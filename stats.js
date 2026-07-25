@@ -112,6 +112,7 @@
       score: { score: sum.score.score, total: sum.score.total, rate: rate(sum.score) },
       byLeague: Object.entries(sum.byLeague)
         .map(([league, b]) => ({ league, score: b.score, total: b.total, rate: rate(b) }))
+        .filter(l => l.total > 0) // 全部待回填的联赛不展示
         .sort((a, b) => b.total - a.total),
     };
   }
