@@ -202,7 +202,7 @@
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  var TIER_COLORS = ['#2F9E63', '#D97706', '#0284C7', '#F25C5C'];
+  var TIER_COLORS = ['#2F9E63', '#D97706', '#F25C5C', '#0284C7', '#8B5CF6'];
 
   // ---- 左侧栏：每日红黑（方向命中=红，失手=黑） ----
   renderHonghei(days);
@@ -238,7 +238,7 @@
     if (!day) { box.innerHTML = ''; return; }
     var groups = [
       { key: 'jc', title: '🇨🇳 竞彩方案', tag: '胜平负/让球/比分，官方SP' },
-      { key: 'ou', title: '⚽ 标准大小盘', tag: '亚盘/主流盘口，单独结算' },
+      { key: 'std', title: '📊 标准盘', tag: '亚洲让球/大小盘，主流盘口单独结算' },
     ];
     var html = '<h2 class="sec-title" style="margin-top:4px">💰 ' + esc(day.date) + ' 投资方案<span class="sec-sub">点方块看详解</span></h2>';
     groups.forEach(function (g) {
@@ -271,7 +271,7 @@
           '<a class="modal-mask" href="#!"></a>' +
           '<div class="modal-box" style="border-top:4px solid ' + c + '">' +
           '<a class="modal-close" href="#!">×</a>' +
-          '<h3>' + esc(t.name) + '<span class="m-pct">' + esc(t.pct) + '</span><span class="m-date">' + esc(day.date) + ' · ' + ((t.market || 'jc') === 'ou' ? '标准大小盘' : '竞彩') + '</span></h3>' +
+          '<h3>' + esc(t.name) + '<span class="m-pct">' + esc(t.pct) + '</span><span class="m-date">' + esc(day.date) + ' · ' + ((t.market || 'jc') === 'std' ? '标准盘' : '竞彩') + '</span></h3>' +
           '<div class="modal-text">' + esc(t.detail || t.text) + '</div>' +
           '</div></div>';
       });
@@ -342,7 +342,7 @@
       ? '<div class="mini-tiers">' + day.plan.map(function (t, i) {
           return '<a class="mini-tier-link" href="#tier-' + esc(day.date) + '-' + i + '">' +
             '<div class="mini-tier" style="border-left-color:' + TIER_COLORS[i % TIER_COLORS.length] + '">' +
-            '<b>' + ((t.market || 'jc') === 'ou' ? '⚽ ' : '🇨🇳 ') + esc(t.name) + ' ' + esc(t.pct) + '</b><br>' + esc(t.text) + '</div></a>';
+            '<b>' + ((t.market || 'jc') === 'std' ? '📊 ' : '🇨🇳 ') + esc(t.name) + ' ' + esc(t.pct) + '</b><br>' + esc(t.text) + '</div></a>';
         }).join('') + '</div>'
       : '';
     return '<div class="day-card" id="day-' + esc(day.date) + '">' +
