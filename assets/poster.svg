@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF6DF"/>
+      <stop offset=".55" stop-color="#FFE3A6"/>
+      <stop offset="1" stop-color="#FFCF7D"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#FFF" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#FFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="1200" height="420" fill="url(#sky)"/>
+  <!-- 动漫速度线（从角色身后放射） -->
+  <g fill="#FFF" opacity=".38">
+    <polygon points="250,210 -60,30 -60,80"/>
+    <polygon points="250,210 -60,140 -60,180"/>
+    <polygon points="250,210 -60,250 -60,300"/>
+    <polygon points="250,210 40,420 110,420"/>
+    <polygon points="250,210 420,-40 480,-20"/>
+    <polygon points="250,210 560,-20 600,10"/>
+  </g>
+  <!-- 云朵 -->
+  <g fill="#FFF" opacity=".85">
+    <ellipse cx="950" cy="70" rx="70" ry="24"/>
+    <ellipse cx="1010" cy="58" rx="50" ry="20"/>
+    <ellipse cx="890" cy="60" rx="42" ry="16"/>
+    <ellipse cx="620" cy="46" rx="46" ry="15" opacity=".6"/>
+  </g>
+  <!-- 星星闪片 -->
+  <g fill="#F5B942">
+    <path d="M720 120 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4z"/>
+    <path d="M1080 150 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" opacity=".8"/>
+    <circle cx="660" cy="330" r="4" opacity=".7"/>
+    <circle cx="1120" cy="330" r="5" opacity=".7"/>
+  </g>
+  <!-- 底部球场 -->
+  <rect x="0" y="352" width="1200" height="68" fill="#7BC96F"/>
+  <rect x="0" y="352" width="1200" height="8" fill="#69B45E"/>
+  <ellipse cx="600" cy="352" rx="180" ry="26" fill="none" stroke="#FFF" stroke-width="4" opacity=".85"/>
+  <line x1="600" y1="352" x2="600" y2="420" stroke="#FFF" stroke-width="4" opacity=".85"/>
+
+  <!-- 角色光环 -->
+  <circle cx="255" cy="230" r="150" fill="url(#glow)"/>
+
+  <!-- ===== Q版动漫小熊 ===== -->
+  <g>
+    <!-- 围巾飘带（身后飘动） -->
+    <path d="M300 262 Q370 240 415 258 Q400 272 368 276 Q330 282 300 276 Z" fill="#D94536"/>
+    <path d="M296 268 Q350 282 388 300 Q372 306 344 300 Q314 292 296 282 Z" fill="#E85545"/>
+    <!-- 速度线 -->
+    <path d="M410 246 q26 -4 40 4" stroke="#E85545" stroke-width="5" fill="none" stroke-linecap="round" opacity=".6"/>
+    <path d="M416 268 q22 0 34 8" stroke="#E85545" stroke-width="5" fill="none" stroke-linecap="round" opacity=".45"/>
+
+    <!-- 身体（二头身小身体） -->
+    <ellipse cx="255" cy="312" rx="66" ry="52" fill="#B87F4A"/>
+    <ellipse cx="255" cy="322" rx="36" ry="30" fill="#F7DCB9"/>
+    <!-- 左手（举足球） -->
+    <circle cx="180" cy="300" r="22" fill="#B87F4A"/>
+    <!-- 足球 -->
+    <g transform="translate(150,330)">
+      <circle r="32" fill="#fff" stroke="#3A2A1A" stroke-width="4"/>
+      <polygon points="0,-14 13.3,-4.3 8.3,11.5 -8.3,11.5 -13.3,-4.3" fill="#3A2A1A"/>
+      <path d="M0 -32 V-14 M30.4 -9.9 L13.3 -4.3 M18.8 25.9 L8.3 11.5 M-18.8 25.9 L-8.3 11.5 M-30.4 -9.9 L-13.3 -4.3" stroke="#3A2A1A" stroke-width="3" fill="none"/>
+    </g>
+    <!-- 右手（挥舞） -->
+    <circle cx="352" cy="226" r="23" fill="#B87F4A"/>
+    <path d="M330 268 Q346 246 352 226" stroke="#B87F4A" stroke-width="26" fill="none" stroke-linecap="round"/>
+
+    <!-- 围巾 -->
+    <path d="M196 266 Q255 288 318 266 L318 288 Q255 310 196 288 Z" fill="#E85545"/>
+    <path d="M196 266 Q255 288 318 266 L318 276 Q255 298 196 276 Z" fill="#D94536" opacity=".55"/>
+
+    <!-- 耳朵 -->
+    <circle cx="188" cy="132" r="32" fill="#A9713D"/>
+    <circle cx="322" cy="132" r="32" fill="#A9713D"/>
+    <circle cx="188" cy="132" r="15" fill="#EFC9A2"/>
+    <circle cx="322" cy="132" r="15" fill="#EFC9A2"/>
+    <!-- 头 -->
+    <circle cx="255" cy="205" r="88" fill="#BC8150"/>
+    <!-- 呆毛 -->
+    <path d="M255 117 q4 -16 16 -18" stroke="#A9713D" stroke-width="6" fill="none" stroke-linecap="round"/>
+
+    <!-- 动漫大眼 -->
+    <g>
+      <ellipse cx="216" cy="198" rx="18" ry="24" fill="#FFF"/>
+      <ellipse cx="294" cy="198" rx="18" ry="24" fill="#FFF"/>
+      <ellipse cx="218" cy="202" rx="12.5" ry="17" fill="#4A3220"/>
+      <ellipse cx="292" cy="202" rx="12.5" ry="17" fill="#4A3220"/>
+      <circle cx="213" cy="194" r="5.5" fill="#FFF"/>
+      <circle cx="287" cy="194" r="5.5" fill="#FFF"/>
+      <circle cx="223" cy="208" r="2.6" fill="#FFF" opacity=".9"/>
+      <circle cx="297" cy="208" r="2.6" fill="#FFF" opacity=".9"/>
+      <path d="M198 176 q14 -10 32 -4" stroke="#3A2A1A" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M280 172 q18 -6 32 4" stroke="#3A2A1A" stroke-width="5" fill="none" stroke-linecap="round"/>
+    </g>
+    <!-- 动漫斜线腮红 -->
+    <g stroke="#F1948A" stroke-width="4" stroke-linecap="round" opacity=".95">
+      <line x1="172" y1="238" x2="186" y2="230"/>
+      <line x1="174" y1="248" x2="188" y2="240"/>
+      <line x1="322" y1="230" x2="336" y2="238"/>
+      <line x1="320" y1="240" x2="334" y2="248"/>
+    </g>
+    <!-- 口鼻 -->
+    <ellipse cx="255" cy="244" rx="30" ry="23" fill="#F7DCB9"/>
+    <ellipse cx="255" cy="234" rx="9" ry="7" fill="#4A3220"/>
+    <!-- 开口笑 + 舌头 -->
+    <path d="M238 248 Q255 274 272 248 Q255 256 238 248 Z" fill="#6B3A25"/>
+    <ellipse cx="255" cy="256" rx="9" ry="5" fill="#F1948A"/>
+
+    <!-- 星星魔法（AI） -->
+    <path d="M352 88 l4.5 11 11 4.5 -11 4.5 -4.5 11 -4.5 -11 -11 -4.5 11 -4.5z" fill="#F5B942"/>
+    <path d="M140 80 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" fill="#F5B942" opacity=".8"/>
+  </g>
+
+  <!-- ===== 标题区 ===== -->
+  <g font-family="Microsoft YaHei, PingFang SC, sans-serif">
+    <text x="470" y="180" font-size="96" font-weight="900" fill="#8B5A2B" stroke="#FFF6E9" stroke-width="8" paint-order="stroke" letter-spacing="2">AI小熊</text>
+    <text x="474" y="246" font-size="42" font-weight="800" fill="#D97706" letter-spacing="6">体育心得分享</text>
+    <text x="476" y="292" font-size="19" font-weight="600" fill="#8B5A2B" opacity=".75" letter-spacing="1">五式足球预测法 V2.6 驱动 · 每日预测与红黑记录</text>
+    <!-- 徽章 -->
+    <g font-size="18" font-weight="700">
+      <rect x="474" y="316" width="128" height="38" rx="19" fill="#FFF" opacity=".9"/>
+      <text x="494" y="341" fill="#2F9E63">⚽ 竞彩方案</text>
+      <rect x="616" y="316" width="128" height="38" rx="19" fill="#FFF" opacity=".9"/>
+      <text x="636" y="341" fill="#0284C7">📊 标准盘</text>
+      <rect x="758" y="316" width="128" height="38" rx="19" fill="#FFF" opacity=".9"/>
+      <text x="778" y="341" fill="#8B5A2B">🐻 每日红黑</text>
+    </g>
+  </g>
+</svg>

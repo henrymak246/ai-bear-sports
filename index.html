@@ -79,6 +79,13 @@
   }
   .analysis-link:hover { transform:translateY(-2px); box-shadow:0 8px 18px rgba(169,113,61,.16); color:var(--honey-dark); }
   .analysis-link .al-sub { font-size:11px; color:var(--muted); font-weight:400; }
+  .poster-frame {
+    border-radius:20px; overflow:hidden; border:1px solid var(--line);
+    box-shadow:0 8px 24px rgba(169,113,61,.22); margin-bottom:18px;
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .poster-frame:hover { transform:translateY(-3px); box-shadow:0 14px 32px rgba(169,113,61,.28); }
+  .poster-frame img { width:100%; display:block; }
 
   /* ---- 方案详解弹窗（:target 纯CSS实现） ---- */
   .modal { display:none; position:fixed; inset:0; z-index:50; }
@@ -249,7 +256,8 @@
       { key: 'jc', title: '🇨🇳 竞彩方案', tag: '胜平负/让球/比分，官方SP' },
       { key: 'std', title: '📊 标准盘', tag: '亚洲让球/大小盘，主流盘口单独结算' },
     ];
-    var html = '<h2 class="sec-title" style="margin-top:4px">💰 ' + esc(day.date) + ' 投资方案<span class="sec-sub">点方块看详解</span></h2>';
+    var html = '<div class="poster-frame"><img src="assets/poster.svg" alt="AI小熊主题海报"></div>' +
+      '<h2 class="sec-title" style="margin-top:4px">💰 ' + esc(day.date) + ' 投资方案<span class="sec-sub">点方块看详解</span></h2>';
     groups.forEach(function (g) {
       var tiers = day.plan.map(function (t, i) { return { t: t, i: i }; })
         .filter(function (x) { return (x.t.market || 'jc') === g.key; });
