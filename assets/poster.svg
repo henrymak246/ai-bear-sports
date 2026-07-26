@@ -9,11 +9,15 @@
       <stop offset="0" stop-color="#FFF" stop-opacity=".9"/>
       <stop offset="1" stop-color="#FFF" stop-opacity="0"/>
     </radialGradient>
+    <radialGradient id="reactor" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#E8FBFF"/>
+      <stop offset=".6" stop-color="#5EE6FF"/>
+      <stop offset="1" stop-color="#5EE6FF" stop-opacity="0"/>
+    </radialGradient>
   </defs>
 
   <!-- 背景 -->
   <rect width="1200" height="420" fill="url(#sky)"/>
-  <!-- 动漫速度线（从角色身后放射） -->
   <g fill="#FFF" opacity=".38">
     <polygon points="250,210 -60,30 -60,80"/>
     <polygon points="250,210 -60,140 -60,180"/>
@@ -22,14 +26,12 @@
     <polygon points="250,210 420,-40 480,-20"/>
     <polygon points="250,210 560,-20 600,10"/>
   </g>
-  <!-- 云朵 -->
   <g fill="#FFF" opacity=".85">
     <ellipse cx="950" cy="70" rx="70" ry="24"/>
     <ellipse cx="1010" cy="58" rx="50" ry="20"/>
     <ellipse cx="890" cy="60" rx="42" ry="16"/>
     <ellipse cx="620" cy="46" rx="46" ry="15" opacity=".6"/>
   </g>
-  <!-- 星星闪片 -->
   <g fill="#F5B942">
     <path d="M720 120 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4z"/>
     <path d="M1080 150 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" opacity=".8"/>
@@ -42,85 +44,107 @@
   <ellipse cx="600" cy="352" rx="180" ry="26" fill="none" stroke="#FFF" stroke-width="4" opacity=".85"/>
   <line x1="600" y1="352" x2="600" y2="420" stroke="#FFF" stroke-width="4" opacity=".85"/>
 
-  <!-- 角色光环 -->
-  <circle cx="255" cy="230" r="150" fill="url(#glow)"/>
+  <circle cx="255" cy="225" r="155" fill="url(#glow)"/>
 
-  <!-- ===== Q版动漫小熊 ===== -->
+  <!-- ===== 钢铁小熊 · 超级英雄落地 ===== -->
   <g>
-    <!-- 围巾飘带（身后飘动） -->
-    <path d="M300 262 Q370 240 415 258 Q400 272 368 276 Q330 282 300 276 Z" fill="#D94536"/>
-    <path d="M296 268 Q350 282 388 300 Q372 306 344 300 Q314 292 296 282 Z" fill="#E85545"/>
-    <!-- 速度线 -->
-    <path d="M410 246 q26 -4 40 4" stroke="#E85545" stroke-width="5" fill="none" stroke-linecap="round" opacity=".6"/>
-    <path d="M416 268 q22 0 34 8" stroke="#E85545" stroke-width="5" fill="none" stroke-linecap="round" opacity=".45"/>
-
-    <!-- 身体（二头身小身体） -->
-    <ellipse cx="255" cy="312" rx="66" ry="52" fill="#B87F4A"/>
-    <ellipse cx="255" cy="322" rx="36" ry="30" fill="#F7DCB9"/>
-    <!-- 左手（举足球） -->
-    <circle cx="180" cy="300" r="22" fill="#B87F4A"/>
-    <!-- 足球 -->
-    <g transform="translate(150,330)">
-      <circle r="32" fill="#fff" stroke="#3A2A1A" stroke-width="4"/>
-      <polygon points="0,-14 13.3,-4.3 8.3,11.5 -8.3,11.5 -13.3,-4.3" fill="#3A2A1A"/>
-      <path d="M0 -32 V-14 M30.4 -9.9 L13.3 -4.3 M18.8 25.9 L8.3 11.5 M-18.8 25.9 L-8.3 11.5 M-30.4 -9.9 L-13.3 -4.3" stroke="#3A2A1A" stroke-width="3" fill="none"/>
+    <!-- 冲击星爆（拳头落地） -->
+    <polygon points="165,330 178,360 210,352 188,374 214,392 182,390 184,420 165,396 146,420 148,390 116,392 142,374 120,352 152,360" fill="#FFF3B0" opacity=".95"/>
+    <!-- 地面裂纹 -->
+    <g stroke="#4A3A28" stroke-width="3.5" fill="none" stroke-linecap="round" opacity=".8">
+      <path d="M165 388 l-40 12 l-18 -4"/>
+      <path d="M165 388 l38 14 l20 -2"/>
+      <path d="M165 390 l-6 22"/>
+      <path d="M150 386 l-30 -8 l-14 6"/>
+      <path d="M182 386 l28 -10 l14 4"/>
     </g>
-    <!-- 右手（挥舞） -->
-    <circle cx="352" cy="226" r="23" fill="#B87F4A"/>
-    <path d="M330 268 Q346 246 352 226" stroke="#B87F4A" stroke-width="26" fill="none" stroke-linecap="round"/>
+    <!-- 飞溅碎石 -->
+    <g fill="#8B5A2B">
+      <polygon points="118,340 126,332 132,342" />
+      <polygon points="208,336 216,328 222,338" />
+      <polygon points="100,362 108,356 113,364" />
+      <polygon points="228,362 236,356 241,364" />
+    </g>
+    <!-- 尘土 -->
+    <ellipse cx="130" cy="390" rx="34" ry="12" fill="#E8D2A8" opacity=".8"/>
+    <ellipse cx="205" cy="394" rx="30" ry="10" fill="#E8D2A8" opacity=".7"/>
 
-    <!-- 围巾 -->
-    <path d="M196 266 Q255 288 318 266 L318 288 Q255 310 196 288 Z" fill="#E85545"/>
-    <path d="M196 266 Q255 288 318 266 L318 276 Q255 298 196 276 Z" fill="#D94536" opacity=".55"/>
+    <!-- 右腿（向后伸，钢铁侠飞踢感） -->
+    <path d="M292 308 Q330 322 366 336" stroke="#C0392B" stroke-width="34" fill="none" stroke-linecap="round"/>
+    <ellipse cx="384" cy="342" rx="24" ry="15" fill="#F5B942" transform="rotate(18 384 342)"/>
+    <!-- 左腿（跪地） -->
+    <path d="M228 312 Q190 330 172 352" stroke="#C0392B" stroke-width="34" fill="none" stroke-linecap="round"/>
+    <ellipse cx="158" cy="366" rx="24" ry="14" fill="#F5B942" transform="rotate(-12 158 366)"/>
 
-    <!-- 耳朵 -->
-    <circle cx="188" cy="132" r="32" fill="#A9713D"/>
-    <circle cx="322" cy="132" r="32" fill="#A9713D"/>
-    <circle cx="188" cy="132" r="15" fill="#EFC9A2"/>
-    <circle cx="322" cy="132" r="15" fill="#EFC9A2"/>
-    <!-- 头 -->
-    <circle cx="255" cy="205" r="88" fill="#BC8150"/>
+    <!-- 躯干装甲 -->
+    <path d="M205 268 Q200 322 228 340 L282 340 Q310 322 305 268 Q300 224 255 220 Q210 224 205 268 Z" fill="#C0392B"/>
+    <path d="M222 246 L255 262 L288 246" stroke="#F5B942" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M228 340 L282 340 L278 352 L232 352 Z" fill="#F5B942"/>
+    <!-- 方舟反应堆 -->
+    <circle cx="255" cy="282" r="24" fill="url(#reactor)"/>
+    <circle cx="255" cy="282" r="13" fill="#E8FBFF" stroke="#5EE6FF" stroke-width="4"/>
+    <circle cx="255" cy="282" r="5" fill="#5EE6FF"/>
+
+    <!-- 左臂（拳头砸地） -->
+    <path d="M222 252 Q190 292 172 336" stroke="#C0392B" stroke-width="30" fill="none" stroke-linecap="round"/>
+    <circle cx="166" cy="356" r="24" fill="#F5B942"/>
+    <path d="M152 350 l28 12" stroke="#C0392B" stroke-width="5" stroke-linecap="round"/>
+
+    <!-- 右臂（举起，掌心炮） -->
+    <path d="M292 246 Q326 222 350 192" stroke="#C0392B" stroke-width="30" fill="none" stroke-linecap="round"/>
+    <circle cx="358" cy="182" r="23" fill="#F5B942"/>
+    <!-- 掌心炮能量 -->
+    <circle cx="358" cy="182" r="34" fill="url(#reactor)"/>
+    <circle cx="358" cy="182" r="12" fill="#E8FBFF"/>
+    <g stroke="#5EE6FF" stroke-width="4" stroke-linecap="round">
+      <line x1="358" y1="138" x2="358" y2="124"/>
+      <line x1="396" y1="158" x2="408" y2="148"/>
+      <line x1="396" y1="206" x2="408" y2="216"/>
+      <line x1="320" y1="158" x2="308" y2="148"/>
+    </g>
+    <circle cx="388" cy="140" r="4" fill="#5EE6FF"/>
+    <circle cx="404" cy="190" r="3" fill="#5EE6FF"/>
+
+    <!-- 头（熊耳伸出头盔） -->
+    <circle cx="200" cy="98" r="26" fill="#A9713D"/>
+    <circle cx="310" cy="98" r="26" fill="#A9713D"/>
+    <circle cx="200" cy="98" r="12" fill="#EFC9A2"/>
+    <circle cx="310" cy="98" r="12" fill="#EFC9A2"/>
+    <circle cx="255" cy="160" r="66" fill="#BC8150"/>
+    <!-- 红金头盔（面罩打开状态） -->
+    <path d="M189 160 A 66 66 0 0 1 321 160" stroke="#C0392B" stroke-width="24" fill="none" stroke-linecap="round"/>
+    <path d="M197 152 A 58 58 0 0 1 313 152" stroke="#F5B942" stroke-width="6" fill="none" stroke-linecap="round"/>
     <!-- 呆毛 -->
-    <path d="M255 117 q4 -16 16 -18" stroke="#A9713D" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M255 94 q4 -14 16 -16" stroke="#A9713D" stroke-width="6" fill="none" stroke-linecap="round"/>
 
-    <!-- 动漫大眼 -->
-    <g>
-      <ellipse cx="216" cy="198" rx="18" ry="24" fill="#FFF"/>
-      <ellipse cx="294" cy="198" rx="18" ry="24" fill="#FFF"/>
-      <ellipse cx="218" cy="202" rx="12.5" ry="17" fill="#4A3220"/>
-      <ellipse cx="292" cy="202" rx="12.5" ry="17" fill="#4A3220"/>
-      <circle cx="213" cy="194" r="5.5" fill="#FFF"/>
-      <circle cx="287" cy="194" r="5.5" fill="#FFF"/>
-      <circle cx="223" cy="208" r="2.6" fill="#FFF" opacity=".9"/>
-      <circle cx="297" cy="208" r="2.6" fill="#FFF" opacity=".9"/>
-      <path d="M198 176 q14 -10 32 -4" stroke="#3A2A1A" stroke-width="5" fill="none" stroke-linecap="round"/>
-      <path d="M280 172 q18 -6 32 4" stroke="#3A2A1A" stroke-width="5" fill="none" stroke-linecap="round"/>
-    </g>
-    <!-- 动漫斜线腮红 -->
-    <g stroke="#F1948A" stroke-width="4" stroke-linecap="round" opacity=".95">
-      <line x1="172" y1="238" x2="186" y2="230"/>
-      <line x1="174" y1="248" x2="188" y2="240"/>
-      <line x1="322" y1="230" x2="336" y2="238"/>
-      <line x1="320" y1="240" x2="334" y2="248"/>
-    </g>
-    <!-- 口鼻 -->
-    <ellipse cx="255" cy="244" rx="30" ry="23" fill="#F7DCB9"/>
-    <ellipse cx="255" cy="234" rx="9" ry="7" fill="#4A3220"/>
-    <!-- 开口笑 + 舌头 -->
-    <path d="M238 248 Q255 274 272 248 Q255 256 238 248 Z" fill="#6B3A25"/>
-    <ellipse cx="255" cy="256" rx="9" ry="5" fill="#F1948A"/>
-
-    <!-- 星星魔法（AI） -->
-    <path d="M352 88 l4.5 11 11 4.5 -11 4.5 -4.5 11 -4.5 -11 -11 -4.5 11 -4.5z" fill="#F5B942"/>
-    <path d="M140 80 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" fill="#F5B942" opacity=".8"/>
+    <!-- 英雄眼神（动漫大眼 + 英气斜眉） -->
+    <ellipse cx="228" cy="166" rx="15" ry="20" fill="#FFF"/>
+    <ellipse cx="282" cy="166" rx="15" ry="20" fill="#FFF"/>
+    <ellipse cx="230" cy="169" rx="10.5" ry="14.5" fill="#4A3220"/>
+    <ellipse cx="280" cy="169" rx="10.5" ry="14.5" fill="#4A3220"/>
+    <circle cx="226" cy="162" r="4.5" fill="#FFF"/>
+    <circle cx="276" cy="162" r="4.5" fill="#FFF"/>
+    <path d="M212 144 l28 8" stroke="#3A2A1A" stroke-width="5.5" stroke-linecap="round"/>
+    <path d="M298 144 l-28 8" stroke="#3A2A1A" stroke-width="5.5" stroke-linecap="round"/>
+    <!-- 口鼻（自信笑） -->
+    <ellipse cx="255" cy="196" rx="26" ry="20" fill="#F7DCB9"/>
+    <ellipse cx="255" cy="188" rx="8" ry="6" fill="#4A3220"/>
+    <path d="M242 198 Q255 210 268 198" stroke="#4A3220" stroke-width="4" fill="none" stroke-linecap="round"/>
   </g>
+
+  <!-- 足球（被冲击波弹起） -->
+  <g transform="translate(94,240) rotate(-18)">
+    <circle r="28" fill="#fff" stroke="#3A2A1A" stroke-width="4"/>
+    <polygon points="0,-12.4 11.8,-3.8 7.3,10.1 -7.3,10.1 -11.8,-3.8" fill="#3A2A1A"/>
+    <path d="M0 -28 V-12.4 M26.6 -8.6 L11.8 -3.8 M16.4 22.7 L7.3 10.1 M-16.4 22.7 L-7.3 10.1 M-26.6 -8.6 L-11.8 -3.8" stroke="#3A2A1A" stroke-width="2.6" fill="none"/>
+  </g>
+  <path d="M120 268 q20 16 26 40" stroke="#4A3A28" stroke-width="4" fill="none" stroke-dasharray="6 8" opacity=".5"/>
 
   <!-- ===== 标题区 ===== -->
   <g font-family="Microsoft YaHei, PingFang SC, sans-serif">
     <text x="470" y="180" font-size="96" font-weight="900" fill="#8B5A2B" stroke="#FFF6E9" stroke-width="8" paint-order="stroke" letter-spacing="2">AI小熊</text>
     <text x="474" y="246" font-size="42" font-weight="800" fill="#D97706" letter-spacing="6">体育心得分享</text>
     <text x="476" y="292" font-size="19" font-weight="600" fill="#8B5A2B" opacity=".75" letter-spacing="1">五式足球预测法 V2.6 驱动 · 每日预测与红黑记录</text>
-    <!-- 徽章 -->
     <g font-size="18" font-weight="700">
       <rect x="474" y="316" width="128" height="38" rx="19" fill="#FFF" opacity=".9"/>
       <text x="494" y="341" fill="#2F9E63">⚽ 竞彩方案</text>
