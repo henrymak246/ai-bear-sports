@@ -67,6 +67,9 @@
   .plan-block .pb-text { font-size:12px; color:var(--brown-soft); line-height:1.65; }
   .plan-block .pb-more { font-size:11px; color:var(--honey-dark); margin-top:8px; font-weight:700; }
   .plan-note { font-size:12px; color:var(--honey-dark); background:var(--amber-bg); border-radius:10px; padding:8px 12px; margin-top:12px; line-height:1.65; }
+  .plan-group-title { font-size:13.5px; font-weight:800; color:var(--brown); margin:16px 0 10px; display:flex; align-items:center; gap:8px; }
+  .plan-group-title:first-of-type { margin-top:0; }
+  .plan-group-title .pg-tag { font-size:10.5px; color:var(--muted); font-weight:400; }
 
   /* ---- 方案详解弹窗（:target 纯CSS实现） ---- */
   .modal { display:none; position:fixed; inset:0; z-index:50; }
@@ -227,22 +230,33 @@
     side.innerHTML = '<h2 class="hh-side-title">📓 每日红黑</h2>' + total + rows;
   }
 
-  // ---- 中间首页：最新一天方案方块（点击跳转详解弹窗） ----
+  // ---- 中间首页：最新一天方案方块（竞彩/标准大小盘分组，点击跳转详解弹窗） ----
   renderPlanBlocks(days);
   function renderPlanBlocks(days) {
     var box = document.getElementById('planBlocks');
     var day = days.find(function (d) { return Array.isArray(d.plan) && d.plan.length > 0; });
     if (!day) { box.innerHTML = ''; return; }
-    box.innerHTML = '<h2 class="sec-title" style="margin-top:4px">💰 ' + esc(day.date) + ' 投资方案<span class="sec-sub">点方块看详解</span></h2>' +
-      '<div class="plan-blocks">' + day.plan.map(function (t, i) {
-        var c = TIER_COLORS[i % TIER_COLORS.length];
-        return '<a class="plan-block" href="#tier-' + esc(day.date) + '-' + i + '" style="border-top-color:' + c + '">' +
-          '<div class="pb-head">' + esc(t.name) + '</div>' +
-          '<div class="pb-pct" style="color:' + c + '">' + esc(t.pct) + '</div>' +
-          '<div class="pb-text">' + esc(t.text) + '</div>' +
-          '<div class="pb-more">详解 ↗</div></a>';
-      }).join('') + '</div>' +
-      (day.planNote ? '<div class="plan-note">⚠️ ' + esc(day.planNote) + '</div>' : '');
+    var groups = [
+      { key: 'jc', title: '🇨🇳 竞彩方案', tag: '胜平负/让球/比分，官方SP' },
+      { key: 'ou', title: '⚽ 标准大小盘', tag: '亚盘/主流盘口，单独结算' },
+    ];
+    var html = '<h2 class="sec-title" style="margin-top:4px">💰 ' + esc(day.date) + ' 投资方案<span class="sec-sub">点方块看详解</span></h2>';
+    groups.forEach(function (g) {
+      var tiers = day.plan.map(function (t, i) { return { t: t, i: i }; })
+        .filter(function (x) { return (x.t.market || 'jc') === g.key; });
+      if (tiers.length === 0) return;
+      html += '<div class="plan-group-title">' + g.title + '<span class="pg-tag">' + g.tag + '</span></div>' +
+        '<div class="plan-blocks">' + tiers.map(function (x) {
+          var c = TIER_COLORS[x.i % TIER_COLORS.length];
+          return '<a class="plan-block" href="#tier-' + esc(day.date) + '-' + x.i + '" style="border-top-color:' + c + '">' +
+            '<div class="pb-head">' + esc(x.t.name) + '</div>' +
+            '<div class="pb-pct" style="color:' + c + '">' + esc(x.t.pct) + '</div>' +
+            '<div class="pb-text">' + esc(x.t.text) + '</div>' +
+            '<div class="pb-more">详解 ↗</div></a>';
+        }).join('') + '</div>';
+    });
+    html += (day.planNote ? '<div class="plan-note">⚠️ ' + esc(day.planNote) + '</div>' : '');
+    box.innerHTML = html;
   }
 
   // ---- 方案详解弹窗（每天每层一个，hash :target 打开） ----
@@ -257,7 +271,7 @@
           '<a class="modal-mask" href="#!"></a>' +
           '<div class="modal-box" style="border-top:4px solid ' + c + '">' +
           '<a class="modal-close" href="#!">×</a>' +
-          '<h3>' + esc(t.name) + '<span class="m-pct">' + esc(t.pct) + '</span><span class="m-date">' + esc(day.date) + '</span></h3>' +
+          '<h3>' + esc(t.name) + '<span class="m-pct">' + esc(t.pct) + '</span><span class="m-date">' + esc(day.date) + ' · ' + ((t.market || 'jc') === 'ou' ? '标准大小盘' : '竞彩') + '</span></h3>' +
           '<div class="modal-text">' + esc(t.detail || t.text) + '</div>' +
           '</div></div>';
       });
@@ -328,7 +342,7 @@
       ? '<div class="mini-tiers">' + day.plan.map(function (t, i) {
           return '<a class="mini-tier-link" href="#tier-' + esc(day.date) + '-' + i + '">' +
             '<div class="mini-tier" style="border-left-color:' + TIER_COLORS[i % TIER_COLORS.length] + '">' +
-            '<b>' + esc(t.name) + ' ' + esc(t.pct) + '</b><br>' + esc(t.text) + '</div></a>';
+            '<b>' + ((t.market || 'jc') === 'ou' ? '⚽ ' : '🇨🇳 ') + esc(t.name) + ' ' + esc(t.pct) + '</b><br>' + esc(t.text) + '</div></a>';
         }).join('') + '</div>'
       : '';
     return '<div class="day-card" id="day-' + esc(day.date) + '">' +
