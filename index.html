@@ -58,14 +58,31 @@
   .plan-blocks { display:grid; grid-template-columns:repeat(auto-fit,minmax(185px,1fr)); gap:12px; }
   .plan-block {
     background:#FFF8EC; border:1px solid var(--line); border-top:4px solid var(--honey);
-    border-radius:14px; padding:14px;
+    border-radius:14px; padding:14px; display:block; text-decoration:none; color:inherit;
     transition:transform .18s ease, box-shadow .18s ease;
   }
   .plan-block:hover { transform:translateY(-3px); box-shadow:0 8px 18px rgba(169,113,61,.16); }
   .plan-block .pb-head { font-size:12.5px; font-weight:700; color:var(--brown); }
   .plan-block .pb-pct { font-size:24px; font-weight:800; margin:2px 0 6px; }
   .plan-block .pb-text { font-size:12px; color:var(--brown-soft); line-height:1.65; }
+  .plan-block .pb-more { font-size:11px; color:var(--honey-dark); margin-top:8px; font-weight:700; }
   .plan-note { font-size:12px; color:var(--honey-dark); background:var(--amber-bg); border-radius:10px; padding:8px 12px; margin-top:12px; line-height:1.65; }
+
+  /* ---- 方案详解弹窗（:target 纯CSS实现） ---- */
+  .modal { display:none; position:fixed; inset:0; z-index:50; }
+  .modal:target { display:flex; align-items:center; justify-content:center; }
+  .modal-mask { position:absolute; inset:0; background:rgba(74,58,40,.45); }
+  .modal-box {
+    position:relative; background:var(--card); border-radius:18px; padding:24px;
+    max-width:580px; width:92%; max-height:82vh; overflow:auto;
+    box-shadow:0 20px 50px rgba(74,58,40,.35);
+  }
+  .modal-box h3 { font-size:16px; color:var(--brown); padding-right:30px; }
+  .modal-box h3 .m-pct { color:var(--honey-dark); margin-left:6px; }
+  .modal-box h3 .m-date { font-size:11.5px; color:var(--muted); font-weight:400; margin-left:8px; }
+  .modal-close { position:absolute; top:12px; right:16px; font-size:24px; line-height:1; text-decoration:none; color:var(--muted); }
+  .modal-close:hover { color:var(--coral); }
+  .modal-text { white-space:pre-wrap; font-size:13px; line-height:1.85; color:var(--brown-soft); margin-top:12px; }
 
   .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:16px; }
   .card {
@@ -82,13 +99,13 @@
     margin-bottom:16px; box-shadow:0 4px 14px rgba(169,113,61,.10);
   }
   .panel h2 { font-size:15px; margin-bottom:12px; color:var(--brown); }
-  .panel .panel-sub { font-size:12px; color:var(--muted); font-weight:400; margin-left:6px; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
   th,td { padding:8px; border-bottom:1px dashed var(--line); text-align:left; }
   th { color:var(--brown-soft); font-weight:700; }
   tr:last-child td { border-bottom:none; }
 
   .sec-title { margin:20px 0 12px; font-size:16px; color:var(--brown); }
+  .sec-title .sec-sub { font-size:12px; color:var(--muted); font-weight:400; margin-left:6px; }
 
   .day-card {
     background:var(--card); border:1px solid var(--line); border-radius:18px; margin-bottom:14px;
@@ -110,7 +127,9 @@
   .half { color:var(--honey-dark); font-weight:700; } .wait { color:var(--muted); }
   .stars { color:var(--honey); }
   .mini-tiers { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px; margin-top:12px; }
-  .mini-tier { background:#FFF8EC; border-left:3px solid var(--honey); border-radius:8px; padding:7px 10px; font-size:12px; color:var(--brown-soft); line-height:1.6; }
+  .mini-tier-link { text-decoration:none; color:inherit; }
+  .mini-tier { background:#FFF8EC; border-left:3px solid var(--honey); border-radius:8px; padding:7px 10px; font-size:12px; color:var(--brown-soft); line-height:1.6; height:100%; }
+  .mini-tier-link:hover .mini-tier { background:#FFF1D6; }
   .mini-tier b { color:var(--brown); }
   .review { font-size:13px; color:var(--brown-soft); margin-top:12px; line-height:1.8; white-space:pre-wrap; background:#FFF8EC; border-radius:12px; padding:10px 14px; }
   .review b { color:var(--brown); }
@@ -154,6 +173,8 @@
     <div id="dailyList"></div>
   </main>
 </div>
+
+<div id="planModals"></div>
 
 <footer>🐻 小熊提醒：仅供娱乐参考，不构成投资建议<br>五式足球预测法 V2.6 驱动 · 数据由 AI 小熊每日维护</footer>
 
@@ -206,21 +227,42 @@
     side.innerHTML = '<h2 class="hh-side-title">📓 每日红黑</h2>' + total + rows;
   }
 
-  // ---- 中间首页：最新一天方案方块 ----
+  // ---- 中间首页：最新一天方案方块（点击跳转详解弹窗） ----
   renderPlanBlocks(days);
   function renderPlanBlocks(days) {
     var box = document.getElementById('planBlocks');
     var day = days.find(function (d) { return Array.isArray(d.plan) && d.plan.length > 0; });
     if (!day) { box.innerHTML = ''; return; }
-    box.innerHTML = '<h2 class="sec-title" style="margin-top:4px">💰 ' + esc(day.date) + ' 投资方案</h2>' +
+    box.innerHTML = '<h2 class="sec-title" style="margin-top:4px">💰 ' + esc(day.date) + ' 投资方案<span class="sec-sub">点方块看详解</span></h2>' +
       '<div class="plan-blocks">' + day.plan.map(function (t, i) {
         var c = TIER_COLORS[i % TIER_COLORS.length];
-        return '<div class="plan-block" style="border-top-color:' + c + '">' +
+        return '<a class="plan-block" href="#tier-' + esc(day.date) + '-' + i + '" style="border-top-color:' + c + '">' +
           '<div class="pb-head">' + esc(t.name) + '</div>' +
           '<div class="pb-pct" style="color:' + c + '">' + esc(t.pct) + '</div>' +
-          '<div class="pb-text">' + esc(t.text) + '</div></div>';
+          '<div class="pb-text">' + esc(t.text) + '</div>' +
+          '<div class="pb-more">详解 ↗</div></a>';
       }).join('') + '</div>' +
       (day.planNote ? '<div class="plan-note">⚠️ ' + esc(day.planNote) + '</div>' : '');
+  }
+
+  // ---- 方案详解弹窗（每天每层一个，hash :target 打开） ----
+  renderPlanModals(days);
+  function renderPlanModals(days) {
+    var html = '';
+    days.forEach(function (day) {
+      if (!Array.isArray(day.plan)) return;
+      day.plan.forEach(function (t, i) {
+        var c = TIER_COLORS[i % TIER_COLORS.length];
+        html += '<div class="modal" id="tier-' + esc(day.date) + '-' + i + '">' +
+          '<a class="modal-mask" href="#!"></a>' +
+          '<div class="modal-box" style="border-top:4px solid ' + c + '">' +
+          '<a class="modal-close" href="#!">×</a>' +
+          '<h3>' + esc(t.name) + '<span class="m-pct">' + esc(t.pct) + '</span><span class="m-date">' + esc(day.date) + '</span></h3>' +
+          '<div class="modal-text">' + esc(t.detail || t.text) + '</div>' +
+          '</div></div>';
+      });
+    });
+    document.getElementById('planModals').innerHTML = html;
   }
 
   // ---- 小熊成绩单 ----
@@ -284,8 +326,9 @@
       : '<span class="badge good">⚽ 方向 ' + ds.direction.score + '/' + ds.direction.total + '</span>';
     var tiers = (Array.isArray(day.plan) && day.plan.length > 0)
       ? '<div class="mini-tiers">' + day.plan.map(function (t, i) {
-          return '<div class="mini-tier" style="border-left-color:' + TIER_COLORS[i % TIER_COLORS.length] + '">' +
-            '<b>' + esc(t.name) + ' ' + esc(t.pct) + '</b><br>' + esc(t.text) + '</div>';
+          return '<a class="mini-tier-link" href="#tier-' + esc(day.date) + '-' + i + '">' +
+            '<div class="mini-tier" style="border-left-color:' + TIER_COLORS[i % TIER_COLORS.length] + '">' +
+            '<b>' + esc(t.name) + ' ' + esc(t.pct) + '</b><br>' + esc(t.text) + '</div></a>';
         }).join('') + '</div>'
       : '';
     return '<div class="day-card" id="day-' + esc(day.date) + '">' +
