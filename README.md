@@ -1,6 +1,8 @@
 # AI小熊 · 体育心得分享
 
-零依赖静态网站：双击 `index.html` 即可查看（无需服务器、无需联网）。Logo：`assets/logo.svg`（AI小熊头像）。
+🌐 公网地址：**https://henrymak246.github.io/ai-bear-sports/**（GitHub Pages，`git push` 后约 1 分钟自动更新）
+
+零依赖静态网站：双击 `index.html` 即可本地查看（无需服务器、无需联网）。Logo：`assets/logo.svg`（AI小熊头像）。
 
 ## 页面结构
 - **左侧栏 📓 每日红黑**：每天方向命中的红黑圆点与 X红X黑计数 + 累计红黑
