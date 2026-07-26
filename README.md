@@ -2,6 +2,10 @@
 
 零依赖静态网站：双击 `index.html` 即可查看（无需服务器、无需联网）。Logo：`assets/logo.svg`（AI小熊头像）。
 
+## 页面结构
+- **左侧栏 💰 每日方案**：每天的资金四层分配（方向底仓/价值增益/大小球专项/比分梦想）+ 风险提示；点日期可跳转展开对应预测卡
+- **主区**：命中率仪表盘、14 日走势、联赛分布、每日预测记录（点开看预测明细与复盘）
+
 ## 文件说明
 - `index.html` — 页面（代码，稳定不改）
 - `stats.js` — 命中率统计逻辑（改判定规则才动）
@@ -12,6 +16,22 @@
 1. 分析完成后：在 `data/predictions.js` 数组**最前**插入当日对象（照 2026-07-26 的格式）
 2. 赛后复盘：只需给每场填 `finalScore`（如 `"3-1"`）、给当日填 `review`；命中判定与统计由页面自动完成
 3. 提交：`git add data/predictions.js && git commit -m "data: YYYY-MM-DD 预测/复盘"`
+
+## 数据格式要点
+```js
+{
+  date: 'YYYY-MM-DD', dayPillar: '丙午年·…·辛丑日', dayNote: '当日基调摘要',
+  matches: [ { id, league, time, home, away, direction, overUnder, score: [], confidence, finalScore: null, note } ],
+  plan: [                              // 左侧栏方案（可省略）
+    { name: '🟢 方向底仓', pct: '40%', text: '…' },
+    { name: '🟡 价值增益', pct: '25%', text: '…' },
+    { name: '🔵 大小球专项', pct: '25%', text: '…' },
+    { name: '🔴 比分梦想', pct: '10%', text: '…' },
+  ],
+  planNote: '回避与风险提示（可选）',
+  review: null,                        // 复盘时回填
+}
+```
 
 ## 判定规则
 - 方向：预测主/平/客胜与实际一致 = ✅
