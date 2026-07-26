@@ -30,6 +30,7 @@
     { market: 'jc', name: '🔴 比分 · 梦想', pct: '10%', text: '…' },
     { market: 'std', name: '🔵 亚洲让球', pct: '10%', text: '…' },   // jc=竞彩方案，std=标准盘（亚洲让球/大小盘，缺省按 jc）
     { market: 'std', name: '🟣 大小盘', pct: '15%', text: '…' },
+    { market: 'jc', name: '🎯 过关专栏', pct: '3胆', text: '胆码+过关组合（pct 字段也可写短标签，如 "3胆"）' },
   ],
   planNote: '回避与风险提示（可选）',
   analysis: '完整分析全文（可选，\\n 换行）：日柱框架/时段信号/逐场拆解；方案下方和日卡内会出现"MMDD 完整分析"跳转条，点击弹窗展示',
