@@ -206,6 +206,33 @@
   footer { color:var(--brown-soft); font-size:12px; text-align:center; margin:28px 0 6px; line-height:1.8; }
   svg text { fill:var(--brown-soft); font-size:11px; }
 
+  /* ---- 会员门 ---- */
+  #gateRoot:empty { display:none; }
+  .gate-overlay { position:fixed; inset:0; z-index:60; overflow:auto; padding:24px;
+    background:linear-gradient(160deg,#FFF9EE 0%,#FFEFD2 55%,#FFE7BD 100%);
+    display:flex; align-items:center; justify-content:center; }
+  .gate-card { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:30px 26px;
+    width:100%; max-width:380px; text-align:center; box-shadow:0 12px 36px rgba(169,113,61,.22); }
+  .gate-logo { width:64px; height:64px; }
+  .gate-card h2 { font-size:19px; color:var(--brown); margin:10px 0 6px; }
+  .gate-sub { font-size:12.5px; color:var(--brown-soft); line-height:1.7; margin-bottom:14px; }
+  .gate-tabs { display:flex; gap:8px; justify-content:center; margin-bottom:14px; }
+  .gate-tab { font-size:13.5px; font-weight:700; color:var(--muted); padding:5px 18px; border-radius:999px; cursor:pointer; border:1px solid var(--line); }
+  .gate-tab.active { color:var(--brown); background:var(--amber-bg); border-color:#F5C96B; }
+  .gate-card input { width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:14px;
+    margin-bottom:10px; background:#FFFDF8; color:#4A3A28; font-family:inherit; }
+  .gate-card input:focus { outline:none; border-color:var(--honey); }
+  .gate-btn { width:100%; border:none; border-radius:10px; padding:11px 0; font-size:15px; font-weight:800; cursor:pointer;
+    background:var(--honey); color:#fff; font-family:inherit; }
+  .gate-btn:hover { background:var(--honey-dark); }
+  .gate-btn:disabled { opacity:.6; cursor:default; }
+  .gate-msg { min-height:20px; font-size:12.5px; color:var(--coral); margin-bottom:8px; }
+  .gate-tip { font-size:11.5px; color:var(--muted); margin-top:12px; }
+  #userBar { margin-left:auto; display:flex; align-items:center; gap:8px; }
+  .ub-mail { font-size:11.5px; color:var(--muted); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ub-out { font-size:12px; font-weight:700; color:var(--honey-dark); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:3px 10px; background:var(--card); }
+  .ub-out:hover { color:var(--coral); }
+
   @media (max-width: 920px) {
     .layout { flex-direction:column; }
     aside { width:100%; position:static; }
@@ -219,6 +246,7 @@
     <h1>AI小熊 · 体育心得分享 <span class="paw">🐾</span></h1>
     <p class="sub" id="dataInfo">小熊加载中…</p>
   </div>
+  <div id="userBar"></div>
 </header>
 <div id="errorBanner" class="error" hidden></div>
 
@@ -249,21 +277,141 @@
 </div>
 
 <div id="planModals"></div>
+<div id="gateRoot"></div>
 
 <footer>🐻 小熊提醒：仅供娱乐参考，不构成投资建议<br>五式足球预测法 V2.6 驱动 · 数据由 AI 小熊每日维护</footer>
 
-<script src="data/predictions.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="stats.js"></script>
 <script>
+// ---- Supabase 配置（Task 4 部署时填入真实值；占位时全站显示"整理中"） ----
+var SUPABASE_URL = 'https://YOUR_PROJECT.supabase.co';
+var SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ---- 会员门：dev 模式 → 本地数据直渲；占位配置 → 整理中；否则走登录三态 ----
 (function () {
-  var banner = document.getElementById('errorBanner');
-  if (typeof PREDICTION_DAYS === 'undefined' || !Array.isArray(PREDICTION_DAYS)) {
+  var gate = document.getElementById('gateRoot');
+  var params = new URLSearchParams(location.search);
+
+  function showGate(html) {
+    gate.innerHTML = '<div class="gate-overlay"><div class="gate-card">' + html + '</div></div>';
+  }
+  function showGateError(t) {
+    var banner = document.getElementById('errorBanner');
     banner.hidden = false;
-    banner.textContent = '🐻 小熊找不到数据文件 data/predictions.js（或格式有误），检查后刷新试试。';
+    banner.textContent = '🐻 ' + t;
+  }
+  function gateLogo() { return '<img src="assets/logo.svg" alt="AI小熊" class="gate-logo">'; }
+
+  // dev 模式：本地预览/测试钩子（?dev），数据文件不上线时此模式自动失效
+  if (params.has('dev')) {
+    var s = document.createElement('script');
+    s.src = 'data/predictions.js';
+    s.onload = function () { renderApp(PREDICTION_DAYS); };
+    s.onerror = function () { showGateError('dev 模式：本地 data/predictions.js 加载失败'); };
+    document.body.appendChild(s);
+    return;
+  }
+
+  if (!window.supabase || SUPABASE_URL.indexOf('https://YOUR_') === 0) {
+    showGate(gateLogo() + '<h2>🐻 小熊搬家整理中</h2><p class="gate-sub">会员系统上线准备中，请稍后再来</p>');
+    return;
+  }
+
+  var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  function renderPending(email) {
+    showGate(gateLogo() + '<h2>🍯 等小熊开门</h2>' +
+      '<p class="gate-sub">账号 <b>' + esc(email) + '</b> 已注册，站长审核中…<br>通过后刷新即可进入</p>' +
+      '<button class="gate-btn" id="gateOut">退出登录</button>');
+    document.getElementById('gateOut').onclick = function () {
+      sb.auth.signOut().then(function () { location.reload(); });
+    };
+  }
+
+  function renderUserBar(email) {
+    var bar = document.getElementById('userBar');
+    bar.innerHTML = '<span class="ub-mail">' + esc(email) + '</span><a href="#!" class="ub-out" id="ubOut">退出</a>';
+    document.getElementById('ubOut').onclick = function (e) {
+      e.preventDefault();
+      sb.auth.signOut().then(function () { location.reload(); });
+    };
+  }
+
+  function renderAuth() {
+    showGate(gateLogo() +
+      '<h2>🐻 AI小熊 · 会员门</h2>' +
+      '<p class="gate-sub">小圈子分享站，登录且通过审核后可见</p>' +
+      '<div class="gate-tabs"><span id="tabLogin" class="gate-tab active">登录</span><span id="tabSignup" class="gate-tab">注册</span></div>' +
+      '<input id="gateEmail" type="email" placeholder="邮箱" autocomplete="email">' +
+      '<input id="gatePwd" type="password" placeholder="密码（至少6位）">' +
+      '<div class="gate-msg" id="gateMsg"></div>' +
+      '<button id="gateGo" class="gate-btn">登录</button>' +
+      '<p class="gate-tip">没有账号？点上方「注册」，提交后等小熊开门 🍯</p>');
+    var mode = 'login';
+    var tabL = document.getElementById('tabLogin'), tabS = document.getElementById('tabSignup');
+    var btn = document.getElementById('gateGo'), msgEl = document.getElementById('gateMsg');
+    function setMode(m) {
+      mode = m;
+      tabL.className = 'gate-tab' + (m === 'login' ? ' active' : '');
+      tabS.className = 'gate-tab' + (m === 'signup' ? ' active' : '');
+      btn.textContent = m === 'login' ? '登录' : '注册';
+      msgEl.textContent = '';
+    }
+    tabL.onclick = function () { setMode('login'); };
+    tabS.onclick = function () { setMode('signup'); };
+    btn.onclick = function () {
+      var email = document.getElementById('gateEmail').value.trim();
+      var pwd = document.getElementById('gatePwd').value;
+      if (!email || pwd.length < 6) { msgEl.textContent = '请填邮箱，密码至少 6 位'; return; }
+      btn.disabled = true;
+      var done = function () { btn.disabled = false; };
+      if (mode === 'login') {
+        sb.auth.signInWithPassword({ email: email, password: pwd }).then(function (res) {
+          done();
+          if (res.error) { msgEl.textContent = '登录失败：' + res.error.message; return; }
+          location.reload();
+        });
+      } else {
+        sb.auth.signUp({ email: email, password: pwd }).then(function (res) {
+          done();
+          if (res.error) { msgEl.textContent = '注册失败：' + res.error.message; return; }
+          if (res.data && res.data.session) { renderPending(email); return; }
+          msgEl.textContent = '已提交，等小熊开门 🍯 审核通过后登录可见';
+        });
+      }
+    };
+  }
+
+  sb.auth.getSession().then(function (res) {
+    var session = res && res.data ? res.data.session : null;
+    if (!session) { renderAuth(); return; }
+    sb.from('members').select('approved').eq('user_id', session.user.id).single()
+      .then(function (r2) {
+        if (!r2.data || !r2.data.approved) { renderPending(session.user.email || ''); return; }
+        renderUserBar(session.user.email || '');
+        sb.from('prediction_days').select('payload').order('date', { ascending: false })
+          .then(function (r3) {
+            if (r3.error || !r3.data || r3.data.length === 0) { showGateError('数据拉取失败，请稍后刷新'); return; }
+            renderApp(r3.data.map(function (row) { return row.payload; }));
+          });
+      })
+      .catch(function () { renderPending(session.user.email || ''); });
+  }).catch(function () { showGateError('登录状态检查失败，请刷新重试'); });
+})();
+
+function renderApp(days) {
+  var banner = document.getElementById('errorBanner');
+  if (!Array.isArray(days)) {
+    banner.hidden = false;
+    banner.textContent = '🐻 小熊找不到预测数据，请稍后刷新试试。';
     document.getElementById('dataInfo').textContent = '数据加载失败';
     return;
   }
-  var days = PREDICTION_DAYS;
   document.getElementById('dataInfo').textContent =
     '小熊已记录 ' + days.length + ' 天 · 最新：' + (days[0] ? days[0].date : '—') + ' 🐾';
 
@@ -273,9 +421,6 @@
     return (t && t.result && map.hasOwnProperty(t.result)) ? map[t.result] : '';
   }
   function frac(b) { return b.score + '/' + b.total; }
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
 
   var TIER_COLORS = ['#2F9E63', '#D97706', '#F25C5C', '#0284C7', '#8B5CF6', '#B7791F'];
 
@@ -548,7 +693,7 @@
     }).join('');
     return '<table><tr><th>编号</th><th>联赛/时间</th><th>对阵</th><th>预测（方向/大小/比分）</th><th>赛果</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>';
   }
-})();
+}
 </script>
 </body>
 </html>
