@@ -17,17 +17,28 @@ function loadEnv() {
     const t = line.trim();
     if (!t || t.startsWith('#') || t.indexOf('=') === -1) return;
     const i = t.indexOf('=');
-    out[t.slice(0, i).trim()] = t.slice(i + 1).trim();
+    let v = t.slice(i + 1).trim();
+    if (v.length >= 2 && ((v[0] === '"' && v[v.length - 1] === '"') || (v[0] === "'" && v[v.length - 1] === "'"))) {
+      v = v.slice(1, -1);
+    }
+    out[t.slice(0, i).trim()] = v;
   });
   return out;
 }
 
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
+  process.argv.slice(2).forEach(function (a) {
+    if (a !== '--dry-run') console.error('警告：忽略未知参数 ' + a + '（想干跑请用 --dry-run）');
+  });
   const days = require(path.join(__dirname, '..', 'data', 'predictions.js'));
   if (!Array.isArray(days) || days.length === 0) throw new Error('predictions.js 为空或不是数组');
+  const seen = {};
   days.forEach(function (d, i) {
     if (!d || typeof d.date !== 'string' || !d.date) throw new Error('第 ' + i + ' 天缺 date 字段');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date)) throw new Error('第 ' + i + ' 天 date 格式应为 YYYY-MM-DD: ' + d.date);
+    if (seen[d.date]) throw new Error('date 重复: ' + d.date);
+    seen[d.date] = true;
   });
   const rows = days.map(function (d) {
     return { date: d.date, payload: d, updated_at: new Date().toISOString() };
