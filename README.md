@@ -18,7 +18,7 @@
 
 ## 每日工作流（AI 执行）
 1. 分析完成后：在 `data/predictions.js` 数组**最前**插入当日对象（照 2026-07-26 的格式）
-2. 赛后复盘：只需给每场填 `finalScore`（如 `"3-1"`）、给当日填 `review`；命中判定与统计由页面自动完成
+2. 赛后复盘：给每场填 `finalScore`（如 `"3-1"`）、给当日填 `review`、给每个方案块填 `result`（hit/miss/half/push）；命中判定与统计由页面自动完成
 3. 提交：`git add data/predictions.js && git commit -m "data: YYYY-MM-DD 预测/复盘"`
 
 ## 数据格式要点
@@ -32,6 +32,7 @@
     { market: 'jc', name: '🏅 比分', pct: '10%', text: '娱乐层比分组合' },
     { market: 'std', name: '🔵 亚洲让球', pct: '10%', text: '…' },   // jc=竞彩方案，std=标准盘（亚洲让球/大小盘，缺省按 jc）
     { market: 'std', name: '🟣 大小盘', pct: '10%', text: '…' },
+    // result: 'hit'|'miss'|'half'|'push'（可选）：复盘回填该块整体战果；半红计0.5、走水与未回填不计入「方案层命中」统计
   ],
   planNote: '回避与风险提示（可选）',
   actualBets: [                           // 实际投注票样留档（可选，显示在标准盘下方）
@@ -47,3 +48,4 @@
 - 大小球：全中✅，半中（赢/输一半）半✅计0.5，走水不计入
 - 比分：命中预测数组任一 = ✅
 - `放弃` / 未回填场次的项不计入统计
+- 方案块：块内全红=hit、全黑=miss、部分红=half、全部走水=push；判定依据写入当日 review

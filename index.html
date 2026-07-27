@@ -270,7 +270,7 @@
   function pct(r) { return r === null ? '—' : Math.round(r * 100) + '%'; }
   function planBadge(t) {
     var map = { hit: ' 🔴', miss: ' ⚫', half: ' 🌗', push: ' ➖' };
-    return (t && t.result && map[t.result]) || '';
+    return (t && t.result && map.hasOwnProperty(t.result)) ? map[t.result] : '';
   }
   function frac(b) { return b.score + '/' + b.total; }
   function esc(s) {
