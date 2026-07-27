@@ -268,6 +268,10 @@
     '小熊已记录 ' + days.length + ' 天 · 最新：' + (days[0] ? days[0].date : '—') + ' 🐾';
 
   function pct(r) { return r === null ? '—' : Math.round(r * 100) + '%'; }
+  function planBadge(t) {
+    var map = { hit: ' 🔴', miss: ' ⚫', half: ' 🌗', push: ' ➖' };
+    return (t && t.result && map[t.result]) || '';
+  }
   function frac(b) { return b.score + '/' + b.total; }
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -346,7 +350,7 @@
         '<div class="plan-blocks">' + tiers.map(function (x) {
           var c = TIER_COLORS[x.i % TIER_COLORS.length];
           return '<a class="plan-block" href="#tier-' + esc(day.date) + '-' + x.i + '" style="border-top-color:' + c + '">' +
-            '<div class="pb-head">' + esc(x.t.name) + '</div>' +
+            '<div class="pb-head">' + esc(x.t.name) + planBadge(x.t) + '</div>' +
             '<div class="pb-pct" style="color:' + c + '">' + esc(x.t.pct) + '</div>' +
             '<div class="pb-text">' + esc(x.t.text) + '</div>' +
             '<div class="pb-more">详解 ↗</div></a>';
@@ -382,7 +386,7 @@
           '<a class="modal-mask" href="#!"></a>' +
           '<div class="modal-box" style="border-top:4px solid ' + c + '">' +
           '<a class="modal-close" href="#!">×</a>' +
-          '<h3>' + esc(t.name) + '<span class="m-pct">' + esc(t.pct) + '</span><span class="m-date">' + esc(day.date) + ' · ' + ((t.market || 'jc') === 'std' ? '标准盘' : '竞彩') + '</span></h3>' +
+          '<h3>' + esc(t.name) + planBadge(t) + '<span class="m-pct">' + esc(t.pct) + '</span><span class="m-date">' + esc(day.date) + ' · ' + ((t.market || 'jc') === 'std' ? '标准盘' : '竞彩') + '</span></h3>' +
           '<div class="modal-text">' + esc(t.detail || t.text) + '</div>' +
           '</div></div>';
       });
@@ -418,6 +422,7 @@
   renderPlanStats(days);
   function renderPlanStats(days) {
     var body = document.getElementById('planStatsBody');
+    if (!body || typeof StatsLib.planStats !== 'function') return;
     var stats = StatsLib.planStats(days);
     var any = stats.some(function (s) { return s.total > 0 || s.push > 0; });
     if (!any) {
@@ -431,7 +436,7 @@
           (s.half > 0 ? ' <span class="h">' + s.half + '半</span>' : '') +
           (s.push > 0 ? ' <span class="p">' + s.push + '走水</span>' : '');
       var enough = s.total >= 3;
-      var rateTxt = enough ? Math.round(s.rate * 100) + '%' : (s.total === 0 ? '—' : '样本不足');
+      var rateTxt = enough ? pct(s.rate) : (s.total === 0 ? '—' : '样本不足');
       var dots = s.last14.map(function (p) {
         var cls = p.result === 'hit' ? 'red' : p.result === 'miss' ? 'black' : p.result === 'half' ? 'half' : 'push';
         return '<span class="dot ' + cls + '" title="' + esc(p.date) + '"></span>';
@@ -505,7 +510,7 @@
       ? '<div class="mini-tiers">' + day.plan.map(function (t, i) {
           return '<a class="mini-tier-link" href="#tier-' + esc(day.date) + '-' + i + '">' +
             '<div class="mini-tier" style="border-left-color:' + TIER_COLORS[i % TIER_COLORS.length] + '">' +
-            '<b>' + ((t.market || 'jc') === 'std' ? '📊 ' : '🇨🇳 ') + esc(t.name) + ' ' + esc(t.pct) + '</b><br>' + esc(t.text) + '</div></a>';
+            '<b>' + ((t.market || 'jc') === 'std' ? '📊 ' : '🇨🇳 ') + esc(t.name) + ' ' + esc(t.pct) + planBadge(t) + '</b><br>' + esc(t.text) + '</div></a>';
         }).join('') + '</div>'
       : '';
     return '<div class="day-card" id="day-' + esc(day.date) + '">' +
