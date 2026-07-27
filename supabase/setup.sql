@@ -1,6 +1,8 @@
 -- ============================================
 -- AI小熊 · 会员门控 数据库装配（Supabase SQL Editor 一次性执行）
 -- 内容：members 表 + 注册触发器 + prediction_days 表 + RLS
+-- 依赖 Supabase 默认授权（public schema 表自动授权 anon/authenticated，RLS 为唯一闸门）
+-- 执行后记得：Authentication 关闭 Confirm email；在 members 表把站长账号 approved 打勾
 -- ============================================
 
 -- 1) members：注册用户档案（approved=站长审核位）
@@ -25,7 +27,8 @@ language plpgsql
 security definer set search_path = public
 as $$
 begin
-  insert into public.members (user_id, email) values (new.id, new.email);
+  insert into public.members (user_id, email) values (new.id, coalesce(new.email, ''))
+  on conflict (user_id) do nothing;
   return new;
 end;
 $$;
@@ -34,6 +37,9 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+
+-- 触发器函数不对外暴露调用
+revoke execute on function public.handle_new_user() from anon, authenticated;
 
 -- 3) prediction_days：每日预测数据（payload=完整当日对象）
 create table if not exists public.prediction_days (
@@ -53,6 +59,9 @@ create policy "days_select_approved" on public.prediction_days
       where m.user_id = auth.uid() and m.approved
     )
   );
+
+-- RLS 不覆盖 TRUNCATE，显式收回（PostgREST 本不可达，纵深防御）
+revoke truncate on public.members, public.prediction_days from anon, authenticated;
 
 -- 4) 验证查询（执行后应返回两行 policy 各一条、两表 RLS 均为 enabled）
 -- select tablename, rowsecurity from pg_tables where schemaname='public';
