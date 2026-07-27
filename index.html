@@ -346,6 +346,10 @@
       html += '<a class="analysis-link" href="#analysis-' + esc(day.date) + '"><span>📋 ' +
         esc(day.date.slice(5).replace('-', '')) + ' 完整分析</span><span class="al-sub">日柱框架 · 五式判定 · 逐场拆解 ↗</span></a>';
     }
+    if (day.fivePillars) {
+      html += '<a class="analysis-link" href="#wushi-' + esc(day.date) + '"><span>☯️ ' +
+        esc(day.date.slice(5).replace('-', '')) + ' 五式详解</span><span class="al-sub">八字 · 紫微 · 奇门 · 六壬 · 六爻 ↗</span></a>';
+    }
     return html;
   }
 
@@ -371,6 +375,15 @@
           '<a class="modal-close" href="#!">×</a>' +
           '<h3>📋 ' + esc(day.date) + ' 完整分析</h3>' +
           '<div class="modal-text">' + esc(day.analysis) + '</div>' +
+          '</div></div>';
+      }
+      if (day.fivePillars) {
+        html += '<div class="modal" id="wushi-' + esc(day.date) + '">' +
+          '<a class="modal-mask" href="#!"></a>' +
+          '<div class="modal-box" style="border-top:4px solid #8B5CF6">' +
+          '<a class="modal-close" href="#!">×</a>' +
+          '<h3>☯️ ' + esc(day.date) + ' 五式详解（八字 · 紫微 · 奇门 · 六壬 · 六爻）</h3>' +
+          '<div class="modal-text">' + esc(day.fivePillars) + '</div>' +
           '</div></div>';
       }
       (Array.isArray(day.actualBets) ? day.actualBets : []).forEach(function (b, i) {
@@ -455,6 +468,7 @@
       badge + '</div>' +
       '<div class="day-body">' + matchTable(day) + tiers +
       (day.analysis ? '<a class="analysis-link" href="#analysis-' + esc(day.date) + '"><span>📋 ' + esc(day.date.slice(5).replace('-', '')) + ' 完整分析</span><span class="al-sub">↗</span></a>' : '') +
+      (day.fivePillars ? '<a class="analysis-link" href="#wushi-' + esc(day.date) + '"><span>☯️ ' + esc(day.date.slice(5).replace('-', '')) + ' 五式详解</span><span class="al-sub">↗</span></a>' : '') +
       (day.planNote ? '<div class="plan-note">⚠️ ' + esc(day.planNote) + '</div>' : '') +
       (day.review ? '<div class="review"><b>🔍 复盘结论：</b>' + esc(day.review) + '</div>' : '') +
       '</div></div>';
