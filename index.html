@@ -52,6 +52,8 @@
   .dot { width:11px; height:11px; border-radius:50%; box-shadow:inset 0 -2px 3px rgba(0,0,0,.18); flex:none; }
   .dot.red { background:var(--coral); }
   .dot.black { background:#3A3A3A; }
+  .dot.half { background:var(--honey); }
+  .dot.push { background:var(--muted); }
   .hh-match { display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--brown-soft); margin-top:7px; line-height:1.5; }
   .hh-match .hh-mid { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .hh-match .hh-score { font-weight:800; color:var(--brown); }
@@ -155,6 +157,17 @@
     margin-bottom:16px; box-shadow:0 4px 14px rgba(169,113,61,.10);
   }
   .panel h2 { font-size:15px; margin-bottom:12px; color:var(--brown); }
+  .ps-row { display:flex; align-items:center; gap:10px; padding:7px 2px; border-bottom:1px dashed var(--line); font-size:13px; }
+  .ps-row:last-child { border-bottom:none; }
+  .ps-name { width:76px; flex:none; font-weight:700; color:var(--brown); }
+  .ps-cnt { flex:1; color:var(--brown-soft); font-size:12.5px; }
+  .ps-cnt .r { color:var(--coral); font-weight:700; }
+  .ps-cnt .b { color:#3A3A3A; font-weight:700; }
+  .ps-cnt .h { color:var(--honey-dark); font-weight:700; }
+  .ps-cnt .p { color:var(--muted); }
+  .ps-dots { display:flex; gap:4px; flex-wrap:wrap; }
+  .ps-rate { width:64px; flex:none; text-align:right; font-weight:800; color:var(--honey-dark); }
+  .ps-rate.na { color:var(--muted); font-weight:400; font-size:11.5px; }
   table { width:100%; border-collapse:collapse; font-size:13px; }
   th,td { padding:8px; border-bottom:1px dashed var(--line); text-align:left; }
   th { color:var(--brown-soft); font-weight:700; }
@@ -214,6 +227,11 @@
   <main>
     <div class="cards" id="statCards"></div>
     <div id="planBlocks"></div>
+
+    <div class="panel" id="planStatsPanel">
+      <h2>🎯 方案层命中<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">按方案类型累计 · 半红计0.5 · 走水不计</span></h2>
+      <div id="planStatsBody"></div>
+    </div>
 
     <div class="panel">
       <h2>📈 近14日方向命中率</h2>
@@ -394,6 +412,34 @@
       });
     });
     document.getElementById('planModals').innerHTML = html;
+  }
+
+  // ---- 方案层命中面板（6类固定顺序；样本<3 显示「样本不足」） ----
+  renderPlanStats(days);
+  function renderPlanStats(days) {
+    var body = document.getElementById('planStatsBody');
+    var stats = StatsLib.planStats(days);
+    var any = stats.some(function (s) { return s.total > 0 || s.push > 0; });
+    if (!any) {
+      body.innerHTML = '<div class="wait" style="font-size:12.5px">方案复盘回填后，这里会出现每层命中统计 🐾</div>';
+      return;
+    }
+    body.innerHTML = stats.map(function (s) {
+      var cnt = (s.total === 0 && s.push === 0)
+        ? '<span class="wait">暂无数据</span>'
+        : '<span class="r">' + s.hit + '红</span> <span class="b">' + s.miss + '黑</span>' +
+          (s.half > 0 ? ' <span class="h">' + s.half + '半</span>' : '') +
+          (s.push > 0 ? ' <span class="p">' + s.push + '走水</span>' : '');
+      var enough = s.total >= 3;
+      var rateTxt = enough ? Math.round(s.rate * 100) + '%' : (s.total === 0 ? '—' : '样本不足');
+      var dots = s.last14.map(function (p) {
+        var cls = p.result === 'hit' ? 'red' : p.result === 'miss' ? 'black' : p.result === 'half' ? 'half' : 'push';
+        return '<span class="dot ' + cls + '" title="' + esc(p.date) + '"></span>';
+      }).join('');
+      return '<div class="ps-row"><span class="ps-name">' + s.type + '</span>' +
+        '<span class="ps-cnt">' + cnt + '</span><span class="ps-dots">' + dots + '</span>' +
+        '<span class="ps-rate' + (enough ? '' : ' na') + '">' + rateTxt + '</span></div>';
+    }).join('');
   }
 
   // ---- 小熊成绩单 ----
