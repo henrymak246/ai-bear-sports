@@ -27,12 +27,11 @@
   date: 'YYYY-MM-DD', dayPillar: '丙午年·…·辛丑日', dayNote: '当日基调摘要',
   matches: [ { id, league, time, home, away, direction, overUnder, score: [], confidence, finalScore: null, note } ],
   plan: [                              // 中间首页方案方块，按 market 分组展示（可省略）
-    { market: 'jc', name: '🟢 胜平负 · 底仓', pct: '40%', text: '一句话方案', detail: '详解全文（可选，\\n 换行；点击方块弹窗展示，缺省时显示 text）' },
-    { market: 'jc', name: '🟡 让球+单关 · 增益', pct: '25%', text: '…' },
-    { market: 'jc', name: '🔴 比分 · 梦想', pct: '10%', text: '…' },
+    { market: 'jc', name: '🎯 胜平负', pct: '50%', text: '含让球任选最有投资价值场次', detail: '详解全文（可选，\\n 换行；点击方块弹窗展示，缺省时显示 text）' },
+    { market: 'jc', name: '⚽ 进球数', pct: '20%', text: '总进球 X球(SP) 及份数' },
+    { market: 'jc', name: '🏅 比分', pct: '10%', text: '娱乐层比分组合' },
     { market: 'std', name: '🔵 亚洲让球', pct: '10%', text: '…' },   // jc=竞彩方案，std=标准盘（亚洲让球/大小盘，缺省按 jc）
-    { market: 'std', name: '🟣 大小盘', pct: '15%', text: '…' },
-    { market: 'jc', name: '🎯 过关专栏', pct: '3胆', text: '胆码+过关组合（pct 字段也可写短标签，如 "3胆"）' },
+    { market: 'std', name: '🟣 大小盘', pct: '10%', text: '…' },
   ],
   planNote: '回避与风险提示（可选）',
   actualBets: [                           // 实际投注票样留档（可选，显示在标准盘下方）
