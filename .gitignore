@@ -1,1 +1,3 @@
 dist/
+tools/.env
+tools/node_modules/

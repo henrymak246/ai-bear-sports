@@ -1,0 +1,9 @@
+{
+  "name": "ai-bear-tools",
+  "private": true,
+  "version": "1.0.0",
+  "description": "AI小熊站点维护工具（数据同步到 Supabase）",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.0.0"
+  }
+}
