@@ -233,6 +233,8 @@ git commit -m "feat: tools/sync-data.js 数据同步脚本（dry-run可校验，
 
 确认 `tools/.env` 与 `tools/node_modules/` 不在提交里（`git status --short` 应干净）。
 
+> 修订（质量审查后，commit a97e611）：days 校验循环增加 date 重复拦截（`date 重复: ...`）与 `YYYY-MM-DD` 格式检查；loadEnv 剥离一层配对引号；未知 CLI 参数打印警告。以仓库内 `tools/sync-data.js` 现行版本为准。
+
 ---
 
 ### Task 3: index.html 三态会员门 + renderApp 重构
@@ -675,4 +677,4 @@ git push
 - 占位符：Supabase URL/keys 属用户提供的部署参数，已隔离在 Task 4；Task 3 的占位值即生产开关（占位=整理中），非计划缺陷
 - 类型一致：sync-data.js 写 `{date, payload, updated_at}` ↔ setup.sql `prediction_days(date text PK, payload jsonb, updated_at timestamptz)` ↔ 前端 `select('payload').order('date')`；members(user_id, email, approved) ↔ 触发器 insert ↔ 前端 `select('approved').eq('user_id', ...).single()`
 - 部署顺序：Task 1-3 仅本地提交；Task 4 Step 8 才 push——中间任何状态上线都只是显示「整理中」，不泄露数据
-- 已知限制（接受）：已登录未审核用户可通过不断刷新检查 approved；邮件找回密码用 Supabase 默认邮件通道；git 历史旧数据仍公开（规格已声明接受）
+- 已知限制（接受）：已登录未审核用户可通过不断刷新检查 approved；邮件找回密码用 Supabase 默认邮件通道；git 历史旧数据仍公开（规格已声明接受）；同步脚本为 upsert-only——本地删除某一天不会删云端行（工作流只增不删，如确需删除到 Supabase 后台删行）
