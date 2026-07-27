@@ -96,6 +96,8 @@ create policy "days_select_approved" on public.prediction_days
 
 说明（执行者理解用，不用写进文件）：members 的子查询在 prediction_days 策略里会叠加 members 自身 RLS——但子查询已限定 `user_id = auth.uid()`，与 members_select_own 兼容；未登录时 `auth.uid()` 为 null，两表都返回空。写表（insert/update）不给任何人策略：前端永远写不进，只有 service_role（绕过 RLS）的同步脚本能写。
 
+> 修订（质量审查后，commit ae5ecf8）：触发器 insert 改为 `coalesce(new.email, '')` + `on conflict (user_id) do nothing`；新增 `revoke execute on function public.handle_new_user() from anon, authenticated;` 与 `revoke truncate on public.members, public.prediction_days from anon, authenticated;`；头部注释补部署提醒。以仓库内 `supabase/setup.sql` 现行版本为准。
+
 - [ ] **Step 2: 静态检查**
 
 通读 SQL：无占位符、policy 名与 drop/create 配对、触发器函数 security definer。用任意在线 SQL 格式化/校验（或本地无 Postgres 则人工复查），不需要连接真实库。
