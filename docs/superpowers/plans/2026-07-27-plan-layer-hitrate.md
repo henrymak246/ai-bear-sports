@@ -408,13 +408,15 @@ Run: `cd "C:/Users/Administrator/Desktop/足球预测站" && node -e "const d=re
 Expected 输出（7/27 未回填，全部来自 7/26）：
 
 ```
-胜平负 0红1黑2半0走 total=3 rate=0.333
+胜平负 0红0黑2半0走 total=2 rate=0.500
 进球数 0红0黑0半0走 total=0 rate=null
 比分 0红1黑0半0走 total=1 rate=0.000
 过关串关 0红1黑0半0走 total=1 rate=0.000
 亚洲让球 0红0黑1半0走 total=1 rate=0.500
 大小盘 0红0黑1半0走 total=1 rate=0.500
 ```
+
+（注：胜平负类只含底仓+增益两块；过关专栏归「过关串关」类单独计，不重复计入胜平负。）
 
 - [ ] **Step 3: README 同步**
 
