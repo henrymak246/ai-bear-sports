@@ -32,7 +32,7 @@
     { market: 'jc', name: '🏅 比分', pct: '10%', text: '娱乐层比分组合' },
     { market: 'std', name: '🔵 亚洲让球', pct: '10%', text: '…' },   // jc=竞彩方案，std=标准盘（亚洲让球/大小盘，缺省按 jc）
     { market: 'std', name: '🟣 大小盘', pct: '10%', text: '…' },
-    // result: 'hit'|'miss'|'half'|'push'（可选）：复盘回填该块整体战果；半红计0.5、走水与未回填不计入「方案层命中」统计
+    // result: 'hit'|'miss'|'half'|'push'（可选）：复盘回填该块整体战果；半红计0.5、走水与未回填不计入命中率分母
   ],
   planNote: '回避与风险提示（可选）',
   actualBets: [                           // 实际投注票样留档（可选，显示在标准盘下方）
