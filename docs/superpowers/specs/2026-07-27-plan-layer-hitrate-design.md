@@ -52,14 +52,14 @@
 `planStats(days)` → 每类输出：
 
 ```js
-{ hit, half, miss, push, total, rate, last14: [/* 每天 { date, hit, half, miss, push } */] }
+{ hit, half, miss, push, total, rate, last14: [/* 已回填块 { date, result }，日期升序，最多 14 条 */] }
 ```
 
 口径（沿用现有规则）：
 
 - `hit`=1、`half`=0.5 计入分子；`total = hit + half + miss`（走水 push 与未回填不计入分母）
 - `rate = (hit + 0.5*half) / total`，`total===0` 时 `rate=null`
-- `last14` 取最近 14 个有方案数据的自然日
+- `last14` 取已回填块（含走水）按日期升序的最近 14 条
 
 ## ③ UI（index.html）
 
