@@ -210,18 +210,19 @@
   #gateRoot:empty { display:none; }
   .gate-overlay { position:fixed; inset:0; z-index:60; overflow:auto; padding:24px;
     background:linear-gradient(160deg,#FFF9EE 0%,#FFEFD2 55%,#FFE7BD 100%);
-    display:flex; align-items:center; justify-content:center; }
+    display:flex; }
   .gate-card { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:30px 26px;
-    width:100%; max-width:380px; text-align:center; box-shadow:0 12px 36px rgba(169,113,61,.22); }
+    width:100%; max-width:380px; text-align:center; box-shadow:0 12px 36px rgba(169,113,61,.22); margin:auto; }
   .gate-logo { width:64px; height:64px; }
   .gate-card h2 { font-size:19px; color:var(--brown); margin:10px 0 6px; }
   .gate-sub { font-size:12.5px; color:var(--brown-soft); line-height:1.7; margin-bottom:14px; }
   .gate-tabs { display:flex; gap:8px; justify-content:center; margin-bottom:14px; }
-  .gate-tab { font-size:13.5px; font-weight:700; color:var(--muted); padding:5px 18px; border-radius:999px; cursor:pointer; border:1px solid var(--line); }
+  .gate-tab { font-size:13.5px; font-weight:700; color:var(--muted); padding:5px 18px; border-radius:999px; cursor:pointer; border:1px solid var(--line); background:var(--card); font-family:inherit; }
   .gate-tab.active { color:var(--brown); background:var(--amber-bg); border-color:#F5C96B; }
   .gate-card input { width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:14px;
     margin-bottom:10px; background:#FFFDF8; color:#4A3A28; font-family:inherit; }
   .gate-card input:focus { outline:none; border-color:var(--honey); }
+  .gate-card form { margin:0; }
   .gate-btn { width:100%; border:none; border-radius:10px; padding:11px 0; font-size:15px; font-weight:800; cursor:pointer;
     background:var(--honey); color:#fff; font-family:inherit; }
   .gate-btn:hover { background:var(--honey-dark); }
@@ -311,7 +312,10 @@ function esc(s) {
   if (params.has('dev')) {
     var s = document.createElement('script');
     s.src = 'data/predictions.js';
-    s.onload = function () { renderApp(PREDICTION_DAYS); };
+    s.onload = function () {
+      if (typeof PREDICTION_DAYS !== 'undefined') renderApp(PREDICTION_DAYS);
+      else showGateError('dev 模式：数据文件格式有误');
+    };
     s.onerror = function () { showGateError('dev 模式：本地 data/predictions.js 加载失败'); };
     document.body.appendChild(s);
     return;
@@ -346,11 +350,13 @@ function esc(s) {
     showGate(gateLogo() +
       '<h2>🐻 AI小熊 · 会员门</h2>' +
       '<p class="gate-sub">小圈子分享站，登录且通过审核后可见</p>' +
-      '<div class="gate-tabs"><span id="tabLogin" class="gate-tab active">登录</span><span id="tabSignup" class="gate-tab">注册</span></div>' +
+      '<div class="gate-tabs"><button type="button" id="tabLogin" class="gate-tab active">登录</button><button type="button" id="tabSignup" class="gate-tab">注册</button></div>' +
+      '<form id="gateForm" novalidate>' +
       '<input id="gateEmail" type="email" placeholder="邮箱" autocomplete="email">' +
-      '<input id="gatePwd" type="password" placeholder="密码（至少6位）">' +
+      '<input id="gatePwd" type="password" placeholder="密码（至少6位）" autocomplete="current-password">' +
       '<div class="gate-msg" id="gateMsg"></div>' +
-      '<button id="gateGo" class="gate-btn">登录</button>' +
+      '<button id="gateGo" class="gate-btn" type="submit">登录</button>' +
+      '</form>' +
       '<p class="gate-tip">没有账号？点上方「注册」，提交后等小熊开门 🍯</p>');
     var mode = 'login';
     var tabL = document.getElementById('tabLogin'), tabS = document.getElementById('tabSignup');
@@ -361,10 +367,12 @@ function esc(s) {
       tabS.className = 'gate-tab' + (m === 'signup' ? ' active' : '');
       btn.textContent = m === 'login' ? '登录' : '注册';
       msgEl.textContent = '';
+      document.getElementById('gatePwd').setAttribute('autocomplete', m === 'login' ? 'current-password' : 'new-password');
     }
     tabL.onclick = function () { setMode('login'); };
     tabS.onclick = function () { setMode('signup'); };
-    btn.onclick = function () {
+    document.getElementById('gateForm').onsubmit = function (e) {
+      e.preventDefault();
       var email = document.getElementById('gateEmail').value.trim();
       var pwd = document.getElementById('gatePwd').value;
       if (!email || pwd.length < 6) { msgEl.textContent = '请填邮箱，密码至少 6 位'; return; }
