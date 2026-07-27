@@ -130,5 +130,51 @@
       .slice(-(n || 14));
   }
 
-  return { parseScore, judgeDirection, judgeOverUnder, judgeScore, computeDayStats, computeOverall, computeTrend };
+  // ---- 方案层命中统计 ----
+  // 6 类固定顺序；归组规则（自上而下优先）：
+  //   std 盘：名称含「大小」→ 大小盘，其余 → 亚洲让球
+  //   竞彩（market 缺省按 jc）：含「比分」→ 比分；含「进球」→ 进球数；含「过关/串」→ 过关串关；其余 → 胜平负
+  var PLAN_TYPES = ['胜平负', '进球数', '比分', '过关串关', '亚洲让球', '大小盘'];
+
+  function planTypeOf(market, name) {
+    var m = market || 'jc';
+    var n = String(name || '');
+    if (m === 'std') return n.indexOf('大小') !== -1 ? '大小盘' : '亚洲让球';
+    if (n.indexOf('比分') !== -1) return '比分';
+    if (n.indexOf('进球') !== -1) return '进球数';
+    if (n.indexOf('过关') !== -1 || n.indexOf('串') !== -1) return '过关串关';
+    return '胜平负';
+  }
+
+  // 汇总每天 plan[] 的 result（hit/half/miss/push，缺省不计）：
+  // total=hit+half+miss（走水 push 不计入分母）；rate=(hit+0.5*half)/total，total=0 时为 null
+  // last14：已回填块按日期升序、最多 14 条，供面板画迷你圆点
+  function planStats(days) {
+    var acc = {};
+    PLAN_TYPES.forEach(function (t) {
+      acc[t] = { hit: 0, half: 0, miss: 0, push: 0, blocks: [] };
+    });
+    (days || []).forEach(function (day) {
+      (Array.isArray(day.plan) ? day.plan : []).forEach(function (p) {
+        if (!p || ['hit', 'half', 'miss', 'push'].indexOf(p.result) === -1) return;
+        var type = planTypeOf(p.market, p.name);
+        acc[type][p.result] += 1;
+        acc[type].blocks.push({ date: day.date, result: p.result });
+      });
+    });
+    return PLAN_TYPES.map(function (t) {
+      var b = acc[t];
+      var total = b.hit + b.half + b.miss;
+      var blocks = b.blocks.slice().sort(function (x, y) { return x.date < y.date ? -1 : 1; });
+      return {
+        type: t,
+        hit: b.hit, half: b.half, miss: b.miss, push: b.push,
+        total: total,
+        rate: total === 0 ? null : (b.hit + 0.5 * b.half) / total,
+        last14: blocks.slice(-14),
+      };
+    });
+  }
+
+  return { parseScore, judgeDirection, judgeOverUnder, judgeScore, computeDayStats, computeOverall, computeTrend, planTypeOf, planStats };
 });

@@ -64,4 +64,52 @@ assert.strictEqual(trend[1].date, '2026-07-26');
 assert.strictEqual(trend[0].rate, 1);
 assert.strictEqual(trend[1].rate, 0.5);
 
+// ---- planTypeOf：方案块归 6 类 ----
+assert.strictEqual(S.planTypeOf('std', '🔵 亚洲让球'), '亚洲让球');
+assert.strictEqual(S.planTypeOf('std', '🟣 大小盘'), '大小盘');
+assert.strictEqual(S.planTypeOf('jc', '🎯 胜平负'), '胜平负');
+assert.strictEqual(S.planTypeOf('jc', '🟢 让球+胜平负 · 底仓'), '胜平负');
+assert.strictEqual(S.planTypeOf(undefined, '🎯 胜平负'), '胜平负'); // market 缺省按 jc
+assert.strictEqual(S.planTypeOf('jc', '⚽ 进球数'), '进球数');
+assert.strictEqual(S.planTypeOf('jc', '🏅 比分'), '比分');
+assert.strictEqual(S.planTypeOf('jc', '🎯 过关专栏'), '过关串关');
+assert.strictEqual(S.planTypeOf('jc', '6串1 娱乐'), '过关串关');
+
+// ---- planStats：半红0.5 / 走水不计 / 未回填不计 / 固定6类顺序 ----
+const planDays = [
+  { date: '2026-07-27', plan: [
+    { market: 'jc', name: '🎯 胜平负', result: 'hit' },
+    { market: 'std', name: '🟣 大小盘', result: 'push' },
+    { market: 'jc', name: '⚽ 进球数' }, // 未回填 result，不计入
+  ]},
+  { date: '2026-07-26', plan: [
+    { market: 'jc', name: '🟢 让球+胜平负 · 底仓', result: 'half' },
+    { market: 'jc', name: '🟡 让球+单关 · 增益', result: 'miss' },
+    { market: 'jc', name: '🔴 比分 · 梦想', result: 'miss' },
+    { market: 'std', name: '🔵 亚洲让球', result: 'hit' },
+  ]},
+];
+const ps = S.planStats(planDays);
+assert.deepStrictEqual(ps.map(function (s) { return s.type; }),
+  ['胜平负', '进球数', '比分', '过关串关', '亚洲让球', '大小盘']);
+const spf = ps[0]; // 胜平负：hit1 + half1 + miss1
+assert.strictEqual(spf.hit, 1);
+assert.strictEqual(spf.half, 1);
+assert.strictEqual(spf.miss, 1);
+assert.strictEqual(spf.push, 0);
+assert.strictEqual(spf.total, 3);
+assert.ok(Math.abs(spf.rate - 1.5 / 3) < 1e-9);
+assert.deepStrictEqual(spf.last14.map(function (p) { return p.date; }),
+  ['2026-07-26', '2026-07-26', '2026-07-27']); // 日期升序
+assert.deepStrictEqual(spf.last14.map(function (p) { return p.result; }),
+  ['half', 'miss', 'hit']);
+const daxiao = ps.find(function (s) { return s.type === '大小盘'; });
+assert.strictEqual(daxiao.push, 1);
+assert.strictEqual(daxiao.total, 0);   // 走水不计入分母
+assert.strictEqual(daxiao.rate, null);
+assert.strictEqual(ps.find(function (s) { return s.type === '进球数'; }).total, 0); // 未回填不计
+assert.strictEqual(ps.find(function (s) { return s.type === '亚洲让球'; }).rate, 1);
+assert.doesNotThrow(function () { S.planStats([{ date: '2026-07-25' }]); }); // 无 plan 字段不报错
+assert.doesNotThrow(function () { S.planStats([]); });
+
 console.log('stats.test.js 全部通过 ✓');
