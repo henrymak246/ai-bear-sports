@@ -200,6 +200,23 @@
   .sp { font-variant-numeric: tabular-nums; color:var(--brown-soft); }
   .sp-hot { color:var(--honey-dark); font-weight:800; }
   .sp-hcp { display:inline-block; margin-right:4px; font-size:11px; color:var(--muted); }
+  .ov-wrap { display:grid; grid-template-columns:280px 1fr; gap:14px; align-items:start; }
+  .ov-cal { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
+  .ov-cal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .ov-cal-title { font-size:13.5px; font-weight:800; color:var(--brown); }
+  .ov-cal-nav { border:1px solid var(--line); background:var(--card); border-radius:8px; padding:2px 9px; font-size:13px; color:var(--brown); cursor:pointer; font-family:inherit; }
+  .ov-cal-nav:hover { background:var(--amber-bg); }
+  .ov-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+  .ov-wd { font-size:10.5px; color:var(--muted); text-align:center; padding:2px 0; }
+  .ov-day { border-radius:8px; padding:4px 2px 3px; text-align:center; font-size:12px; color:var(--brown-soft); border:1px solid transparent; }
+  .ov-day.has { cursor:pointer; background:var(--amber-bg); border-color:var(--line); }
+  .ov-day.has:hover { border-color:var(--honey); }
+  .ov-day.sel { background:var(--honey); color:#fff; font-weight:800; }
+  .ov-day.today { border-color:var(--coral); }
+  .ov-day .hb { display:block; font-size:9px; margin-top:1px; white-space:nowrap; }
+  .ov-day .hb .r { color:var(--coral); } .ov-day .hb .b { color:#3A3A3A; }
+  .ov-day.sel .hb .r, .ov-day.sel .hb .b { color:#fff; }
+  @media (max-width: 920px) { .ov-wrap { grid-template-columns:1fr; } }
 
   .hit { color:var(--green); font-weight:700; } .miss { color:var(--coral); font-weight:700; }
   .half { color:var(--honey-dark); font-weight:700; } .wait { color:var(--muted); }
@@ -760,23 +777,70 @@ function renderApp(days) {
     }).join('');
   }
 
-  // ---- 每日记录 ----
+  // ---- 每日预测总览（左月历 + 右当日详情） ----
   var list = document.getElementById('dailyList');
   if (days.length === 0) {
     list.innerHTML = '<div class="panel wait">还没有记录，等小熊的第一场预测 🐻</div>';
-    return;
-  }
-  list.innerHTML = days.map(function (d, i) { return dayCard(d, i === 0); }).join('');
-  Array.prototype.forEach.call(document.querySelectorAll('.day-head'), function (el) {
-    el.addEventListener('click', function () { el.parentElement.classList.toggle('open'); });
-  });
+  } else {
+    var byDate = {};
+    days.forEach(function (d) { byDate[d.date] = d; });
+    var d0 = days[0].date.split('-');
+    var calState = { y: +d0[0], m: +d0[1], sel: days[0].date };
+    var now = new Date();
+    var todayStr = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
+    list.innerHTML = '<div class="ov-wrap"><div class="ov-cal" id="ovCal"></div><div class="ov-detail" id="ovDetail"></div></div>';
 
-  function dayCard(day, isToday) {
+    function renderCal() {
+      var y = calState.y, m = calState.m;
+      var startWd = (new Date(y, m - 1, 1).getDay() + 6) % 7; // 周一开头
+      var dim = new Date(y, m, 0).getDate();
+      var cells = '';
+      ['一', '二', '三', '四', '五', '六', '日'].forEach(function (w) { cells += '<div class="ov-wd">' + w + '</div>'; });
+      for (var i = 0; i < startWd; i++) cells += '<div></div>';
+      for (var d = 1; d <= dim; d++) {
+        var ds2 = y + '-' + ('0' + m).slice(-2) + '-' + ('0' + d).slice(-2);
+        var day = byDate[ds2];
+        var cls = 'ov-day', hb = '';
+        if (day) {
+          cls += ' has';
+          var st = StatsLib.computeDayStats(day);
+          if (st.direction.total > 0) hb = '<span class="hb"><span class="r">' + st.direction.score + '红</span> <span class="b">' + (st.direction.total - st.direction.score) + '黑</span></span>';
+          else if (st.pending > 0) hb = '<span class="hb">🍯</span>';
+        }
+        if (ds2 === calState.sel) cls += ' sel';
+        if (ds2 === todayStr) cls += ' today';
+        cells += '<div class="' + cls + '"' + (day ? ' data-d="' + ds2 + '"' : '') + '>' + d + hb + '</div>';
+      }
+      document.getElementById('ovCal').innerHTML =
+        '<div class="ov-cal-head"><button type="button" class="ov-cal-nav" id="ovPrev">‹</button>' +
+        '<span class="ov-cal-title">' + y + ' 年 ' + m + ' 月</span>' +
+        '<button type="button" class="ov-cal-nav" id="ovNext">›</button></div>' +
+        '<div class="ov-grid">' + cells + '</div>';
+      document.getElementById('ovPrev').onclick = function () { shiftMonth(-1); };
+      document.getElementById('ovNext').onclick = function () { shiftMonth(1); };
+      Array.prototype.forEach.call(document.querySelectorAll('.ov-day.has'), function (el) {
+        el.onclick = function () { calState.sel = el.getAttribute('data-d'); renderCal(); renderDetail(); };
+      });
+    }
+    function shiftMonth(n) {
+      var mm = calState.m + n;
+      calState.y += Math.floor((mm - 1) / 12);
+      calState.m = ((mm - 1) % 12 + 12) % 12 + 1;
+      renderCal();
+    }
+    function renderDetail() {
+      var day = byDate[calState.sel];
+      document.getElementById('ovDetail').innerHTML = day ? dayDetail(day) : '';
+    }
+    renderCal(); renderDetail();
+  }
+
+  function dayDetail(day) {
     var ds = StatsLib.computeDayStats(day);
     var badge = ds.pending > 0
       ? '<span class="badge pending">🍯 待回填 ' + ds.pending + ' 场</span>'
       : '<span class="badge good">⚽ 方向 ' + ds.direction.score + '/' + ds.direction.total + '</span>';
-    return '<div class="day-card' + (isToday ? ' open' : '') + '" id="day-' + esc(day.date) + '">' +
+    return '<div class="day-card open" id="day-' + esc(day.date) + '">' +
       '<div class="day-head"><div><div class="day-title">' + esc(day.date) + '</div>' +
       '<div class="day-meta">' + esc(day.dayPillar || '') + (day.dayNote ? ' · ' + esc(day.dayNote) : '') + ' · ' + ds.matches + ' 场</div></div>' +
       badge + '</div>' +
