@@ -776,21 +776,13 @@ function renderApp(days) {
     var badge = ds.pending > 0
       ? '<span class="badge pending">🍯 待回填 ' + ds.pending + ' 场</span>'
       : '<span class="badge good">⚽ 方向 ' + ds.direction.score + '/' + ds.direction.total + '</span>';
-    var tiers = (Array.isArray(day.plan) && day.plan.length > 0)
-      ? '<div class="mini-tiers">' + day.plan.map(function (t, i) {
-          return '<a class="mini-tier-link" href="#tier-' + esc(day.date) + '-' + i + '">' +
-            '<div class="mini-tier" style="border-left-color:' + TIER_COLORS[i % TIER_COLORS.length] + '">' +
-            '<b>' + ((t.market || 'jc') === 'std' ? '📊 ' : '🇨🇳 ') + esc(t.name) + ' ' + esc(t.pct) + planBadge(t) + '</b><br>' + esc(t.text) + '</div></a>';
-        }).join('') + '</div>'
-      : '';
     return '<div class="day-card' + (isToday ? ' open' : '') + '" id="day-' + esc(day.date) + '">' +
       '<div class="day-head"><div><div class="day-title">' + esc(day.date) + '</div>' +
       '<div class="day-meta">' + esc(day.dayPillar || '') + (day.dayNote ? ' · ' + esc(day.dayNote) : '') + ' · ' + ds.matches + ' 场</div></div>' +
       badge + '</div>' +
-      '<div class="day-body">' + matchTable(day) + tiers +
+      '<div class="day-body">' + matchTable(day) +
       (day.analysis ? '<a class="analysis-link" href="#analysis-' + esc(day.date) + '"><span>📋 ' + esc(day.date.slice(5).replace('-', '')) + ' 完整分析</span><span class="al-sub">↗</span></a>' : '') +
       (day.fivePillars ? '<a class="analysis-link" href="#wushi-' + esc(day.date) + '"><span>☯️ ' + esc(day.date.slice(5).replace('-', '')) + ' 五式详解</span><span class="al-sub">↗</span></a>' : '') +
-      (day.planNote ? '<div class="plan-note">⚠️ ' + esc(day.planNote) + '</div>' : '') +
       (day.review ? '<div class="review"><b>🔍 复盘结论：</b>' + esc(day.review) + '</div>' : '') +
       '</div></div>';
   }
