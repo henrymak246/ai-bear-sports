@@ -337,6 +337,12 @@ function esc(s) {
     };
   }
 
+  function renderEmailSent(email) {
+    showGate(gateLogo() + '<h2>📧 去邮箱点确认链接</h2>' +
+      '<p class="gate-sub">验证邮件已发送到 <b>' + esc(email) + '</b><br>' +
+      '点开邮件里的链接即可回到本站（可能在垃圾箱）</p>');
+  }
+
   function renderUserBar(email) {
     var bar = document.getElementById('userBar');
     bar.innerHTML = '<span class="ub-mail">' + esc(email) + '</span><a href="#!" class="ub-out" id="ubOut">退出</a>';
@@ -381,7 +387,12 @@ function esc(s) {
       if (mode === 'login') {
         sb.auth.signInWithPassword({ email: email, password: pwd }).then(function (res) {
           done();
-          if (res.error) { msgEl.textContent = '登录失败：' + res.error.message; return; }
+          if (res.error) {
+            msgEl.textContent = /email not confirmed/i.test(res.error.message)
+              ? '邮箱还未验证：请先到邮箱点确认链接（可能在垃圾箱）'
+              : '登录失败：' + res.error.message;
+            return;
+          }
           location.reload();
         });
       } else {
@@ -389,7 +400,7 @@ function esc(s) {
           done();
           if (res.error) { msgEl.textContent = '注册失败：' + res.error.message; return; }
           if (res.data && res.data.session) { renderPending(email); return; }
-          msgEl.textContent = '已提交，等小熊开门 🍯 审核通过后登录可见';
+          renderEmailSent(email);
         });
       }
     };
