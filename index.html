@@ -229,6 +229,20 @@
   .gate-btn:disabled { opacity:.6; cursor:default; }
   .gate-msg { min-height:20px; font-size:12.5px; color:var(--coral); margin-bottom:8px; }
   .gate-tip { font-size:11.5px; color:var(--muted); margin-top:12px; }
+  .adm-overlay { position:fixed; inset:0; z-index:60; overflow:auto; padding:24px; background:rgba(74,58,40,.45); display:flex; align-items:flex-start; justify-content:center; }
+  .adm-card { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:22px 20px; max-width:520px; width:100%; margin:auto; position:relative; box-shadow:0 20px 50px rgba(74,58,40,.28); }
+  .adm-card h2 { font-size:17px; color:var(--brown); margin:0 30px 4px 0; }
+  .adm-sec { margin-top:14px; }
+  .adm-sec-title { font-size:13.5px; font-weight:800; color:var(--brown); margin-bottom:6px; }
+  .adm-row { display:flex; align-items:center; gap:8px; padding:7px 10px; border:1px solid var(--line); border-radius:10px; margin-bottom:6px; font-size:12.5px; color:var(--brown-soft); }
+  .adm-row .am { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .adm-btn { border:none; border-radius:8px; padding:5px 12px; font-size:12px; font-weight:700; cursor:pointer; background:var(--honey); color:#fff; font-family:inherit; }
+  .adm-btn.revoke { background:var(--coral); }
+  .adm-btn:disabled { opacity:.6; cursor:default; }
+  .adm-empty { font-size:12px; color:var(--muted); padding:4px 2px; }
+  .adm-msg { min-height:18px; font-size:12px; color:var(--coral); margin-top:8px; }
+  .adm-close { position:absolute; top:10px; right:14px; font-size:22px; line-height:1; cursor:pointer; color:var(--muted); background:none; border:none; font-family:inherit; }
+  .adm-close:hover { color:var(--coral); }
   #userBar { margin-left:auto; display:flex; align-items:center; gap:8px; }
   .ub-mail { font-size:11.5px; color:var(--muted); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ub-out { font-size:12px; font-weight:700; color:var(--honey-dark); text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:3px 10px; background:var(--card); }
@@ -279,6 +293,7 @@
 
 <div id="planModals"></div>
 <div id="gateRoot"></div>
+<div id="admRoot"></div>
 
 <footer>🐻 小熊提醒：仅供娱乐参考，不构成投资建议<br>五式足球预测法 V2.6 驱动 · 数据由 AI 小熊每日维护</footer>
 
@@ -343,13 +358,87 @@ function esc(s) {
       '点开邮件里的链接即可回到本站（可能在垃圾箱）</p>');
   }
 
-  function renderUserBar(email) {
+  function renderUserBar(email, isAdmin) {
     var bar = document.getElementById('userBar');
-    bar.innerHTML = '<span class="ub-mail">' + esc(email) + '</span><a href="#!" class="ub-out" id="ubOut">退出</a>';
+    bar.innerHTML = '<span class="ub-mail">' + esc(email) + '</span>' +
+      (isAdmin ? '<a href="#!" class="ub-out" id="ubAdmin">🛠 管理</a>' : '') +
+      '<a href="#!" class="ub-out" id="ubOut">退出</a>';
+    if (isAdmin) {
+      document.getElementById('ubAdmin').onclick = function (e) { e.preventDefault(); openAdmin(); };
+    }
     document.getElementById('ubOut').onclick = function (e) {
       e.preventDefault();
       sb.auth.signOut().then(function () { location.reload(); });
     };
+  }
+
+  function openAdmin() {
+    var root = document.getElementById('admRoot');
+    root.innerHTML = '<div class="adm-overlay" id="admMask"><div class="adm-card">' +
+      '<button type="button" class="adm-close" id="admClose">×</button>' +
+      '<h2>🛠 站长后台</h2>' +
+      '<div class="adm-sec"><div class="adm-sec-title">🔔 待审核</div><div id="admPending"><div class="adm-empty">加载中…</div></div></div>' +
+      '<div class="adm-sec"><div class="adm-sec-title">👥 会员管理</div><div id="admApproved"><div class="adm-empty">加载中…</div></div></div>' +
+      '<div class="adm-sec"><div class="adm-sec-title">📦 数据状态</div><div id="admDays"><div class="adm-empty">加载中…</div></div></div>' +
+      '<div class="adm-msg" id="admMsg"></div>' +
+      '</div></div>';
+    document.getElementById('admClose').onclick = closeAdmin;
+    document.getElementById('admMask').onclick = function (e) { if (e.target === this) closeAdmin(); };
+    loadAdmin();
+  }
+  function closeAdmin() { document.getElementById('admRoot').innerHTML = ''; }
+  function admErr(t) {
+    var el = document.getElementById('admMsg');
+    if (el) el.textContent = t;
+  }
+  function memberRow(m, actionHtml) {
+    return '<div class="adm-row"><span class="am">' + esc(m.email) + (m.is_admin ? ' 👑' : '') + '</span>' + actionHtml + '</div>';
+  }
+  function loadAdmin() {
+    Promise.all([sb.rpc('list_members'), sb.rpc('list_days')]).then(function (rs) {
+      var rm = rs[0], rd = rs[1];
+      if (rm.error) { admErr('会员列表加载失败：' + rm.error.message); return; }
+      var members = rm.data || [];
+      var pending = members.filter(function (m) { return !m.approved; });
+      var approved = members.filter(function (m) { return m.approved; });
+      document.getElementById('admPending').innerHTML = pending.length === 0
+        ? '<div class="adm-empty">没有待审核的账号</div>'
+        : pending.map(function (m) {
+            return memberRow(m, '<button type="button" class="adm-btn" data-approve="' + m.user_id + '">通过</button>');
+          }).join('');
+      document.getElementById('admApproved').innerHTML = approved.length === 0
+        ? '<div class="adm-empty">暂无会员</div>'
+        : approved.map(function (m) {
+            return memberRow(m, m.is_admin ? '' : '<button type="button" class="adm-btn revoke" data-revoke="' + m.user_id + '">撤销</button>');
+          }).join('');
+      Array.prototype.forEach.call(document.querySelectorAll('[data-approve]'), function (b) {
+        b.onclick = function () {
+          b.disabled = true;
+          sb.rpc('approve_member', { target: b.getAttribute('data-approve') }).then(function (r) {
+            if (r.error) { admErr('通过失败：' + r.error.message); b.disabled = false; return; }
+            loadAdmin();
+          });
+        };
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-revoke]'), function (b) {
+        b.onclick = function () {
+          if (!window.confirm('确定撤销该会员的访问资格？')) return;
+          b.disabled = true;
+          sb.rpc('revoke_member', { target: b.getAttribute('data-revoke') }).then(function (r) {
+            if (r.error) { admErr('撤销失败：' + r.error.message); b.disabled = false; return; }
+            loadAdmin();
+          });
+        };
+      });
+      if (rd.error) { document.getElementById('admDays').innerHTML = '<div class="adm-empty">数据状态加载失败</div>'; return; }
+      var days = rd.data || [];
+      document.getElementById('admDays').innerHTML = days.length === 0
+        ? '<div class="adm-empty">暂无数据</div>'
+        : days.map(function (d) {
+            return '<div class="adm-row"><span class="am">' + esc(d.date) + ' · ' + d.matches + ' 场</span>' +
+              '<span>' + esc(new Date(d.updated_at).toLocaleString('zh-CN', { hour12: false })) + '</span></div>';
+          }).join('');
+    }).catch(function () { admErr('网络异常，请稍后重试'); });
   }
 
   function renderAuth() {
@@ -409,10 +498,10 @@ function esc(s) {
   sb.auth.getSession().then(function (res) {
     var session = res && res.data ? res.data.session : null;
     if (!session) { renderAuth(); return; }
-    sb.from('members').select('approved').eq('user_id', session.user.id).single()
+    sb.from('members').select('approved, is_admin').eq('user_id', session.user.id).single()
       .then(function (r2) {
         if (!r2.data || !r2.data.approved) { renderPending(session.user.email || ''); return; }
-        renderUserBar(session.user.email || '');
+        renderUserBar(session.user.email || '', !!r2.data.is_admin);
         sb.from('prediction_days').select('payload').order('date', { ascending: false })
           .then(function (r3) {
             if (r3.error || !r3.data || r3.data.length === 0) { showGateError('数据拉取失败，请稍后刷新'); return; }
