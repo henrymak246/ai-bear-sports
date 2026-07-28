@@ -18,7 +18,7 @@
 - `test/stats.test.js` — 统计逻辑测试：`node test/stats.test.js`
 
 ## 每日工作流（AI 执行）
-1. 分析完成后：在 `data/predictions.js` 数组**最前**插入当日对象（照 2026-07-26 的格式）
+1. 分析完成后：在 `data/predictions.js` 数组**最前**插入当日对象（照 2026-07-26 的格式）。**场次规则：竞彩当日不足 7 场时，从北单选最有信心场次补足，保持每日 7 场推荐**（北单场 id 如 `北单159`）
 2. 赛后复盘：给每场填 `finalScore`（如 `"3-1"`）、给当日填 `review`、给每个方案块填 `result`（hit/miss/half/push）；命中判定与统计由页面自动完成
 3. 同步：`node tools/sync-data.js`（数据在 Supabase，不入 git；页面壳改动才 git commit + push）
 
