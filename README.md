@@ -1,7 +1,7 @@
 # AI小熊 · 体育心得分享
 
 🌐 公网地址：**https://henrymak246.github.io/ai-bear-sports/**（GitHub Pages，`git push` 后约 1 分钟自动更新）
-- 🔐 会员门控：注册后需站长审核（Supabase members 表 approved 打勾）才可见内容
+- 🔐 会员门控：注册需邮箱确认 + 站长审核（站长在站内「🛠 管理」面板操作）才可见内容
 
 零依赖静态网站：双击 `index.html` 即可本地查看（无需服务器、无需联网）。Logo：`assets/logo.svg`（AI小熊头像）。
 

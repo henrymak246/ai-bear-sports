@@ -1,6 +1,6 @@
 # 站长后台管理面板 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 站长在网站内完成会员审核/撤销与数据状态查看（零数据库操作），注册流程加邮箱确认（四态门）。
 
@@ -20,7 +20,7 @@
 - Create: `tools/set-admin.js`
 - Modify: `supabase/setup.sql`（头部注释加一行迁移指引）
 
-- [ ] **Step 1: 创建 `supabase/admin.sql`**
+- [x] **Step 1: 创建 `supabase/admin.sql`**
 
 完整内容：
 
@@ -119,7 +119,7 @@ grant execute on function public.list_days() to authenticated;
 -- update public.members set is_admin = true, approved = true where email = '站长邮箱';
 ```
 
-- [ ] **Step 2: 创建 `tools/set-admin.js`**
+- [x] **Step 2: 创建 `tools/set-admin.js`**
 
 完整内容（风格对齐 sync-data.js 的 .env 读取与去引号）：
 
@@ -170,7 +170,7 @@ function loadEnv() {
 })();
 ```
 
-- [ ] **Step 3: setup.sql 头部注释加迁移指引**
+- [x] **Step 3: setup.sql 头部注释加迁移指引**
 
 `supabase/setup.sql` 第 5 行后（`-- 执行后记得：…` 那行之后）追加一行：
 
@@ -178,7 +178,7 @@ function loadEnv() {
 -- 增量迁移：站长后台（is_admin + 管理 RPC）见同目录 admin.sql（在 setup.sql 之后执行）
 ```
 
-- [ ] **Step 4: 静态校验**
+- [x] **Step 4: 静态校验**
 
 ```bash
 cd "C:/Users/Administrator/Desktop/足球预测站"
@@ -188,7 +188,7 @@ grep -c "raise exception" supabase/admin.sql
 
 Expected: `JS语法OK`；grep 输出 `5`（4 个 RPC 各 1 次 + revoke 自撤保护 1 次）
 
-- [ ] **Step 5: Commit（不 push）**
+- [x] **Step 5: Commit（不 push）**
 
 ```bash
 cd "C:/Users/Administrator/Desktop/足球预测站"
@@ -203,7 +203,7 @@ git commit -m "feat: 站长后台 DB 迁移（is_admin+4个管理RPC）+ set-adm
 **Files:**
 - Modify: `index.html`（门控 IIFE 内，renderPending 函数后加 renderEmailSent；renderAuth 的 signup/login 分支）
 
-- [ ] **Step 1: 加 renderEmailSent 函数**
+- [x] **Step 1: 加 renderEmailSent 函数**
 
 在 `index.html` 的 `renderPending` 函数结束（`}` 闭合，现第 338 行）之后插入：
 
@@ -215,7 +215,7 @@ git commit -m "feat: 站长后台 DB 迁移（is_admin+4个管理RPC）+ set-adm
   }
 ```
 
-- [ ] **Step 2: signup 成功分支改为四态**
+- [x] **Step 2: signup 成功分支改为四态**
 
 现第 388-393 行 signup 的 `.then` 体：
 
@@ -239,7 +239,7 @@ git commit -m "feat: 站长后台 DB 迁移（is_admin+4个管理RPC）+ set-adm
         });
 ```
 
-- [ ] **Step 3: login 失败加"邮箱未验证"友好提示**
+- [x] **Step 3: login 失败加"邮箱未验证"友好提示**
 
 现第 384 行：
 
@@ -258,7 +258,7 @@ git commit -m "feat: 站长后台 DB 迁移（is_admin+4个管理RPC）+ set-adm
           }
 ```
 
-- [ ] **Step 4: 回归测试**
+- [x] **Step 4: 回归测试**
 
 ```bash
 cd "C:/Users/Administrator/Desktop/足球预测站" && node test/stats.test.js
@@ -266,7 +266,7 @@ cd "C:/Users/Administrator/Desktop/足球预测站" && node test/stats.test.js
 
 Expected: `stats.test.js 全部通过 ✓`（本次未动统计逻辑，应保持全绿）
 
-- [ ] **Step 5: Commit（不 push）**
+- [x] **Step 5: Commit（不 push）**
 
 ```bash
 cd "C:/Users/Administrator/Desktop/足球预测站"
@@ -281,7 +281,7 @@ git commit -m "feat: 注册四态门（邮箱确认态 + 未验证登录友好�
 **Files:**
 - Modify: `index.html`（CSS 区加 .adm-* 样式；body 加 #admRoot；renderUserBar 加 isAdmin 参数；members select 加 is_admin；门控 IIFE 加面板函数）
 
-- [ ] **Step 1: CSS 追加（现 .gate-tip 样式即第 231 行之后）**
+- [x] **Step 1: CSS 追加（现 .gate-tip 样式即第 231 行之后）**
 
 ```css
   .adm-overlay { position:fixed; inset:0; z-index:60; overflow:auto; padding:24px; background:rgba(74,58,40,.45); display:flex; align-items:flex-start; justify-content:center; }
@@ -300,7 +300,7 @@ git commit -m "feat: 注册四态门（邮箱确认态 + 未验证登录友好�
   .adm-close:hover { color:var(--coral); }
 ```
 
-- [ ] **Step 2: body 加面板挂载点**
+- [x] **Step 2: body 加面板挂载点**
 
 现第 281 行 `<div id="gateRoot"></div>` 之后加一行：
 
@@ -308,7 +308,7 @@ git commit -m "feat: 注册四态门（邮箱确认态 + 未验证登录友好�
 <div id="admRoot"></div>
 ```
 
-- [ ] **Step 3: renderUserBar 加 isAdmin 参数（现第 340-347 行整函数替换）**
+- [x] **Step 3: renderUserBar 加 isAdmin 参数（现第 340-347 行整函数替换）**
 
 ```js
   function renderUserBar(email, isAdmin) {
@@ -326,7 +326,7 @@ git commit -m "feat: 注册四态门（邮箱确认态 + 未验证登录友好�
   }
 ```
 
-- [ ] **Step 4: 面板函数（插在 renderUserBar 之后、renderAuth 之前）**
+- [x] **Step 4: 面板函数（插在 renderUserBar 之后、renderAuth 之前）**
 
 ```js
   function openAdmin() {
@@ -399,7 +399,7 @@ git commit -m "feat: 注册四态门（邮箱确认态 + 未验证登录友好�
   }
 ```
 
-- [ ] **Step 5: members 查询加 is_admin + 传参（现第 401-404 行）**
+- [x] **Step 5: members 查询加 is_admin + 传参（现第 401-404 行）**
 
 现：
 
@@ -419,7 +419,7 @@ git commit -m "feat: 注册四态门（邮箱确认态 + 未验证登录友好�
         renderUserBar(session.user.email || '', !!r2.data.is_admin);
 ```
 
-- [ ] **Step 6: 回归测试 + 静态检查**
+- [x] **Step 6: 回归测试 + 静态检查**
 
 ```bash
 cd "C:/Users/Administrator/Desktop/足球预测站" && node test/stats.test.js
@@ -428,7 +428,7 @@ grep -n "admRoot\|openAdmin\|list_members\|is_admin" index.html | head -8
 
 Expected: 测试全绿；grep 能看到 admRoot 挂载点、openAdmin 定义与调用、is_admin 查询
 
-- [ ] **Step 7: Commit（不 push）**
+- [x] **Step 7: Commit（不 push）**
 
 ```bash
 cd "C:/Users/Administrator/Desktop/足球预测站"
@@ -442,7 +442,7 @@ git commit -m "feat: 站长后台面板（🛠按钮+待审核/会员管理/数�
 
 **本任务需用户配合（SQL Editor 与 Auth 设置）。部署顺序铁律：admin.sql 执行成功前不得 push。**
 
-- [ ] **Step 1: 用户执行 admin.sql（人工）**
+- [x] **Step 1: 用户执行 admin.sql（人工）**
 
 Supabase SQL Editor → 粘贴 `supabase/admin.sql` 全文 → Run。应无报错；末段验证查询可自选执行：
 
@@ -451,12 +451,12 @@ select proname from pg_proc where proname in ('is_admin','list_members','approve
 -- 应返回 5 行
 ```
 
-- [ ] **Step 2: 用户开邮箱确认（人工）**
+- [x] **Step 2: 用户开邮箱确认（人工）**
 
 - Authentication → Sign In / Providers → Email → **Confirm email 打开**
 - Authentication → URL Configuration → Site URL 填 `https://henrymak246.github.io/ai-bear-sports/`，Redirect URLs 加同一条
 
-- [ ] **Step 3: AI 负向验证（无 JWT 调 RPC 必须被拒）**
+- [x] **Step 3: AI 负向验证（无 JWT 调 RPC 必须被拒）**
 
 ```bash
 curl -s -X POST "https://gzpuxgkpblpbpdpfvpof.supabase.co/rest/v1/rpc/approve_member" \
@@ -468,11 +468,11 @@ curl -s -X POST "https://gzpuxgkpblpbpdpfvpof.supabase.co/rest/v1/rpc/approve_me
 
 Expected: `{"code":"42501",...,"message":"permission denied for function approve_member"}`（anon 无 execute 权限）
 
-- [ ] **Step 4: 用户注册站长号（人工）**
+- [x] **Step 4: 用户注册站长号（人工）**
 
 用户在网站上注册自己的账号 → 收到验证邮件 → 点链接确认（members 行由触发器自动创建）→ 把邮箱告诉 AI
 
-- [ ] **Step 5: AI 赋权站长**
+- [x] **Step 5: AI 赋权站长**
 
 ```bash
 cd "C:/Users/Administrator/Desktop/足球预测站" && node tools/set-admin.js <站长邮箱>
@@ -480,7 +480,7 @@ cd "C:/Users/Administrator/Desktop/足球预测站" && node tools/set-admin.js <
 
 Expected: `已赋权 ✓ <站长邮箱> → is_admin + approved`
 
-- [ ] **Step 6: 回归 + 同步 dist + push（需用户确认后执行）**
+- [x] **Step 6: 回归 + 同步 dist + push（需用户确认后执行）**
 
 Task 1-3 已全部 commit，此步无新改动可提交，直接回归 + push：
 
@@ -491,7 +491,7 @@ cp index.html dist/
 git push
 ```
 
-- [ ] **Step 7: 用户端到端验证（线上，人工）**
+- [x] **Step 7: 用户端到端验证（线上，人工）**
 
 1. 无痕窗口注册新测试号 → 看到「📧 去邮箱点确认链接」→ 邮件点链接 → 跳回站点 → 「🍯 等小熊开门」
 2. 站长号登录 → 用户条有「🛠 管理」→ 打开面板：待审核里看到测试号 → 点「通过」→ 测试号刷新能进站
@@ -499,7 +499,7 @@ git push
 4. 数据状态区块显示 7/26 起逐日（日期/场次数/更新时间）
 5. 普通会员（测试号再次通过后）登录 → 用户条**没有**🛠 按钮
 
-- [ ] **Step 8: 收尾工作记录**
+- [x] **Step 8: 收尾工作记录**
 
 更新 `docs/worklog/2026-07-28.md` 追加站长后台上线段落并 commit + push：
 

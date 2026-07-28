@@ -308,7 +308,7 @@ function esc(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-// ---- 会员门：dev 模式 → 本地数据直渲；占位配置 → 整理中；否则走登录三态 ----
+// ---- 会员门：dev 模式 → 本地数据直渲；占位配置 → 整理中；否则走登录四态（注册→📧邮箱确认→🍯审核→内容） ----
 (function () {
   var gate = document.getElementById('gateRoot');
   var params = new URLSearchParams(location.search);
@@ -458,7 +458,7 @@ function esc(s) {
       '<div class="gate-msg" id="gateMsg"></div>' +
       '<button id="gateGo" class="gate-btn" type="submit">登录</button>' +
       '</form>' +
-      '<p class="gate-tip">没有账号？点上方「注册」，提交后等小熊开门 🍯</p>');
+      '<p class="gate-tip">没有账号？点上方「注册」，提交后先去邮箱点确认链接 📧</p>');
     var mode = 'login';
     var tabL = document.getElementById('tabLogin'), tabS = document.getElementById('tabSignup');
     var btn = document.getElementById('gateGo'), msgEl = document.getElementById('gateMsg');
