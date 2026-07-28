@@ -1,3 +1,4 @@
 dist/
+data/predictions.js
 tools/.env
 tools/node_modules/

@@ -63,6 +63,11 @@ create policy "days_select_approved" on public.prediction_days
 -- RLS 不覆盖 TRUNCATE，显式收回（PostgREST 本不可达，纵深防御）
 revoke truncate on public.members, public.prediction_days from anon, authenticated;
 
+-- 3.5) 表级授权（部分项目缺省授权未生效时需显式执行；RLS 仍是唯一闸门）
+grant select on public.members to anon, authenticated;
+grant select on public.prediction_days to anon, authenticated;
+grant all on public.members, public.prediction_days to service_role;
+
 -- 4) 验证查询（执行后应返回两行 policy 各一条、两表 RLS 均为 enabled）
 -- select tablename, rowsecurity from pg_tables where schemaname='public';
 -- select policyname, tablename from pg_policies where schemaname='public';
