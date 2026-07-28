@@ -191,6 +191,9 @@
   .badge.pending { color:var(--honey-dark); background:var(--amber-bg); border-color:#F5C96B; }
   .day-body { display:none; padding:2px 18px 18px; }
   .day-card.open .day-body { display:block; }
+  .sp { font-variant-numeric: tabular-nums; color:var(--brown-soft); }
+  .sp-hot { color:var(--honey-dark); font-weight:800; }
+  .sp-hcp { display:inline-block; margin-right:4px; font-size:11px; color:var(--muted); }
 
   .hit { color:var(--green); font-weight:700; } .miss { color:var(--coral); font-weight:700; }
   .half { color:var(--honey-dark); font-weight:700; } .wait { color:var(--muted); }
@@ -268,6 +271,8 @@
 <div class="layout">
   <aside id="hongheiSidebar"></aside>
   <main>
+    <h2 class="sec-title">📊 每日预测总览</h2>
+    <div id="dailyList"></div>
     <div class="cards" id="statCards"></div>
     <div id="planBlocks"></div>
 
@@ -285,9 +290,6 @@
       <h2>🏆 联赛分布（方向命中）</h2>
       <table id="leagueTable"></table>
     </div>
-
-    <h2 class="sec-title">📅 每日预测记录</h2>
-    <div id="dailyList"></div>
   </main>
 </div>
 
@@ -755,12 +757,12 @@ function renderApp(days) {
     list.innerHTML = '<div class="panel wait">还没有记录，等小熊的第一场预测 🐻</div>';
     return;
   }
-  list.innerHTML = days.map(dayCard).join('');
+  list.innerHTML = days.map(function (d, i) { return dayCard(d, i === 0); }).join('');
   Array.prototype.forEach.call(document.querySelectorAll('.day-head'), function (el) {
     el.addEventListener('click', function () { el.parentElement.classList.toggle('open'); });
   });
 
-  function dayCard(day) {
+  function dayCard(day, isToday) {
     var ds = StatsLib.computeDayStats(day);
     var badge = ds.pending > 0
       ? '<span class="badge pending">🍯 待回填 ' + ds.pending + ' 场</span>'
@@ -772,7 +774,7 @@ function renderApp(days) {
             '<b>' + ((t.market || 'jc') === 'std' ? '📊 ' : '🇨🇳 ') + esc(t.name) + ' ' + esc(t.pct) + planBadge(t) + '</b><br>' + esc(t.text) + '</div></a>';
         }).join('') + '</div>'
       : '';
-    return '<div class="day-card" id="day-' + esc(day.date) + '">' +
+    return '<div class="day-card' + (isToday ? ' open' : '') + '" id="day-' + esc(day.date) + '">' +
       '<div class="day-head"><div><div class="day-title">' + esc(day.date) + '</div>' +
       '<div class="day-meta">' + esc(day.dayPillar || '') + (day.dayNote ? ' · ' + esc(day.dayNote) : '') + ' · ' + ds.matches + ' 场</div></div>' +
       badge + '</div>' +
@@ -798,14 +800,23 @@ function renderApp(days) {
         : mark(StatsLib.judgeDirection(m.direction, m.finalScore)) + ' ' +
           mark(StatsLib.judgeOverUnder(m.overUnder, m.finalScore)) + ' ' +
           mark(StatsLib.judgeScore(m.score, m.finalScore));
+      var spCell = '<span class="wait">—</span>';
+      if (Array.isArray(m.sp) && m.sp.length === 3) {
+        var hotIdx = m.direction === '主胜' ? 0 : m.direction === '平' ? 1 : m.direction === '客胜' ? 2 : -1;
+        var spTxt = m.sp.map(function (v, i) {
+          return i === hotIdx ? '<b class="sp-hot">' + esc(v) + '</b>' : esc(v);
+        }).join(' / ');
+        spCell = (m.spHandicap ? '<span class="sp-hcp">让' + esc(m.spHandicap) + '</span>' : '') + '<span class="sp">' + spTxt + '</span>';
+      }
       return '<tr><td>' + esc(m.id) + '</td><td>' + esc(m.league) + ' ' + esc(m.time) + '</td>' +
         '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
         '<td>' + esc(m.direction) + ' / ' + esc(m.overUnder) + ' / ' + esc((m.score || []).join(' ')) +
         ' <span class="stars">' + '★'.repeat(m.confidence || 0) + '</span></td>' +
+        '<td>' + spCell + '</td>' +
         '<td>' + (pending ? '<span class="wait">待回填</span>' : esc(m.finalScore)) + '</td>' +
         '<td>' + judge + '</td></tr>';
     }).join('');
-    return '<table><tr><th>编号</th><th>联赛/时间</th><th>对阵</th><th>预测（方向/大小/比分）</th><th>赛果</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>';
+    return '<table><tr><th>编号</th><th>联赛/时间</th><th>对阵</th><th>预测（方向/大小/比分）</th><th>SP（胜/平/负）</th><th>赛果</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>';
   }
 }
 </script>
