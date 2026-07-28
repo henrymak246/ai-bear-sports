@@ -3,6 +3,7 @@
 -- 内容：members 表 + 注册触发器 + prediction_days 表 + RLS
 -- 依赖 Supabase 默认授权（public schema 表自动授权 anon/authenticated，RLS 为唯一闸门）
 -- 执行后记得：Authentication 关闭 Confirm email；在 members 表把站长账号 approved 打勾
+-- 增量迁移：站长后台（is_admin + 管理 RPC）见同目录 admin.sql（在 setup.sql 之后执行）
 -- ============================================
 
 -- 1) members：注册用户档案（approved=站长审核位）
