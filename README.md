@@ -19,14 +19,15 @@
 
 ## 每日工作流（AI 执行）
 1. 分析完成后：在 `data/predictions.js` 数组**最前**插入当日对象（照 2026-07-26 的格式）。**场次规则：竞彩当日不足 7 场时，从北单选最有信心场次补足，保持每日 7 场推荐**（北单场 id 如 `北单159`）
-2. 赛后复盘：给每场填 `finalScore`（如 `"3-1"`）、给当日填 `review`、给每个方案块填 `result`（hit/miss/half/push）；命中判定与统计由页面自动完成
-3. 同步：`node tools/sync-data.js`（数据在 Supabase，不入 git；页面壳改动才 git commit + push）
+2. 竞彩 SP 发布后：给当日每场补 `sp: ['主胜','平','客胜']`（北单场另加 `spHandicap: 让球数`），跑 `node tools/sync-data.js` 重传（首更先发预测，SP 后补）
+3. 赛后复盘：给每场填 `finalScore`（如 `"3-1"`）、给当日填 `review`、给每个方案块填 `result`（hit/miss/half/push）；命中判定与统计由页面自动完成
+4. 同步：`node tools/sync-data.js`（数据在 Supabase，不入 git；页面壳改动才 git commit + push）
 
 ## 数据格式要点
 ```js
 {
   date: 'YYYY-MM-DD', dayPillar: '丙午年·…·辛丑日', dayNote: '当日基调摘要',
-  matches: [ { id, league, time, home, away, direction, overUnder, score: [], confidence, finalScore: null, note } ],
+  matches: [ { id, league, time, home, away, direction, overUnder, score: [], confidence, finalScore: null, note, sp: ['主胜','平','客胜'], spHandicap } ],   // sp/spHandicap 可选：竞彩 SP 三元组、北单让球数；缺省页面显示 —
   plan: [                              // 中间首页方案方块，按 market 分组展示（可省略）
     { market: 'jc', name: '🎯 胜平负', pct: '50%', text: '含让球任选最有投资价值场次', detail: '详解全文（可选，\\n 换行；点击方块弹窗展示，缺省时显示 text）' },
     { market: 'jc', name: '⚽ 进球数', pct: '20%', text: '总进球 X球(SP) 及份数' },
