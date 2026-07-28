@@ -15,10 +15,11 @@ language sql
 stable
 security definer set search_path = public
 as $$
-  select exists(select 1 from public.members where user_id = auth.uid() and is_admin);
+  select exists(select 1 from public.members where user_id = auth.uid() and is_admin and approved);
 $$;
 -- 注意：is_admin() 保持默认 PUBLIC execute（策略表达式需对 anon/authenticated 可调用；
 -- 只返回布尔、不泄露数据，可安全暴露）
+-- 同时要求 approved：被撤销资格的管理员立即失去全部管理权限
 
 -- 3) 管理员可读 members 全部行（与 members_select_own 是 OR 叠加：普通会员仍只能读自己）
 drop policy if exists "members_select_admin" on public.members;
@@ -78,11 +79,12 @@ begin
 end;
 $$;
 
--- 8) 授权：anon 一律不可调；authenticated 可调但非管理员被函数体首行拦截
-revoke execute on function public.list_members() from anon, authenticated;
-revoke execute on function public.approve_member(uuid) from anon, authenticated;
-revoke execute on function public.revoke_member(uuid) from anon, authenticated;
-revoke execute on function public.list_days() from anon, authenticated;
+-- 8) 授权：anon 一律不可调（PostgreSQL 默认授 EXECUTE 给 PUBLIC，必须连 PUBLIC 一起收）；
+--    authenticated 可调但非管理员被函数体首行拦截
+revoke execute on function public.list_members() from public, anon, authenticated;
+revoke execute on function public.approve_member(uuid) from public, anon, authenticated;
+revoke execute on function public.revoke_member(uuid) from public, anon, authenticated;
+revoke execute on function public.list_days() from public, anon, authenticated;
 grant execute on function public.list_members() to authenticated;
 grant execute on function public.approve_member(uuid) to authenticated;
 grant execute on function public.revoke_member(uuid) to authenticated;

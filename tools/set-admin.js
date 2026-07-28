@@ -41,4 +41,4 @@ function loadEnv() {
     process.exit(1);
   }
   console.log('已赋权 ✓', email, '→ is_admin + approved');
-})();
+})().catch(e => { console.error('赋权失败:', e && e.message ? e.message : e); process.exit(1); });
