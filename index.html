@@ -395,9 +395,15 @@ function esc(s) {
     return '<div class="adm-row"><span class="am">' + esc(m.email) + (m.is_admin ? ' 👑' : '') + '</span>' + actionHtml + '</div>';
   }
   function loadAdmin() {
+    admErr('');
     Promise.all([sb.rpc('list_members'), sb.rpc('list_days')]).then(function (rs) {
       var rm = rs[0], rd = rs[1];
-      if (rm.error) { admErr('会员列表加载失败：' + rm.error.message); return; }
+      if (rm.error) {
+        admErr('会员列表加载失败：' + rm.error.message);
+        document.getElementById('admPending').innerHTML = '<div class="adm-empty">加载失败</div>';
+        document.getElementById('admApproved').innerHTML = '<div class="adm-empty">加载失败</div>';
+        return;
+      }
       var members = rm.data || [];
       var pending = members.filter(function (m) { return !m.approved; });
       var approved = members.filter(function (m) { return m.approved; });
@@ -417,7 +423,7 @@ function esc(s) {
           sb.rpc('approve_member', { target: b.getAttribute('data-approve') }).then(function (r) {
             if (r.error) { admErr('通过失败：' + r.error.message); b.disabled = false; return; }
             loadAdmin();
-          });
+          }).catch(function () { admErr('网络异常，请稍后重试'); b.disabled = false; });
         };
       });
       Array.prototype.forEach.call(document.querySelectorAll('[data-revoke]'), function (b) {
@@ -427,7 +433,7 @@ function esc(s) {
           sb.rpc('revoke_member', { target: b.getAttribute('data-revoke') }).then(function (r) {
             if (r.error) { admErr('撤销失败：' + r.error.message); b.disabled = false; return; }
             loadAdmin();
-          });
+          }).catch(function () { admErr('网络异常，请稍后重试'); b.disabled = false; });
         };
       });
       if (rd.error) { document.getElementById('admDays').innerHTML = '<div class="adm-empty">数据状态加载失败</div>'; return; }
