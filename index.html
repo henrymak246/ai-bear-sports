@@ -567,38 +567,68 @@ function renderApp(days) {
 
   var TIER_COLORS = ['#2F9E63', '#D97706', '#F25C5C', '#0284C7', '#8B5CF6', '#B7791F'];
 
-  // ---- 左侧栏：每日红黑（方向命中=红，失手=黑；最近一天明细展开，其余日期折叠可点开） ----
-  renderHonghei(days);
-  function renderHonghei(days) {
+  // ---- 左侧栏：月历（方向命中=红，失手=黑；点日期主区展开当日） ----
+  var byDate = {};
+  days.forEach(function (d) { byDate[d.date] = d; });
+  var d0 = days.length > 0 ? days[0].date.split('-') : null;
+  var calState = d0 ? { y: +d0[0], m: +d0[1], sel: days[0].date } : { y: 1970, m: 1, sel: '' };
+  var now = new Date();
+  var todayStr = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
+
+  function renderCal() {
     var side = document.getElementById('hongheiSidebar');
+    if (days.length === 0) {
+      side.innerHTML = '<h2 class="hh-side-title">📓 每日红黑</h2><div class="panel wait">还没有记录，等小熊的第一场预测 🐻</div>';
+      return;
+    }
     var totR = 0, totB = 0;
-    var rows = days.map(function (day, di) {
-      var hits = [], matchRows = [];
+    days.forEach(function (day) {
       (day.matches || []).forEach(function (m) {
         var v = StatsLib.judgeDirection(m.direction, m.finalScore);
-        if (v === null) return;
-        hits.push(v);
-        matchRows.push('<div class="hh-match" title="' + esc(m.id) + ' ' + esc(m.home) + ' vs ' + esc(m.away) + ' · 预测' + esc(m.direction) + '">' +
-          '<span class="dot ' + (v === 1 ? 'red' : 'black') + '"></span>' +
-          '<span class="hh-mid">' + esc(m.id) + ' ' + esc(m.home) + ' <span class="hh-score">' + esc(m.finalScore) + '</span> ' + esc(m.away) + '</span></div>');
+        if (v === 1) totR++; else if (v === 0) totB++;
       });
-      var red = hits.filter(function (v) { return v === 1; }).length;
-      var black = hits.filter(function (v) { return v === 0; }).length;
-      totR += red; totB += black;
-      var ds = StatsLib.computeDayStats(day);
-      var body = matchRows.length > 0 ? matchRows.join('') : '';
-      if (ds.pending > 0) body += '<div><span class="hh-pending">🍯 待回填 ' + ds.pending + ' 场</span></div>';
-      var cnt = hits.length === 0 ? '' : '<span class="cnt"><span class="r">' + red + '红</span> <span class="b">' + black + '黑</span></span>';
-      return '<div class="hh-day' + (di === 0 ? ' open' : '') + '"><div class="hh-date"><span>' + esc(day.date.slice(5)) + '</span>' + cnt + '<span class="hh-arrow">▼</span></div><div class="hh-body">' + body + '</div></div>';
-    }).join('');
+    });
     var total = (totR + totB) > 0
       ? '<div class="hh-total">累计 <span class="r">' + totR + ' 红</span> · <span class="b">' + totB + ' 黑</span></div>'
       : '';
-    side.innerHTML = '<h2 class="hh-side-title">📓 每日红黑</h2>' + total + rows;
-    Array.prototype.forEach.call(side.querySelectorAll('.hh-date'), function (el) {
-      el.addEventListener('click', function () { el.parentElement.classList.toggle('open'); });
+    var y = calState.y, m = calState.m;
+    var startWd = (new Date(y, m - 1, 1).getDay() + 6) % 7; // 周一开头
+    var dim = new Date(y, m, 0).getDate();
+    var cells = '';
+    ['一', '二', '三', '四', '五', '六', '日'].forEach(function (w) { cells += '<div class="ov-wd">' + w + '</div>'; });
+    for (var i = 0; i < startWd; i++) cells += '<div></div>';
+    for (var d = 1; d <= dim; d++) {
+      var ds2 = y + '-' + ('0' + m).slice(-2) + '-' + ('0' + d).slice(-2);
+      var day = byDate[ds2];
+      var cls = 'ov-day', hb = '';
+      if (day) {
+        cls += ' has';
+        var st = StatsLib.computeDayStats(day);
+        if (st.direction.total > 0) hb = '<span class="hb"><span class="r">' + st.direction.score + '红</span> <span class="b">' + (st.direction.total - st.direction.score) + '黑</span></span>';
+        else if (st.pending > 0) hb = '<span class="hb">🍯</span>';
+      }
+      if (ds2 === calState.sel) cls += ' sel';
+      if (ds2 === todayStr) cls += ' today';
+      cells += '<div class="' + cls + '"' + (day ? ' data-d="' + ds2 + '"' : '') + '>' + d + hb + '</div>';
+    }
+    side.innerHTML = '<h2 class="hh-side-title">📓 每日红黑</h2>' + total +
+      '<div class="ov-cal"><div class="ov-cal-head"><button type="button" class="ov-cal-nav" id="ovPrev">‹</button>' +
+      '<span class="ov-cal-title">' + y + ' 年 ' + m + ' 月</span>' +
+      '<button type="button" class="ov-cal-nav" id="ovNext">›</button></div>' +
+      '<div class="ov-grid">' + cells + '</div></div>';
+    document.getElementById('ovPrev').onclick = function () { shiftMonth(-1); };
+    document.getElementById('ovNext').onclick = function () { shiftMonth(1); };
+    Array.prototype.forEach.call(side.querySelectorAll('.ov-day.has'), function (el) {
+      el.onclick = function () { calState.sel = el.getAttribute('data-d'); renderCal(); renderDetail(); };
     });
   }
+  function shiftMonth(n) {
+    var mm = calState.m + n;
+    calState.y += Math.floor((mm - 1) / 12);
+    calState.m = ((mm - 1) % 12 + 12) % 12 + 1;
+    renderCal();
+  }
+  renderCal(); renderDetail();
 
   // ---- 中间首页：最新一天方案方块（竞彩/标准大小盘分组，点击跳转详解弹窗） ----
   renderPlanBlocks(days);
@@ -777,62 +807,12 @@ function renderApp(days) {
     }).join('');
   }
 
-  // ---- 每日预测总览（左月历 + 右当日详情） ----
-  var list = document.getElementById('dailyList');
-  if (days.length === 0) {
-    list.innerHTML = '<div class="panel wait">还没有记录，等小熊的第一场预测 🐻</div>';
-  } else {
-    var byDate = {};
-    days.forEach(function (d) { byDate[d.date] = d; });
-    var d0 = days[0].date.split('-');
-    var calState = { y: +d0[0], m: +d0[1], sel: days[0].date };
-    var now = new Date();
-    var todayStr = now.getFullYear() + '-' + ('0' + (now.getMonth() + 1)).slice(-2) + '-' + ('0' + now.getDate()).slice(-2);
-    list.innerHTML = '<div class="ov-wrap"><div class="ov-cal" id="ovCal"></div><div class="ov-detail" id="ovDetail"></div></div>';
-
-    function renderCal() {
-      var y = calState.y, m = calState.m;
-      var startWd = (new Date(y, m - 1, 1).getDay() + 6) % 7; // 周一开头
-      var dim = new Date(y, m, 0).getDate();
-      var cells = '';
-      ['一', '二', '三', '四', '五', '六', '日'].forEach(function (w) { cells += '<div class="ov-wd">' + w + '</div>'; });
-      for (var i = 0; i < startWd; i++) cells += '<div></div>';
-      for (var d = 1; d <= dim; d++) {
-        var ds2 = y + '-' + ('0' + m).slice(-2) + '-' + ('0' + d).slice(-2);
-        var day = byDate[ds2];
-        var cls = 'ov-day', hb = '';
-        if (day) {
-          cls += ' has';
-          var st = StatsLib.computeDayStats(day);
-          if (st.direction.total > 0) hb = '<span class="hb"><span class="r">' + st.direction.score + '红</span> <span class="b">' + (st.direction.total - st.direction.score) + '黑</span></span>';
-          else if (st.pending > 0) hb = '<span class="hb">🍯</span>';
-        }
-        if (ds2 === calState.sel) cls += ' sel';
-        if (ds2 === todayStr) cls += ' today';
-        cells += '<div class="' + cls + '"' + (day ? ' data-d="' + ds2 + '"' : '') + '>' + d + hb + '</div>';
-      }
-      document.getElementById('ovCal').innerHTML =
-        '<div class="ov-cal-head"><button type="button" class="ov-cal-nav" id="ovPrev">‹</button>' +
-        '<span class="ov-cal-title">' + y + ' 年 ' + m + ' 月</span>' +
-        '<button type="button" class="ov-cal-nav" id="ovNext">›</button></div>' +
-        '<div class="ov-grid">' + cells + '</div>';
-      document.getElementById('ovPrev').onclick = function () { shiftMonth(-1); };
-      document.getElementById('ovNext').onclick = function () { shiftMonth(1); };
-      Array.prototype.forEach.call(document.querySelectorAll('.ov-day.has'), function (el) {
-        el.onclick = function () { calState.sel = el.getAttribute('data-d'); renderCal(); renderDetail(); };
-      });
-    }
-    function shiftMonth(n) {
-      var mm = calState.m + n;
-      calState.y += Math.floor((mm - 1) / 12);
-      calState.m = ((mm - 1) % 12 + 12) % 12 + 1;
-      renderCal();
-    }
-    function renderDetail() {
-      var day = byDate[calState.sel];
-      document.getElementById('ovDetail').innerHTML = day ? dayDetail(day) : '';
-    }
-    renderCal(); renderDetail();
+  // ---- 每日预测总览（当日详情；点侧栏月历日期切换） ----
+  function renderDetail() {
+    var day = byDate[calState.sel];
+    document.getElementById('dailyList').innerHTML = day
+      ? dayDetail(day)
+      : '<div class="panel wait">还没有记录，等小熊的第一场预测 🐻</div>';
   }
 
   function dayDetail(day) {
