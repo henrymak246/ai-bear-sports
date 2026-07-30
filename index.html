@@ -200,6 +200,10 @@
   .sp { font-variant-numeric: tabular-nums; color:var(--brown-soft); }
   .sp-hot { color:var(--honey-dark); font-weight:800; }
   .sp-hcp { display:inline-block; margin-right:4px; font-size:11px; color:var(--muted); }
+  .sp-win { color:var(--green); font-weight:800; }
+  .final { font-weight:800; color:var(--brown); white-space:nowrap; }
+  .table-legend { font-size:11px; color:var(--muted); margin-top:6px; }
+  .table-legend b { font-weight:800; }
   .ov-wrap { display:grid; grid-template-columns:280px 1fr; gap:14px; align-items:start; }
   .ov-cal { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
   .ov-cal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
@@ -843,22 +847,34 @@ function renderApp(days) {
         : mark(StatsLib.judgeDirection(m.direction, m.finalScore)) + ' ' +
           mark(StatsLib.judgeOverUnder(m.overUnder, m.finalScore)) + ' ' +
           mark(StatsLib.judgeScore(m.score, m.finalScore));
+      var fs = String(m.finalScore || '').match(/^(\d+)\s*[-:：]\s*(\d+)$/);
+      var actIdx = fs ? (Number(fs[1]) > Number(fs[2]) ? 0 : Number(fs[1]) < Number(fs[2]) ? 2 : 1) : -1;
+      var finalCell = pending ? '<span class="wait">待赛</span>' : '<span class="final">' + esc(m.finalScore) + '</span>';
+      var scoreTxt = (m.score || []).map(function (sc, i) {
+        var odd = Array.isArray(m.scoreSp) && m.scoreSp[i] ? '(' + esc(m.scoreSp[i]) + ')' : '';
+        return esc(sc) + odd;
+      }).join(' ');
       var spCell = '<span class="wait">—</span>';
       if (Array.isArray(m.sp) && m.sp.length === 3) {
         var hotIdx = m.direction === '主胜' ? 0 : m.direction === '平' ? 1 : m.direction === '客胜' ? 2 : -1;
         var spTxt = m.sp.map(function (v, i) {
-          return i === hotIdx ? '<b class="sp-hot">' + esc(v) + '</b>' : esc(v);
+          var cls = [];
+          if (i === hotIdx) cls.push('sp-hot');
+          if (i === actIdx) cls.push('sp-win');
+          return cls.length ? '<b class="' + cls.join(' ') + '">' + esc(v) + '</b>' : esc(v);
         }).join(' / ');
         spCell = (m.spHandicap ? '<span class="sp-hcp">让' + esc(m.spHandicap) + '</span>' : '') + '<span class="sp">' + spTxt + '</span>';
       }
       return '<tr><td>' + esc(m.id) + '</td><td>' + esc(m.league) + ' ' + esc(m.time) + '</td>' +
         '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
-        '<td>' + esc(m.direction) + ' / ' + esc(m.overUnder) + ' / ' + esc((m.score || []).join(' ')) +
+        '<td>' + finalCell + '</td>' +
+        '<td>' + esc(m.direction) + ' / ' + esc(m.overUnder) + ' / ' + scoreTxt +
         ' <span class="stars">' + '★'.repeat(m.confidence || 0) + '</span></td>' +
         '<td>' + spCell + '</td>' +
         '<td>' + judge + '</td></tr>';
     }).join('');
-    return '<table><tr><th>编号</th><th>联赛/时间</th><th>对阵</th><th>预测（方向/大小/比分）</th><th>SP（胜/平/负）</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>';
+    return '<table><tr><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th><th>预测（方向/大小/比分(赔率)）</th><th>SP（胜/平/负）</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
+      '<div class="table-legend">SP 标注：<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>；判定三列依次为 方向/大小/比分</div>';
   }
 }
 </script>

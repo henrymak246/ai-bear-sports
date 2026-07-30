@@ -27,7 +27,7 @@
 ```js
 {
   date: 'YYYY-MM-DD', dayPillar: '丙午年·…·辛丑日', dayNote: '当日基调摘要',
-  matches: [ { id, league, time, home, away, direction, overUnder, score: [], confidence, finalScore: null, note, sp: ['主胜','平','客胜'], spHandicap } ],   // sp/spHandicap 可选：竞彩 SP 三元组、北单让球数；缺省页面显示 —
+  matches: [ { id, league, time, home, away, direction, overUnder, score: [], confidence, finalScore: null, note, sp: ['主胜','平','客胜'], spHandicap, scoreSp: [] } ],   // sp/spHandicap 可选：竞彩 SP 三元组、北单让球数；scoreSp 可选：与 score 对齐的比分赔率（页面在比分后括号显示）；缺省页面显示 —
   plan: [                              // 中间首页方案方块，按 market 分组展示（可省略）
     { market: 'jc', name: '🎯 胜平负', pct: '50%', text: '含让球任选最有投资价值场次', detail: '详解全文（可选，\\n 换行；点击方块弹窗展示，缺省时显示 text）' },
     { market: 'jc', name: '⚽ 进球数', pct: '20%', text: '总进球 X球(SP) 及份数' },
