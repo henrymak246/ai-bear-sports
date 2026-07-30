@@ -176,5 +176,44 @@
     });
   }
 
-  return { parseScore, judgeDirection, judgeOverUnder, judgeScore, computeDayStats, computeOverall, computeTrend, planTypeOf, planStats };
+  // ---- 北单专栏：id 以「北单」开头的场次单独累计（含竞彩方向对照 + 北单方案块） ----
+  function isBeidan(m) { return !!m && String(m.id || '').indexOf('北单') === 0; }
+
+  // direction/overUnder/score 只累计北单场；jcDirection 累计其余场次方向作对照；
+  // matches 为北单明细（日期倒序，含待回填场，d/o/b 为三项判定 null=不计入）；
+  // plan 只数名称含「北单」的方案块 result
+  function computeBeidan(days) {
+    const dir = { score: 0, total: 0 }, ou = { score: 0, total: 0 }, sc = { score: 0, total: 0 };
+    const jcDir = { score: 0, total: 0 };
+    const plan = { hit: 0, half: 0, miss: 0, push: 0 };
+    const list = [];
+    (days || []).forEach(day => {
+      (day.matches || []).forEach(m => {
+        const d = judgeDirection(m.direction, m.finalScore);
+        if (!isBeidan(m)) { if (d !== null) { jcDir.score += d; jcDir.total += 1; } return; }
+        if (d !== null) { dir.score += d; dir.total += 1; }
+        const o = judgeOverUnder(m.overUnder, m.finalScore);
+        if (o !== null) { ou.score += o; ou.total += 1; }
+        const b = judgeScore(m.score, m.finalScore);
+        if (b !== null) { sc.score += b; sc.total += 1; }
+        list.push({ date: day.date, id: m.id, league: m.league, home: m.home, away: m.away,
+          direction: m.direction, overUnder: m.overUnder, finalScore: m.finalScore || null, d, o, b });
+      });
+      (Array.isArray(day.plan) ? day.plan : []).forEach(p => {
+        if (!p || String(p.name || '').indexOf('北单') === -1) return;
+        if (['hit', 'half', 'miss', 'push'].indexOf(p.result) !== -1) plan[p.result] += 1;
+      });
+    });
+    list.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)); // 日期倒序，同日保持原顺序
+    return {
+      direction: { score: dir.score, total: dir.total, rate: rate(dir) },
+      overUnder: { score: ou.score, total: ou.total, rate: rate(ou) },
+      score: { score: sc.score, total: sc.total, rate: rate(sc) },
+      jcDirection: { score: jcDir.score, total: jcDir.total, rate: rate(jcDir) },
+      plan,
+      matches: list,
+    };
+  }
+
+  return { parseScore, judgeDirection, judgeOverUnder, judgeScore, computeDayStats, computeOverall, computeTrend, planTypeOf, planStats, isBeidan, computeBeidan };
 });

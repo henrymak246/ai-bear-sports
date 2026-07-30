@@ -112,4 +112,38 @@ assert.strictEqual(ps.find(function (s) { return s.type === '亚洲让球'; }).r
 assert.doesNotThrow(function () { S.planStats([{ date: '2026-07-25' }]); }); // 无 plan 字段不报错
 assert.doesNotThrow(function () { S.planStats([]); });
 
+// ---- computeBeidan：北单（id 以「北单」开头）单独累计 + 竞彩对照 + 北单方案块 ----
+const bdDays = [
+  { date: '2026-07-29', matches: [
+    { id: '周三005', league: '巴甲', direction: '主胜', overUnder: '小2.5', score: ['1-0'], finalScore: '0-0' },
+    { id: '北单·红星', league: '欧冠资格赛', direction: '主胜', overUnder: '放弃', score: ['3-0'], finalScore: '5-0' },
+  ], plan: [
+    { market: 'jc', name: '🀄 北单 · 胜平负', result: 'hit' },
+    { market: 'jc', name: '🎯 胜平负', result: 'miss' },   // 非北单块不计入
+  ]},
+  { date: '2026-07-27', matches: [
+    { id: '北单159', league: '罗甲', direction: '主胜', overUnder: '放弃', score: ['2-1'], finalScore: '5-0' },
+    { id: '北单168', league: '冰岛超', direction: '主胜', overUnder: '大2.5', score: [], finalScore: '1-0' },
+    { id: '北单171', league: '巴西乙', direction: '主胜', overUnder: '放弃', score: ['2-1'], finalScore: null }, // 待回填
+  ]},
+];
+const bd = S.computeBeidan(bdDays);
+assert.strictEqual(bd.direction.score, 3);            // 红星✓ 159✓ 168✓
+assert.strictEqual(bd.direction.total, 3);            // 171 待回填不计
+assert.strictEqual(bd.direction.rate, 1);
+assert.strictEqual(bd.overUnder.total, 1);            // 仅 168 大2.5（1球）= 黑
+assert.strictEqual(bd.overUnder.score, 0);
+assert.strictEqual(bd.score.total, 2);                // 红星3-0✗、159 2-1✗；168 无比分项不计
+assert.strictEqual(bd.score.score, 0);
+assert.strictEqual(bd.jcDirection.score, 0);          // 周三005 主胜 0-0 = 黑（对照组）
+assert.strictEqual(bd.jcDirection.total, 1);
+assert.deepStrictEqual(bd.plan, { hit: 1, half: 0, miss: 0, push: 0 });
+assert.strictEqual(bd.matches.length, 4);             // 含待回填 171
+assert.strictEqual(bd.matches[0].id, '北单·红星');    // 日期倒序
+assert.strictEqual(bd.matches[3].id, '北单171');
+assert.strictEqual(S.isBeidan({ id: '北单165' }), true);
+assert.strictEqual(S.isBeidan({ id: '周三001' }), false);
+assert.doesNotThrow(function () { S.computeBeidan([]); });
+assert.doesNotThrow(function () { S.computeBeidan([{ date: '2026-07-25' }]); });
+
 console.log('stats.test.js 全部通过 ✓');

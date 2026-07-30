@@ -204,6 +204,8 @@
   .final { font-weight:800; color:var(--brown); white-space:nowrap; }
   .table-legend { font-size:11px; color:var(--muted); margin-top:6px; }
   .table-legend b { font-weight:800; }
+  .bd-sum { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:10px; font-size:12.5px; color:var(--brown-soft); }
+  .bd-item b { color:var(--brown); font-size:15px; margin-right:3px; }
   .ov-wrap { display:grid; grid-template-columns:280px 1fr; gap:14px; align-items:start; }
   .ov-cal { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; }
   .ov-cal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
@@ -310,6 +312,11 @@
     <div class="panel" id="planStatsPanel">
       <h2>🎯 方案层命中<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">按方案类型累计 · 半红计0.5 · 走水不计</span></h2>
       <div id="planStatsBody"></div>
+    </div>
+
+    <div class="panel" id="beidanPanel">
+      <h2>🀄 北单专栏<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">与竞彩分开累计 · 方向/大小/比分 + 方案块</span></h2>
+      <div id="beidanBody"></div>
     </div>
 
     <div class="panel">
@@ -766,6 +773,39 @@ function renderApp(days) {
         '<span class="ps-cnt">' + cnt + '</span><span class="ps-dots">' + dots + '</span>' +
         '<span class="ps-rate' + (enough ? '' : ' na') + '">' + rateTxt + '</span></div>';
     }).join('');
+  }
+
+  // ---- 北单专栏（id 以「北单」开头的场次单独累计，附竞彩方向对照） ----
+  renderBeidan(days);
+  function renderBeidan(days) {
+    var body = document.getElementById('beidanBody');
+    if (!body || typeof StatsLib.computeBeidan !== 'function') return;
+    var bd = StatsLib.computeBeidan(days);
+    if (bd.matches.length === 0) {
+      body.innerHTML = '<div class="wait" style="font-size:12.5px">还没有北单场次记录，小熊等补充场 🐾</div>';
+      return;
+    }
+    var p = bd.plan, pTot = p.hit + p.half + p.miss;
+    var pRate = pTot === 0 ? '—' : Math.round((p.hit + 0.5 * p.half) / pTot * 100) + '%';
+    function item(lbl, fracTxt, rateTxt) {
+      return '<span class="bd-item"><b>' + rateTxt + '</b>' + lbl + '（' + fracTxt + '）</span>';
+    }
+    var sum = '<div class="bd-sum">' +
+      item('🎯 北单方向', frac(bd.direction), pct(bd.direction.rate)) +
+      item('⚽ 大小', frac(bd.overUnder), pct(bd.overUnder.rate)) +
+      item('🏅 比分', frac(bd.score), pct(bd.score.rate)) +
+      item('🀄 方案块', p.hit + '红' + p.miss + '黑' + (p.half > 0 ? p.half + '半' : '') + (p.push > 0 ? p.push + '走水' : ''), pRate) +
+      item('📊 对照·竞彩方向', frac(bd.jcDirection), pct(bd.jcDirection.rate)) +
+      '</div>';
+    var rows = bd.matches.map(function (m) {
+      return '<tr><td>' + esc(m.date.slice(5)) + '</td><td>' + esc(m.id) + '</td>' +
+        '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
+        '<td>' + esc(m.direction) + ' / ' + esc(m.overUnder) + '</td>' +
+        '<td>' + (m.finalScore ? '<span class="final">' + esc(m.finalScore) + '</span>' : '<span class="wait">待赛</span>') + '</td>' +
+        '<td>' + mark(m.d) + ' ' + mark(m.o) + ' ' + mark(m.b) + '</td></tr>';
+    }).join('');
+    body.innerHTML = sum +
+      '<table><tr><th>日期</th><th>编号</th><th>对阵</th><th>预测（方向/大小）</th><th>赛果</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>';
   }
 
   // ---- 小熊成绩单 ----
