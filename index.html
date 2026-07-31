@@ -868,9 +868,24 @@ function renderApp(days) {
       '<div class="day-head"><div><div class="day-title">' + esc(day.date) + '</div>' +
       '<div class="day-meta">' + esc(day.dayPillar || '') + (day.dayNote ? ' · ' + esc(day.dayNote) : '') + ' · ' + ds.matches + ' 场</div></div>' +
       badge + '</div>' +
-      '<div class="day-body">' + matchTable(day) +
+      '<div class="day-body">' + matchGroups(day) +
       (day.review ? '<div class="review"><b>🔍 复盘结论：</b>' + esc(day.review) + '</div>' : '') +
       '</div></div>';
+  }
+
+  // 每日比赛分两组展示：竞彩 / 北单；仅一组有场次时保持单表不分组
+  function matchGroups(day) {
+    var jc = [], bd = [];
+    (day.matches || []).forEach(function (m) { (StatsLib.isBeidan(m) ? bd : jc).push(m); });
+    if (jc.length === 0 || bd.length === 0) return matchTable(day);
+    function group(title, matches) {
+      var ds = StatsLib.computeDayStats({ matches: matches });
+      var stat = ds.direction.total > 0 ? ' · 方向 ' + ds.direction.score + '/' + ds.direction.total : '';
+      return '<div class="plan-group-title">' + title +
+        '<span style="font-size:11px;color:var(--muted);font-weight:400">' + stat + ' · ' + matches.length + ' 场</span></div>' +
+        matchTable({ matches: matches });
+    }
+    return group('⚽ 竞彩', jc) + group('🀄 北单', bd);
   }
 
   function mark(v) {
