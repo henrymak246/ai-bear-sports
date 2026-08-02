@@ -802,7 +802,7 @@ function renderApp(days) {
         '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
         '<td>' + esc(m.direction) + ' / ' + esc(m.overUnder) + '</td>' +
         '<td>' + (m.finalScore ? '<span class="final">' + esc(m.finalScore) + '</span>' : '<span class="wait">待赛</span>') + '</td>' +
-        '<td>' + mark(m.d) + ' ' + mark(m.o) + ' ' + mark(m.b) + '</td></tr>';
+        '<td>' + mark(m.d) + ' ' + mark(m.o) + ' ' + scoreMark(m.score, m.finalScore, m.scoreSp) + '</td></tr>';
     }).join('');
     body.innerHTML = sum +
       '<table><tr><th>日期</th><th>编号</th><th>对阵</th><th>预测（方向/大小）</th><th>赛果</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>';
@@ -895,13 +895,24 @@ function renderApp(days) {
     return '<span class="miss">❌</span>';
   }
 
+  // 比分判定专用：不中不显示；中了显示 ✅+命中比分赔率（scoreSp）
+  function scoreMark(scoreArr, finalScore, scoreSp) {
+    var v = StatsLib.judgeScore(scoreArr, finalScore);
+    if (v === null) return '<span class="wait">—</span>';
+    if (v !== 1) return '';
+    var norm = String(finalScore || '').replace(/[:：]/g, '-');
+    var idx = (scoreArr || []).findIndex(function (p) { return String(p).replace(/[:：]/g, '-') === norm; });
+    var odd = idx >= 0 && Array.isArray(scoreSp) && scoreSp[idx] ? '(' + esc(scoreSp[idx]) + ')' : '';
+    return '<span class="hit">✅' + odd + '</span>';
+  }
+
   function matchTable(day) {
     var rows = day.matches.map(function (m) {
       var pending = !m.finalScore;
       var judge = pending ? '<span class="wait">—</span>'
         : mark(StatsLib.judgeDirection(m.direction, m.finalScore)) + ' ' +
           mark(StatsLib.judgeOverUnder(m.overUnder, m.finalScore)) + ' ' +
-          mark(StatsLib.judgeScore(m.score, m.finalScore));
+          scoreMark(m.score, m.finalScore, m.scoreSp);
       var fs = String(m.finalScore || '').match(/^(\d+)\s*[-:：]\s*(\d+)$/);
       var actIdx = fs ? (Number(fs[1]) > Number(fs[2]) ? 0 : Number(fs[1]) < Number(fs[2]) ? 2 : 1) : -1;
       var finalCell = pending ? '<span class="wait">待赛</span>' : '<span class="final">' + esc(m.finalScore) + '</span>';

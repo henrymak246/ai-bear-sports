@@ -197,7 +197,8 @@
         const b = judgeScore(m.score, m.finalScore);
         if (b !== null) { sc.score += b; sc.total += 1; }
         list.push({ date: day.date, id: m.id, league: m.league, home: m.home, away: m.away,
-          direction: m.direction, overUnder: m.overUnder, finalScore: m.finalScore || null, d, o, b });
+          direction: m.direction, overUnder: m.overUnder, finalScore: m.finalScore || null,
+          score: m.score || [], scoreSp: m.scoreSp || null, d, o, b });
       });
       (Array.isArray(day.plan) ? day.plan : []).forEach(p => {
         if (!p || String(p.name || '').indexOf('北单') === -1) return;
