@@ -204,6 +204,9 @@
   .final { font-weight:800; color:var(--brown); white-space:nowrap; }
   .table-legend { font-size:11px; color:var(--muted); margin-top:6px; }
   .table-legend b { font-weight:800; }
+  .an-btn { border:1px solid var(--line); background:var(--card); border-radius:8px; padding:0 6px; font-size:12px; line-height:20px; cursor:pointer; color:var(--brown); font-family:inherit; }
+  .an-btn:hover { background:var(--amber-bg); }
+  .an-row td { background:var(--amber-bg); font-size:12.5px; line-height:1.7; color:var(--brown-soft); text-align:left; white-space:normal; padding:8px 12px; }
   .bd-sum { display:flex; gap:16px; flex-wrap:wrap; margin-bottom:10px; font-size:12.5px; color:var(--brown-soft); }
   .bd-item b { color:var(--brown); font-size:15px; margin-right:3px; }
   .ov-wrap { display:grid; grid-template-columns:280px 1fr; gap:14px; align-items:start; }
@@ -950,6 +953,17 @@ function renderApp(days) {
     return '<span class="hit">✅' + odd + '</span>';
   }
 
+  // 每场分析展开键（🔍）：事件委托一次注册，切换分析行显隐
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.an-btn') : null;
+    if (!b) return;
+    var row = b.closest('tr').nextElementSibling;
+    if (!row || !row.classList.contains('an-row')) return;
+    var open = row.style.display !== 'none';
+    row.style.display = open ? 'none' : '';
+    b.textContent = open ? '🔍' : '✖';
+  });
+
   function matchTable(day) {
     var rows = day.matches.map(function (m) {
       var pending = !m.finalScore;
@@ -975,16 +989,18 @@ function renderApp(days) {
         }).join(' / ');
         spCell = (m.spHandicap ? '<span class="sp-hcp">让' + esc(m.spHandicap) + '</span>' : '') + '<span class="sp">' + spTxt + '</span>';
       }
-      return '<tr><td>' + esc(m.id) + '</td><td>' + esc(m.league) + ' ' + esc(m.time) + '</td>' +
+      var anBtn = m.note ? '<button class="an-btn" type="button" title="展开/收起本场分析">🔍</button>' : '';
+      return '<tr><td>' + anBtn + '</td><td>' + esc(m.id) + '</td><td>' + esc(m.league) + ' ' + esc(m.time) + '</td>' +
         '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
         '<td>' + finalCell + '</td>' +
         '<td>' + esc(m.direction) + ' / ' + esc(m.overUnder) + ' / ' + scoreTxt +
         ' <span class="stars">' + '★'.repeat(m.confidence || 0) + '</span></td>' +
         '<td>' + spCell + '</td>' +
-        '<td>' + judge + '</td></tr>';
+        '<td>' + judge + '</td></tr>' +
+        (m.note ? '<tr class="an-row" style="display:none"><td colspan="8">📋 ' + esc(m.note) + '</td></tr>' : '');
     }).join('');
-    return '<table><tr><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th><th>预测（方向/大小/比分(赔率)）</th><th>SP（胜/平/负）</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
-      '<div class="table-legend">SP 标注：<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>；判定三列依次为 方向/大小/比分</div>';
+    return '<table><tr><th></th><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th><th>预测（方向/大小/比分(赔率)）</th><th>SP（胜/平/负）</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
+      '<div class="table-legend">SP 标注：<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>；判定三列依次为 方向/大小/比分；点 🔍 展开本场完整分析</div>';
   }
 }
 </script>
