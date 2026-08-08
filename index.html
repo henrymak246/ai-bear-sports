@@ -314,6 +314,11 @@
       <div id="planStatsBody"></div>
     </div>
 
+    <div class="panel" id="jkPanel">
+      <h2>🎌 日韩专栏<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">每轮J联赛/K联赛各4场 · 与竞彩分开累计 · 方向/大小/比分 + 方案块</span></h2>
+      <div id="jkBody"></div>
+    </div>
+
     <div class="panel" id="beidanPanel">
       <h2>🀄 北单专栏<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">与竞彩分开累计 · 方向/大小/比分 + 方案块</span></h2>
       <div id="beidanBody"></div>
@@ -775,6 +780,39 @@ function renderApp(days) {
     }).join('');
   }
 
+  // ---- 日韩专栏（id 以「日职」/「韩K」开头的场次单独累计，附竞彩方向对照） ----
+  renderJK(days);
+  function renderJK(days) {
+    var body = document.getElementById('jkBody');
+    if (!body || typeof StatsLib.computeJK !== 'function') return;
+    var jk = StatsLib.computeJK(days);
+    if (jk.matches.length === 0) {
+      body.innerHTML = '<div class="wait" style="font-size:12.5px">还没有日韩场次记录，小熊等补充场 🐾</div>';
+      return;
+    }
+    var p = jk.plan, pTot = p.hit + p.half + p.miss;
+    var pRate = pTot === 0 ? '—' : Math.round((p.hit + 0.5 * p.half) / pTot * 100) + '%';
+    function item(lbl, fracTxt, rateTxt) {
+      return '<span class="bd-item"><b>' + rateTxt + '</b>' + lbl + '（' + fracTxt + '）</span>';
+    }
+    var sum = '<div class="bd-sum">' +
+      item('🎯 日韩方向', frac(jk.direction), pct(jk.direction.rate)) +
+      item('⚽ 大小', frac(jk.overUnder), pct(jk.overUnder.rate)) +
+      item('🏅 比分', frac(jk.score), pct(jk.score.rate)) +
+      item('🎌 方案块', p.hit + '红' + p.miss + '黑' + (p.half > 0 ? p.half + '半' : '') + (p.push > 0 ? p.push + '走水' : ''), pRate) +
+      item('📊 对照·竞彩方向', frac(jk.jcDirection), pct(jk.jcDirection.rate)) +
+      '</div>';
+    var rows = jk.matches.map(function (m) {
+      return '<tr><td>' + esc(m.date.slice(5)) + '</td><td>' + esc(m.id) + '</td>' +
+        '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
+        '<td>' + esc(m.direction) + ' / ' + esc(m.overUnder) + '</td>' +
+        '<td>' + (m.finalScore ? '<span class="final">' + esc(m.finalScore) + '</span>' : '<span class="wait">待赛</span>') + '</td>' +
+        '<td>' + mark(m.d) + ' ' + mark(m.o) + ' ' + scoreMark(m.score, m.finalScore, m.scoreSp) + '</td></tr>';
+    }).join('');
+    body.innerHTML = sum +
+      '<table><tr><th>日期</th><th>编号</th><th>对阵</th><th>预测（方向/大小）</th><th>赛果</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>';
+  }
+
   // ---- 北单专栏（id 以「北单」开头的场次单独累计，附竞彩方向对照） ----
   renderBeidan(days);
   function renderBeidan(days) {
@@ -873,19 +911,25 @@ function renderApp(days) {
       '</div></div>';
   }
 
-  // 每日比赛分两组展示：竞彩 / 北单；仅一组有场次时保持单表不分组
+  // 每日比赛分三组展示：竞彩 / 日韩 / 北单；仅一组有场次时保持单表不分组
   function matchGroups(day) {
-    var jc = [], bd = [];
-    (day.matches || []).forEach(function (m) { (StatsLib.isBeidan(m) ? bd : jc).push(m); });
-    if (jc.length === 0 || bd.length === 0) return matchTable(day);
+    var jc = [], jk = [], bd = [];
+    (day.matches || []).forEach(function (m) {
+      if (StatsLib.isBeidan(m)) bd.push(m);
+      else if (StatsLib.isJK(m)) jk.push(m);
+      else jc.push(m);
+    });
+    var filled = (jc.length > 0) + (jk.length > 0) + (bd.length > 0);
+    if (filled <= 1) return matchTable(day);
     function group(title, matches) {
+      if (matches.length === 0) return '';
       var ds = StatsLib.computeDayStats({ matches: matches });
       var stat = ds.direction.total > 0 ? ' · 方向 ' + ds.direction.score + '/' + ds.direction.total : '';
       return '<div class="plan-group-title">' + title +
         '<span style="font-size:11px;color:var(--muted);font-weight:400">' + stat + ' · ' + matches.length + ' 场</span></div>' +
         matchTable({ matches: matches });
     }
-    return group('⚽ 竞彩', jc) + group('🀄 北单', bd);
+    return group('⚽ 竞彩', jc) + group('🎌 日韩', jk) + group('🀄 北单', bd);
   }
 
   function mark(v) {

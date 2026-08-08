@@ -146,4 +146,43 @@ assert.strictEqual(S.isBeidan({ id: '周三001' }), false);
 assert.doesNotThrow(function () { S.computeBeidan([]); });
 assert.doesNotThrow(function () { S.computeBeidan([{ date: '2026-07-25' }]); });
 
+// ---- computeJK：日韩（id 以「日职」/「韩K」开头）单独累计 + 竞彩对照 + 日韩方案块 ----
+const jkDays = [
+  { date: '2026-08-08', matches: [
+    { id: '日职1', league: '日职', direction: '主胜', overUnder: '大2.5', score: ['2-1'], finalScore: '2-1' },
+    { id: '韩K1', league: '韩职', direction: '主胜', overUnder: '小2.5', score: ['1-0'], finalScore: '0-0' },
+    { id: '周六007', league: '英联杯', direction: '主胜', overUnder: '小2.5', score: ['2-0'], finalScore: '2-0' },
+    { id: '北单112', league: '苏超', direction: '主胜', overUnder: '大2.5', score: ['2-1'], finalScore: '2-1' },
+  ], plan: [
+    { market: 'jc', name: '🎌 日韩 · 胜平负', result: 'half' },
+    { market: 'jc', name: '🀄 北单 · 胜平负', result: 'hit' }, // 非日韩块不计入
+  ]},
+  { date: '2026-08-05', matches: [
+    { id: '日职2', league: '日职', direction: '主胜', overUnder: '放弃', score: [], finalScore: null }, // 待回填
+  ]},
+];
+const jk = S.computeJK(jkDays);
+assert.strictEqual(S.isJK({ id: '日职1' }), true);
+assert.strictEqual(S.isJK({ id: '韩K3' }), true);
+assert.strictEqual(S.isJK({ id: '北单112' }), false);
+assert.strictEqual(S.isJK({ id: '周六001' }), false);
+assert.strictEqual(jk.direction.score, 1);            // 日职1✓；韩K1 主胜0-0✗
+assert.strictEqual(jk.direction.total, 2);            // 日职2 待回填不计
+assert.strictEqual(jk.overUnder.total, 2);            // 日职1 大2.5(2-1)✓、韩K1 小2.5(0-0)✓
+assert.strictEqual(jk.overUnder.score, 2);
+assert.strictEqual(jk.score.total, 2);                // 日职1 2-1✓、韩K1 1-0✗
+assert.strictEqual(jk.score.score, 1);
+assert.strictEqual(jk.jcDirection.score, 1);          // 仅竞彩组周六007✓（北单112 不入对照）
+assert.strictEqual(jk.jcDirection.total, 1);
+assert.deepStrictEqual(jk.plan, { hit: 0, half: 1, miss: 0, push: 0 });
+assert.strictEqual(jk.matches.length, 3);             // 含待回填 日职2
+assert.strictEqual(jk.matches[0].id, '日职1');        // 日期倒序
+assert.strictEqual(jk.matches[2].id, '日职2');
+assert.doesNotThrow(function () { S.computeJK([]); });
+assert.doesNotThrow(function () { S.computeJK([{ date: '2026-08-08' }]); });
+
+// 北单对照口径：日韩场次不入北单专栏的竞彩对照
+const bd2 = S.computeBeidan(jkDays);
+assert.strictEqual(bd2.jcDirection.total, 1);         // 仅周六007（日职/韩K 场次排除）
+
 console.log('stats.test.js 全部通过 ✓');
