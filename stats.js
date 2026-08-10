@@ -259,5 +259,24 @@
     };
   }
 
-  return { parseScore, judgeDirection, judgeOverUnder, judgeScore, computeDayStats, computeOverall, computeTrend, planTypeOf, planStats, isBeidan, computeBeidan, isJK, computeJK };
+  // ---- 心水公布记录：day.xinshui.picks[]（label + result: hit/miss/缺省=待赛）累计 ----
+  function computeXinshui(days) {
+    var hit = 0, miss = 0, pending = 0;
+    var entries = [];
+    (days || []).forEach(function (day) {
+      var xs = day && day.xinshui;
+      if (!xs || !Array.isArray(xs.picks)) return;
+      xs.picks.forEach(function (p) {
+        if (!p) return;
+        var r = p.result === 'hit' ? 'hit' : p.result === 'miss' ? 'miss' : null;
+        if (r === 'hit') hit++; else if (r === 'miss') miss++; else pending++;
+        entries.push({ date: day.date, label: p.label || '', result: r });
+      });
+    });
+    entries.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; }); // 日期倒序
+    var total = hit + miss;
+    return { hit: hit, miss: miss, pending: pending, total: total, rate: rate({ score: hit, total: total }), entries: entries };
+  }
+
+  return { parseScore, judgeDirection, judgeOverUnder, judgeScore, computeDayStats, computeOverall, computeTrend, planTypeOf, planStats, isBeidan, computeBeidan, isJK, computeJK, computeXinshui };
 });

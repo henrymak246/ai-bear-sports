@@ -229,6 +229,12 @@
 
   .hit { color:var(--green); font-weight:700; } .miss { color:var(--coral); font-weight:700; }
   .half { color:var(--honey-dark); font-weight:700; } .wait { color:var(--muted); }
+  .xs-day { border-top:1px dashed var(--line); padding:10px 0 6px; }
+  .xs-day:first-child { border-top:none; padding-top:2px; }
+  .xs-date { font-size:13px; font-weight:800; color:var(--brown); margin-bottom:4px; }
+  .xs-post { white-space:pre-wrap; font-size:12.5px; line-height:1.75; color:var(--brown-soft); }
+  .xs-picks { margin-top:6px; font-size:12px; display:flex; gap:12px; flex-wrap:wrap; }
+  .xs-pick { background:var(--amber-bg); border-radius:8px; padding:2px 8px; }
   .stars { color:var(--honey); }
   .mini-tiers { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px; margin-top:12px; }
   .mini-tier-link { text-decoration:none; color:inherit; }
@@ -315,6 +321,11 @@
     <div class="panel" id="planStatsPanel">
       <h2>🎯 方案层命中<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">按方案类型累计 · 半红计0.5 · 走水不计</span></h2>
       <div id="planStatsBody"></div>
+    </div>
+
+    <div class="panel" id="xinshuiPanel">
+      <h2>💧 心水公布记录<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">竞彩为主 · 每日3-4场社媒风推荐 · 红黑单独累计</span></h2>
+      <div id="xinshuiBody"></div>
     </div>
 
     <div class="panel" id="jkPanel">
@@ -781,6 +792,42 @@ function renderApp(days) {
         '<span class="ps-cnt">' + cnt + '</span><span class="ps-dots">' + dots + '</span>' +
         '<span class="ps-rate' + (enough ? '' : ' na') + '">' + rateTxt + '</span></div>';
     }).join('');
+  }
+
+  // ---- 心水公布记录（day.xinshui = 社媒风每日3-4场竞彩推荐 + 逐条红黑） ----
+  renderXinshui(days);
+  function renderXinshui(days) {
+    var body = document.getElementById('xinshuiBody');
+    if (!body || typeof StatsLib.computeXinshui !== 'function') return;
+    var xs = StatsLib.computeXinshui(days);
+    if (xs.entries.length === 0) {
+      body.innerHTML = '<div class="wait" style="font-size:12.5px">心水公布筹备中，等小熊的第一帖 🐾</div>';
+      return;
+    }
+    var tot = xs.hit + xs.miss;
+    var rateTxt = tot === 0 ? '—' : Math.round(xs.hit / tot * 100) + '%';
+    var dots = xs.entries.filter(function (e) { return e.result; }).slice(0, 20).map(function (e) {
+      return e.result === 'hit' ? '<span class="hit">●</span>' : '<span class="miss">●</span>';
+    }).join('');
+    var sum = '<div class="bd-sum"><span class="bd-item"><b>' + rateTxt + '</b>💧 心水累计（' + xs.hit + '红' + xs.miss + '黑' + (xs.pending > 0 ? '·待赛' + xs.pending : '') + '）</span>' +
+      '<span class="bd-item">' + dots + '</span></div>';
+    var byDay = {};
+    var order = [];
+    (days || []).forEach(function (d) {
+      if (d && d.xinshui && Array.isArray(d.xinshui.picks)) { byDay[d.date] = d.xinshui; order.push(d.date); }
+    });
+    order.sort(function (a, b) { return a < b ? 1 : -1; });
+    var html = order.map(function (date) {
+      var x = byDay[date];
+      var picks = x.picks.map(function (p) {
+        var badge = p.result === 'hit' ? '<span class="hit">红 ✅</span>' : p.result === 'miss' ? '<span class="miss">黑 ❌</span>' : '<span class="wait">待赛</span>';
+        return '<span class="xs-pick">' + esc(p.label || '') + ' ' + badge + '</span>';
+      }).join('');
+      return '<div class="xs-day"><div class="xs-date">💧 ' + esc(date) + ' 心水公布</div>' +
+        (x.post ? '<div class="xs-post">' + esc(x.post) + '</div>' : '') +
+        '<div class="xs-picks">' + picks + '</div></div>';
+    }).join('');
+    body.innerHTML = sum + html;
   }
 
   // ---- 日韩专栏（id 以「日职」/「韩K」开头的场次单独累计，附竞彩方向对照） ----

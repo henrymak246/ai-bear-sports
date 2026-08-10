@@ -185,4 +185,20 @@ assert.doesNotThrow(function () { S.computeJK([{ date: '2026-08-08' }]); });
 const bd2 = S.computeBeidan(jkDays);
 assert.strictEqual(bd2.jcDirection.total, 1);         // 仅周六007（日职/韩K 场次排除）
 
+// computeXinshui：心水公布记录累计
+const xsDays = [
+  { date: '2026-08-10', xinshui: { post: 'p', picks: [{ label: 'a', result: 'hit' }, { label: 'b', result: 'miss' }, { label: 'c' }] } },
+  { date: '2026-08-09', xinshui: { post: 'q', picks: [{ label: 'd', result: 'hit' }] } },
+  { date: '2026-08-08' }, // 无 xinshui 字段不报错
+];
+const xs = S.computeXinshui(xsDays);
+assert.strictEqual(xs.hit, 2);
+assert.strictEqual(xs.miss, 1);
+assert.strictEqual(xs.pending, 1);
+assert.strictEqual(xs.total, 3);
+assert.strictEqual(Math.round(xs.rate * 100), 67);
+assert.strictEqual(xs.entries[0].date, '2026-08-10'); // 日期倒序
+assert.strictEqual(S.computeXinshui([]).rate, null);
+assert.doesNotThrow(function () { S.computeXinshui([{ date: '2026-08-07' }]); });
+
 console.log('stats.test.js 全部通过 ✓');
