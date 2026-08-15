@@ -1025,6 +1025,15 @@ function renderApp(days) {
         var odd = Array.isArray(m.scoreSp) && m.scoreSp[i] ? '(' + esc(m.scoreSp[i]) + ')' : '';
         return esc(sc) + odd;
       }).join(' ');
+      var hcpCell = '';
+      if (m.spHandicap) {
+        var hcpRes = '';
+        if (fs) {
+          var adj = Number(fs[1]) + Number(m.spHandicap) - Number(fs[2]);
+          hcpRes = adj > 0 ? '让胜' : adj === 0 ? '让平' : '让负';
+        }
+        hcpCell = '<span class="sp-hcp">让' + esc(m.spHandicap) + (hcpRes ? '(<b class="sp-win">' + hcpRes + '</b>)' : '') + '</span>';
+      }
       var spCell = '<span class="wait">—</span>';
       if (Array.isArray(m.sp) && m.sp.length === 3) {
         var hotIdx = m.direction === '主胜' ? 0 : m.direction === '平' ? 1 : m.direction === '客胜' ? 2 : -1;
@@ -1034,7 +1043,9 @@ function renderApp(days) {
           if (i === actIdx) cls.push('sp-win');
           return cls.length ? '<b class="' + cls.join(' ') + '">' + esc(v) + '</b>' : esc(v);
         }).join(' / ');
-        spCell = (m.spHandicap ? '<span class="sp-hcp">让' + esc(m.spHandicap) + '</span>' : '') + '<span class="sp">' + spTxt + '</span>';
+        spCell = hcpCell + '<span class="sp">' + spTxt + '</span>';
+      } else if (hcpCell) {
+        spCell = hcpCell;
       }
       var anBtn = m.note ? '<button class="an-btn" type="button" title="展开/收起本场分析">🔍</button>' : '';
       return '<tr><td>' + anBtn + '</td><td>' + esc(m.id) + '</td><td>' + esc(m.league) + ' ' + esc(m.time) + '</td>' +
@@ -1047,7 +1058,7 @@ function renderApp(days) {
         (m.note ? '<tr class="an-row" style="display:none"><td colspan="8">📋 ' + esc(m.note) + '</td></tr>' : '');
     }).join('');
     return '<table><tr><th></th><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th><th>预测（方向/大小/比分(赔率)）</th><th>SP（胜/平/负）</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
-      '<div class="table-legend">SP 标注：<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>；判定三列依次为 方向/大小/比分；点 🔍 展开本场完整分析</div>';
+      '<div class="table-legend">SP 标注：<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>（SP 为胜平负无让球口径，按 90 分钟赛果判定）；「让X(绿字)」= 让球胜平负实际结果（赛果+让球数后比较，如 0-0 让-1 → 让负）；判定三列依次为 方向/大小/比分；点 🔍 展开本场完整分析</div>';
   }
 }
 </script>
