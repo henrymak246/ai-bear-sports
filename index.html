@@ -81,6 +81,7 @@
   .dream7-panel { border-top:4px solid #8B5CF6; }
   .d7-table td { font-size:12.5px; vertical-align:top; }
   .d7-table td:first-child { width:30px; font-weight:800; color:var(--honey-dark); }
+  .d7-league { font-weight:700; color:var(--brown); white-space:nowrap; }
   .d7-pick { font-weight:800; color:var(--honey-dark); white-space:nowrap; }
   .d7-odds { font-variant-numeric:tabular-nums; font-weight:700; color:var(--brown); white-space:nowrap; }
   .d7-reason { color:var(--brown-soft); font-size:12px; line-height:1.6; }
@@ -714,6 +715,7 @@ function renderApp(days) {
     var d7 = day.dream7;
     var rows = d7.legs.map(function (leg, i) {
       return '<tr><td>' + (i + 1) + '</td>' +
+        '<td><span class="d7-league">' + esc(leg.league || '—') + '</span></td>' +
         '<td>' + esc(leg.match) + '</td>' +
         '<td><span class="d7-pick">' + esc(leg.pick) + '</span></td>' +
         '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
@@ -721,7 +723,7 @@ function renderApp(days) {
     }).join('');
     box.innerHTML =
       '<div class="panel dream7-panel"><h2>🎰 梦想7关（非日韩）<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 全中约 ' + esc(d7.totalOdds || '—') + ' · 过关串娱乐小注</span></h2>' +
-      '<table class="d7-table"><tr><th>关</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th></tr>' + rows + '</table>' +
+      '<table class="d7-table"><tr><th>关</th><th>联赛</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th></tr>' + rows + '</table>' +
       (d7.note ? '<div class="plan-note">⚠️ ' + esc(d7.note) + '</div>' : '') +
       '</div>';
   }
