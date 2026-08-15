@@ -131,9 +131,8 @@
     .poster-badges { display:none; }
   }
 
-  /* ---- 方案详解弹窗（:target 纯CSS实现） ---- */
-  .modal { display:none; position:fixed; inset:0; z-index:50; }
-  .modal:target { display:flex; align-items:center; justify-content:center; }
+  /* ---- 通用弹窗（JS 控制显隐，按需生成，不再预生成 125 个隐藏 DOM） ---- */
+  .modal-open { display:flex; align-items:center; justify-content:center; position:fixed; inset:0; z-index:50; }
   .modal-mask { position:absolute; inset:0; background:rgba(74,58,40,.45); }
   .modal-box {
     position:relative; background:var(--card); border-radius:18px; padding:24px;
@@ -143,7 +142,7 @@
   .modal-box h3 { font-size:16px; color:var(--brown); padding-right:30px; }
   .modal-box h3 .m-pct { color:var(--honey-dark); margin-left:6px; }
   .modal-box h3 .m-date { font-size:11.5px; color:var(--muted); font-weight:400; margin-left:8px; }
-  .modal-close { position:absolute; top:12px; right:16px; font-size:24px; line-height:1; text-decoration:none; color:var(--muted); }
+  .modal-close { position:absolute; top:12px; right:16px; font-size:24px; line-height:1; text-decoration:none; color:var(--muted); background:none; border:none; cursor:pointer; font-family:inherit; }
   .modal-close:hover { color:var(--coral); }
   .modal-text { white-space:pre-wrap; font-size:13px; line-height:1.85; color:var(--brown-soft); margin-top:12px; }
 
@@ -243,6 +242,12 @@
   .mini-tier b { color:var(--brown); }
   .review { font-size:13px; color:var(--brown-soft); margin-top:12px; line-height:1.8; white-space:pre-wrap; background:#FFF8EC; border-radius:12px; padding:10px 14px; }
   .review b { color:var(--brown); }
+  .fold-more-btn { display:block; width:100%; margin-top:10px; border:1px dashed var(--line); background:var(--card); border-radius:10px; padding:8px 0; font-size:12.5px; font-weight:700; color:var(--honey-dark); cursor:pointer; font-family:inherit; }
+  .fold-more-btn:hover { background:var(--amber-bg); }
+  .xs-toggle { border:none; background:none; color:var(--honey-dark); font-size:11.5px; font-weight:700; cursor:pointer; font-family:inherit; padding:0; margin-left:8px; }
+  .xs-toggle:hover { text-decoration:underline; }
+  .daynote-link { color:var(--honey-dark); text-decoration:none; font-weight:700; cursor:pointer; }
+  .daynote-link:hover { text-decoration:underline; }
 
   footer { color:var(--brown-soft); font-size:12px; text-align:center; margin:28px 0 6px; line-height:1.8; }
   svg text { fill:var(--brown-soft); font-size:11px; }
@@ -350,7 +355,7 @@
   </main>
 </div>
 
-<div id="planModals"></div>
+<div id="modalRoot"></div>
 <div id="gateRoot"></div>
 <div id="admRoot"></div>
 
@@ -696,7 +701,7 @@ function renderApp(days) {
       html += '<div class="plan-group-title">' + g.title + '<span class="pg-tag">' + g.tag + '</span></div>' +
         '<div class="plan-blocks">' + tiers.map(function (x) {
           var c = TIER_COLORS[x.i % TIER_COLORS.length];
-          return '<a class="plan-block" href="#tier-' + esc(day.date) + '-' + x.i + '" style="border-top-color:' + c + '">' +
+          return '<a class="plan-block" href="#!" data-modal="tier" data-date="' + esc(day.date) + '" data-idx="' + x.i + '" style="border-top-color:' + c + '">' +
             '<div class="pb-head">' + esc(x.t.name) + planBadge(x.t) + '</div>' +
             '<div class="pb-pct" style="color:' + c + '">' + esc(x.t.pct) + '</div>' +
             '<div class="pb-text">' + esc(x.t.text) + '</div>' +
@@ -707,63 +712,103 @@ function renderApp(days) {
     if (Array.isArray(day.actualBets) && day.actualBets.length > 0) {
       html += '<div class="plan-group-title">🧾 实际投注<span class="pg-tag">票样留档 · 点击放大</span></div>' +
         '<div class="bet-gallery">' + day.actualBets.map(function (b, i) {
-          return '<a class="bet-thumb" href="#bet-' + esc(day.date) + '-' + i + '"><img src="' + esc(b.img) + '" alt="实际投注票样" loading="lazy"><div class="bt-zoom">点击放大 🔍</div></a>' +
+          return '<a class="bet-thumb" href="#!" data-modal="bet" data-date="' + esc(day.date) + '" data-idx="' + i + '"><img src="' + esc(b.img) + '" alt="实际投注票样" loading="lazy"><div class="bt-zoom">点击放大 🔍</div></a>' +
             (b.note ? '<div class="bet-note">' + esc(b.note) + '</div>' : '');
         }).join('') + '</div>';
     }
     if (day.analysis) {
-      html += '<a class="analysis-link" href="#analysis-' + esc(day.date) + '"><span>📋 ' +
+      html += '<a class="analysis-link" href="#!" data-modal="analysis" data-date="' + esc(day.date) + '"><span>📋 ' +
         esc(day.date.slice(5).replace('-', '')) + ' 完整分析</span><span class="al-sub">日柱框架 · 五式判定 · 逐场拆解 ↗</span></a>';
     }
     if (day.fivePillars) {
-      html += '<a class="analysis-link" href="#wushi-' + esc(day.date) + '"><span>☯️ ' +
+      html += '<a class="analysis-link" href="#!" data-modal="wushi" data-date="' + esc(day.date) + '"><span>☯️ ' +
         esc(day.date.slice(5).replace('-', '')) + ' 五式详解</span><span class="al-sub">八字 · 紫微 · 奇门 · 六壬 · 六爻 ↗</span></a>';
     }
     return html;
   }
 
-  // ---- 方案详解弹窗（每天每层一个，hash :target 打开） ----
-  renderPlanModals(days);
-  function renderPlanModals(days) {
-    var html = '';
-    days.forEach(function (day) {
-      (Array.isArray(day.plan) ? day.plan : []).forEach(function (t, i) {
-        var c = TIER_COLORS[i % TIER_COLORS.length];
-        html += '<div class="modal" id="tier-' + esc(day.date) + '-' + i + '">' +
-          '<a class="modal-mask" href="#!"></a>' +
-          '<div class="modal-box" style="border-top:4px solid ' + c + '">' +
-          '<a class="modal-close" href="#!">×</a>' +
-          '<h3>' + esc(t.name) + planBadge(t) + '<span class="m-pct">' + esc(t.pct) + '</span><span class="m-date">' + esc(day.date) + ' · ' + ((t.market || 'jc') === 'std' ? '标准盘' : '竞彩') + '</span></h3>' +
-          '<div class="modal-text">' + esc(t.detail || t.text) + '</div>' +
-          '</div></div>';
-      });
-      if (day.analysis) {
-        html += '<div class="modal" id="analysis-' + esc(day.date) + '">' +
-          '<a class="modal-mask" href="#!"></a>' +
-          '<div class="modal-box" style="border-top:4px solid var(--honey)">' +
-          '<a class="modal-close" href="#!">×</a>' +
-          '<h3>📋 ' + esc(day.date) + ' 完整分析</h3>' +
-          '<div class="modal-text">' + esc(day.analysis) + '</div>' +
-          '</div></div>';
-      }
-      if (day.fivePillars) {
-        html += '<div class="modal" id="wushi-' + esc(day.date) + '">' +
-          '<a class="modal-mask" href="#!"></a>' +
-          '<div class="modal-box" style="border-top:4px solid #8B5CF6">' +
-          '<a class="modal-close" href="#!">×</a>' +
-          '<h3>☯️ ' + esc(day.date) + ' 五式详解（八字 · 紫微 · 奇门 · 六壬 · 六爻）</h3>' +
-          '<div class="modal-text">' + esc(day.fivePillars) + '</div>' +
-          '</div></div>';
-      }
-      (Array.isArray(day.actualBets) ? day.actualBets : []).forEach(function (b, i) {
-        html += '<div class="modal" id="bet-' + esc(day.date) + '-' + i + '">' +
-          '<a class="modal-mask" href="#!"></a>' +
-          '<img class="modal-img" src="' + esc(b.img) + '" alt="实际投注票样">' +
-          '</div>';
-      });
-    });
-    document.getElementById('planModals').innerHTML = html;
+  // ---- 通用弹窗（按需生成）：单一容器 + JS 填内容，替代原 125 个预生成 :target 弹窗 ----
+  function openModal(titleHtml, bodyHtml, color) {
+    document.getElementById('modalRoot').innerHTML =
+      '<div class="modal-open"><div class="modal-mask" data-close-modal></div>' +
+      '<div class="modal-box"' + (color ? ' style="border-top:4px solid ' + color + '"' : '') + '>' +
+      '<button type="button" class="modal-close" data-close-modal>×</button>' +
+      '<h3>' + titleHtml + '</h3>' +
+      '<div class="modal-text">' + bodyHtml + '</div>' +
+      '</div></div>';
   }
+  function openModalImg(src) {
+    document.getElementById('modalRoot').innerHTML =
+      '<div class="modal-open"><div class="modal-mask" data-close-modal></div>' +
+      '<img class="modal-img" src="' + src + '" alt="实际投注票样"></div>';
+  }
+  function closeModal() { document.getElementById('modalRoot').innerHTML = ''; }
+
+  // ---- 弹窗 / 折叠 / 展开 统一事件委托 ----
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest ? e.target : null;
+    if (!el) return;
+    var closer = el.closest('[data-close-modal]');
+    if (closer) { closeModal(); return; }
+    var trig = el.closest('[data-modal]');
+    if (trig) {
+      e.preventDefault();
+      var type = trig.getAttribute('data-modal');
+      var date = trig.getAttribute('data-date');
+      var idx = parseInt(trig.getAttribute('data-idx') || '0', 10);
+      var day = byDate[date];
+      if (!day) return;
+      if (type === 'tier') {
+        var t = day.plan[idx];
+        if (!t) return;
+        openModal(
+          esc(t.name) + planBadge(t) + '<span class="m-pct">' + esc(t.pct) + '</span><span class="m-date">' + esc(day.date) + ' · ' + ((t.market || 'jc') === 'std' ? '标准盘' : '竞彩') + '</span>',
+          esc(t.detail || t.text),
+          TIER_COLORS[idx % TIER_COLORS.length]);
+      } else if (type === 'analysis') {
+        openModal('📋 ' + esc(day.date) + ' 完整分析', esc(day.analysis), 'var(--honey)');
+      } else if (type === 'wushi') {
+        openModal('☯️ ' + esc(day.date) + ' 五式详解（八字 · 紫微 · 奇门 · 六壬 · 六爻）', esc(day.fivePillars), '#8B5CF6');
+      } else if (type === 'daynote') {
+        openModal('📝 ' + esc(day.date) + ' 当日基调', esc(day.dayNote), 'var(--honey)');
+      } else if (type === 'bet') {
+        var b = (Array.isArray(day.actualBets) ? day.actualBets : [])[idx];
+        if (b) openModalImg(esc(b.img));
+      }
+      return;
+    }
+    var fb = el.closest('.fold-more-btn');
+    if (fb) {
+      var panel = fb.parentElement;
+      var rows = panel.querySelectorAll('.old-row');
+      var showing = fb.getAttribute('data-open') === '1';
+      Array.prototype.forEach.call(rows, function (r) { r.style.display = showing ? 'none' : ''; });
+      fb.setAttribute('data-open', showing ? '0' : '1');
+      fb.textContent = showing ? '展开更早 ' + rows.length + ' 场 ▾' : '收起 ▲';
+      return;
+    }
+    var xt = el.closest('.xs-toggle');
+    if (xt) {
+      var dayEl = xt.closest('.xs-day');
+      var post = dayEl ? dayEl.querySelector('.xs-post') : null;
+      if (post) {
+        var open = post.style.display !== 'none';
+        post.style.display = open ? 'none' : '';
+        xt.textContent = open ? '展开推荐帖 ▾' : '收起 ▲';
+      }
+      return;
+    }
+    var an = el.closest('.an-btn');
+    if (an) {
+      var row = an.closest('tr').nextElementSibling;
+      if (row && row.classList.contains('an-row')) {
+        var openRow = row.style.display !== 'none';
+        row.style.display = openRow ? 'none' : '';
+        an.textContent = openRow ? '🔍' : '✖';
+      }
+      return;
+    }
+  });
 
   // ---- 方案层命中面板（6类固定顺序；样本<3 显示「样本不足」） ----
   renderPlanStats(days);
@@ -823,23 +868,54 @@ function renderApp(days) {
         var badge = p.result === 'hit' ? '<span class="hit">红 ✅</span>' : p.result === 'miss' ? '<span class="miss">黑 ❌</span>' : '<span class="wait">待赛</span>';
         return '<span class="xs-pick">' + esc(p.label || '') + ' ' + badge + '</span>';
       }).join('');
-      return '<div class="xs-day"><div class="xs-date">💧 ' + esc(date) + ' 心水公布</div>' +
-        (x.post ? '<div class="xs-post">' + esc(x.post) + '</div>' : '') +
+      return '<div class="xs-day"><div class="xs-date">💧 ' + esc(date) + ' 心水公布' +
+        (x.post ? '<button type="button" class="xs-toggle">展开推荐帖 ▾</button>' : '') + '</div>' +
+        (x.post ? '<div class="xs-post" style="display:none">' + esc(x.post) + '</div>' : '') +
         '<div class="xs-picks">' + picks + '</div></div>';
     }).join('');
     body.innerHTML = sum + html;
   }
 
+  // ---- 专栏通用渲染：累计摘要 + 明细表（默认只显示最近 3 个日期，更早折叠） ----
+  function splitByRecentDates(list, limit) {
+    var seen = {}, dates = [];
+    list.forEach(function (m) { if (!seen[m.date]) { seen[m.date] = true; dates.push(m.date); } });
+    var recentSet = {};
+    dates.slice(0, limit).forEach(function (d) { recentSet[d] = true; });
+    var visible = [], hidden = [];
+    list.forEach(function (m) { (recentSet[m.date] ? visible : hidden).push(m); });
+    return { visible: visible, hidden: hidden };
+  }
+  function renderColumnPanel(bodyId, col, emptyText, sumHtml) {
+    var body = document.getElementById(bodyId);
+    if (!body) return;
+    if (col.matches.length === 0) {
+      body.innerHTML = '<div class="wait" style="font-size:12.5px">' + emptyText + '</div>';
+      return;
+    }
+    function rowHtml(m) {
+      return '<tr><td>' + esc(m.date.slice(5)) + '</td><td>' + esc(m.id) + '</td>' +
+        '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
+        '<td>' + esc(m.direction) + ' / ' + esc(m.overUnder) + '</td>' +
+        '<td>' + (m.finalScore ? '<span class="final">' + esc(m.finalScore) + '</span>' : '<span class="wait">待赛</span>') + '</td>' +
+        '<td>' + mark(m.d) + ' ' + mark(m.o) + ' ' + scoreMark(m.score, m.finalScore, m.scoreSp) + '</td></tr>';
+    }
+    var sp = splitByRecentDates(col.matches, 3);
+    var rows = sp.visible.map(rowHtml).join('') +
+      sp.hidden.map(function (m) { return rowHtml(m).replace('<tr>', '<tr class="old-row" style="display:none">'); }).join('');
+    var html = sumHtml +
+      '<table><tr><th>日期</th><th>编号</th><th>对阵</th><th>预测（方向/大小）</th><th>赛果</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>';
+    if (sp.hidden.length > 0) {
+      html += '<button type="button" class="fold-more-btn" data-open="0">展开更早 ' + sp.hidden.length + ' 场 ▾</button>';
+    }
+    body.innerHTML = html;
+  }
+
   // ---- 日韩专栏（id 以「日职」/「韩K」开头的场次单独累计，附竞彩方向对照） ----
   renderJK(days);
   function renderJK(days) {
-    var body = document.getElementById('jkBody');
-    if (!body || typeof StatsLib.computeJK !== 'function') return;
+    if (typeof StatsLib.computeJK !== 'function') return;
     var jk = StatsLib.computeJK(days);
-    if (jk.matches.length === 0) {
-      body.innerHTML = '<div class="wait" style="font-size:12.5px">还没有日韩场次记录，小熊等补充场 🐾</div>';
-      return;
-    }
     var p = jk.plan, pTot = p.hit + p.half + p.miss;
     var pRate = pTot === 0 ? '—' : Math.round((p.hit + 0.5 * p.half) / pTot * 100) + '%';
     function item(lbl, fracTxt, rateTxt) {
@@ -852,27 +928,14 @@ function renderApp(days) {
       item('🎌 方案块', p.hit + '红' + p.miss + '黑' + (p.half > 0 ? p.half + '半' : '') + (p.push > 0 ? p.push + '走水' : ''), pRate) +
       item('📊 对照·竞彩方向', frac(jk.jcDirection), pct(jk.jcDirection.rate)) +
       '</div>';
-    var rows = jk.matches.map(function (m) {
-      return '<tr><td>' + esc(m.date.slice(5)) + '</td><td>' + esc(m.id) + '</td>' +
-        '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
-        '<td>' + esc(m.direction) + ' / ' + esc(m.overUnder) + '</td>' +
-        '<td>' + (m.finalScore ? '<span class="final">' + esc(m.finalScore) + '</span>' : '<span class="wait">待赛</span>') + '</td>' +
-        '<td>' + mark(m.d) + ' ' + mark(m.o) + ' ' + scoreMark(m.score, m.finalScore, m.scoreSp) + '</td></tr>';
-    }).join('');
-    body.innerHTML = sum +
-      '<table><tr><th>日期</th><th>编号</th><th>对阵</th><th>预测（方向/大小）</th><th>赛果</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>';
+    renderColumnPanel('jkBody', jk, '还没有日韩场次记录，小熊等补充场 🐾', sum);
   }
 
   // ---- 北单专栏（id 以「北单」开头的场次单独累计，附竞彩方向对照） ----
   renderBeidan(days);
   function renderBeidan(days) {
-    var body = document.getElementById('beidanBody');
-    if (!body || typeof StatsLib.computeBeidan !== 'function') return;
+    if (typeof StatsLib.computeBeidan !== 'function') return;
     var bd = StatsLib.computeBeidan(days);
-    if (bd.matches.length === 0) {
-      body.innerHTML = '<div class="wait" style="font-size:12.5px">还没有北单场次记录，小熊等补充场 🐾</div>';
-      return;
-    }
     var p = bd.plan, pTot = p.hit + p.half + p.miss;
     var pRate = pTot === 0 ? '—' : Math.round((p.hit + 0.5 * p.half) / pTot * 100) + '%';
     function item(lbl, fracTxt, rateTxt) {
@@ -885,15 +948,7 @@ function renderApp(days) {
       item('🀄 方案块', p.hit + '红' + p.miss + '黑' + (p.half > 0 ? p.half + '半' : '') + (p.push > 0 ? p.push + '走水' : ''), pRate) +
       item('📊 对照·竞彩方向', frac(bd.jcDirection), pct(bd.jcDirection.rate)) +
       '</div>';
-    var rows = bd.matches.map(function (m) {
-      return '<tr><td>' + esc(m.date.slice(5)) + '</td><td>' + esc(m.id) + '</td>' +
-        '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
-        '<td>' + esc(m.direction) + ' / ' + esc(m.overUnder) + '</td>' +
-        '<td>' + (m.finalScore ? '<span class="final">' + esc(m.finalScore) + '</span>' : '<span class="wait">待赛</span>') + '</td>' +
-        '<td>' + mark(m.d) + ' ' + mark(m.o) + ' ' + scoreMark(m.score, m.finalScore, m.scoreSp) + '</td></tr>';
-    }).join('');
-    body.innerHTML = sum +
-      '<table><tr><th>日期</th><th>编号</th><th>对阵</th><th>预测（方向/大小）</th><th>赛果</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>';
+    renderColumnPanel('beidanBody', bd, '还没有北单场次记录，小熊等补充场 🐾', sum);
   }
 
   // ---- 小熊成绩单 ----
@@ -954,7 +1009,8 @@ function renderApp(days) {
       : '<span class="badge good">⚽ 方向 ' + ds.direction.score + '/' + ds.direction.total + '</span>';
     return '<div class="day-card open" id="day-' + esc(day.date) + '">' +
       '<div class="day-head"><div><div class="day-title">' + esc(day.date) + '</div>' +
-      '<div class="day-meta">' + esc(day.dayPillar || '') + (day.dayNote ? ' · ' + esc(day.dayNote) : '') + ' · ' + ds.matches + ' 场</div></div>' +
+      '<div class="day-meta">' + esc(day.dayPillar || '') + ' · ' + ds.matches + ' 场' +
+      (day.dayNote ? ' · <a href="#!" data-modal="daynote" data-date="' + esc(day.date) + '" class="daynote-link">📝 当日基调</a>' : '') + '</div></div>' +
       badge + '</div>' +
       '<div class="day-body">' + matchGroups(day) +
       (day.review ? '<div class="review"><b>🔍 复盘结论：</b>' + esc(day.review) + '</div>' : '') +
@@ -999,17 +1055,6 @@ function renderApp(days) {
     var odd = idx >= 0 && Array.isArray(scoreSp) && scoreSp[idx] ? '(' + esc(scoreSp[idx]) + ')' : '';
     return '<span class="hit">✅' + odd + '</span>';
   }
-
-  // 每场分析展开键（🔍）：事件委托一次注册，切换分析行显隐
-  document.addEventListener('click', function (e) {
-    var b = e.target.closest ? e.target.closest('.an-btn') : null;
-    if (!b) return;
-    var row = b.closest('tr').nextElementSibling;
-    if (!row || !row.classList.contains('an-row')) return;
-    var open = row.style.display !== 'none';
-    row.style.display = open ? 'none' : '';
-    b.textContent = open ? '🔍' : '✖';
-  });
 
   function matchTable(day) {
     var rows = day.matches.map(function (m) {
