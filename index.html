@@ -14,6 +14,7 @@
     --coral:#F25C5C; --amber-bg:#FFF1D6;
   }
   * { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
   body {
     background:linear-gradient(160deg,#FFF9EE 0%,#FFEFD2 55%,#FFE7BD 100%);
     min-height:100vh;
@@ -181,6 +182,13 @@
   main > .sec-title:first-child { margin-top:0; }
   .sec-title .sec-sub { font-size:12px; color:var(--muted); font-weight:400; margin-left:6px; }
 
+  /* ---- 顶部分区导航 ---- */
+  .sec-nav { position:sticky; top:10px; z-index:40; display:flex; gap:6px; margin-bottom:16px; padding:6px; background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:0 4px 14px rgba(169,113,61,.10); }
+  .sec-nav-item { flex:1; text-align:center; text-decoration:none; font-size:13.5px; font-weight:800; color:var(--brown-soft); padding:9px 0; border-radius:10px; transition:background .15s ease, color .15s ease; }
+  .sec-nav-item:hover { background:var(--amber-bg); color:var(--brown); }
+  .sec-nav-item.active { background:var(--honey); color:#fff; }
+  section[id] { scroll-margin-top:72px; }
+
   .day-card {
     background:var(--card); border:1px solid var(--line); border-radius:18px; margin-bottom:14px;
     overflow:hidden; box-shadow:0 4px 14px rgba(169,113,61,.10);
@@ -314,44 +322,56 @@
 <div class="layout">
   <aside id="hongheiSidebar"></aside>
   <main>
-    <div class="poster-frame"><img src="assets/ai-poster.png" alt="AI小熊主题海报">
-      <div class="poster-overlay"><h2>AI小熊</h2><p>体育心得分享</p></div>
-      <div class="poster-badges"><span>⚽ 竞彩方案</span><span>📊 标准盘</span><span>🐻 每日红黑</span></div>
-    </div>
-    <div class="cards" id="statCards"></div>
-    <h2 class="sec-title">📊 每日预测总览</h2>
-    <div id="dailyList"></div>
-    <div id="planBlocks"></div>
+    <nav class="sec-nav" id="secNav">
+      <a href="#sec-today" class="sec-nav-item active">📌 今日</a>
+      <a href="#sec-history" class="sec-nav-item">📈 历史战绩</a>
+      <a href="#sec-columns" class="sec-nav-item">🗂 专栏</a>
+    </nav>
 
-    <div class="panel" id="planStatsPanel">
-      <h2>🎯 方案层命中<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">按方案类型累计 · 半红计0.5 · 走水不计</span></h2>
-      <div id="planStatsBody"></div>
-    </div>
+    <section id="sec-today">
+      <div class="poster-frame"><img src="assets/ai-poster.png" alt="AI小熊主题海报">
+        <div class="poster-overlay"><h2>AI小熊</h2><p>体育心得分享</p></div>
+        <div class="poster-badges"><span>⚽ 竞彩方案</span><span>📊 标准盘</span><span>🐻 每日红黑</span></div>
+      </div>
+      <div class="cards" id="statCards"></div>
+      <h2 class="sec-title">📊 每日预测总览</h2>
+      <div id="dailyList"></div>
+      <div id="planBlocks"></div>
+    </section>
 
-    <div class="panel" id="xinshuiPanel">
-      <h2>💧 心水公布记录<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">竞彩为主 · 每日3-4场社媒风推荐 · 红黑单独累计</span></h2>
-      <div id="xinshuiBody"></div>
-    </div>
+    <section id="sec-history">
+      <div class="panel" id="planStatsPanel">
+        <h2>🎯 方案层命中<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">按方案类型累计 · 半红计0.5 · 走水不计</span></h2>
+        <div id="planStatsBody"></div>
+      </div>
 
-    <div class="panel" id="jkPanel">
-      <h2>🎌 日韩专栏<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">每轮J联赛/K联赛各4场 · 与竞彩分开累计 · 方向/大小/比分 + 方案块</span></h2>
-      <div id="jkBody"></div>
-    </div>
+      <div class="panel">
+        <h2>📈 近14日方向命中率</h2>
+        <svg id="trendChart" viewBox="0 0 720 220" width="100%"></svg>
+      </div>
 
-    <div class="panel" id="beidanPanel">
-      <h2>🀄 北单专栏<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">与竞彩分开累计 · 方向/大小/比分 + 方案块</span></h2>
-      <div id="beidanBody"></div>
-    </div>
+      <div class="panel">
+        <h2>🏆 联赛分布（方向命中）</h2>
+        <table id="leagueTable"></table>
+      </div>
+    </section>
 
-    <div class="panel">
-      <h2>📈 近14日方向命中率</h2>
-      <svg id="trendChart" viewBox="0 0 720 220" width="100%"></svg>
-    </div>
+    <section id="sec-columns">
+      <div class="panel" id="xinshuiPanel">
+        <h2>💧 心水公布记录<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">竞彩为主 · 每日3-4场社媒风推荐 · 红黑单独累计</span></h2>
+        <div id="xinshuiBody"></div>
+      </div>
 
-    <div class="panel">
-      <h2>🏆 联赛分布（方向命中）</h2>
-      <table id="leagueTable"></table>
-    </div>
+      <div class="panel" id="jkPanel">
+        <h2>🎌 日韩专栏<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">每轮J联赛/K联赛各4场 · 与竞彩分开累计 · 方向/大小/比分 + 方案块</span></h2>
+        <div id="jkBody"></div>
+      </div>
+
+      <div class="panel" id="beidanPanel">
+        <h2>🀄 北单专栏<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">与竞彩分开累计 · 方向/大小/比分 + 方案块</span></h2>
+        <div id="beidanBody"></div>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -371,6 +391,18 @@ var SUPABASE_ANON_KEY = 'sb_publishable_QVvDcCQFfcTvVpVFmeqEQA_N1xNjGZW';
 function esc(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
+
+// ---- 顶部分区导航：点击高亮当前 Tab ----
+(function () {
+  var items = document.querySelectorAll('.sec-nav-item');
+  if (!items.length) return;
+  Array.prototype.forEach.call(items, function (a) {
+    a.addEventListener('click', function () {
+      Array.prototype.forEach.call(items, function (x) { x.classList.remove('active'); });
+      a.classList.add('active');
+    });
+  });
+})();
 
 // ---- 会员门：dev 模式 → 本地数据直渲；占位配置 → 整理中；否则走登录四态（注册→📧邮箱确认→🍯审核→内容） ----
 (function () {
@@ -639,7 +671,7 @@ function renderApp(days) {
       if (day) {
         cls += ' has';
         var st = StatsLib.computeDayStats(day);
-        if (st.direction.total > 0) hb = '<span class="hb"><span class="r">' + st.direction.score + '红</span> <span class="b">' + (st.direction.total - st.direction.score) + '黑</span></span>';
+        if (st.direction.total > 0) hb = '<span class="hb" title="' + st.direction.score + '红 ' + (st.direction.total - st.direction.score) + '黑"><span class="r">' + st.direction.score + '</span><span class="b">/' + (st.direction.total - st.direction.score) + '</span></span>';
         else if (st.pending > 0) hb = '<span class="hb">🍯</span>';
       }
       if (ds2 === calState.sel) cls += ' sel';
