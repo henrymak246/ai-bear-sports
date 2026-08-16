@@ -966,16 +966,18 @@ function renderApp(days) {
     if (!day) { box.innerHTML = ''; return; }
     var d7 = day.dream7;
     var rows = d7.legs.map(function (leg, i) {
+      var mark = leg.result === 'hit' ? '<span class="hit">红 ✅</span>' : leg.result === 'miss' ? '<span class="miss">黑 ❌</span>' : '<span class="wait">待赛</span>';
       return '<tr><td>' + (i + 1) + '</td>' +
         '<td><span class="d7-league">' + esc(leg.league || '—') + '</span></td>' +
         '<td>' + esc(leg.match) + '</td>' +
         '<td><span class="d7-pick">' + esc(leg.pick) + '</span></td>' +
         '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
-        '<td class="d7-reason">' + esc(leg.reason) + '</td></tr>';
+        '<td class="d7-reason">' + esc(leg.reason) + '</td>' +
+        '<td>' + mark + '</td></tr>';
     }).join('');
     box.innerHTML =
       '<div class="panel dream7-panel"><h2>🎰 梦想7关（非日韩）<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 全中约 ' + esc(d7.totalOdds || '—') + ' · 过关串娱乐小注</span></h2>' +
-      '<table class="d7-table"><tr><th>关</th><th>联赛</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th></tr>' + rows + '</table>' +
+      '<table class="d7-table"><tr><th>关</th><th>联赛</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th><th>红黑</th></tr>' + rows + '</table>' +
       (d7.note ? '<div class="plan-note">⚠️ ' + esc(d7.note) + '</div>' : '') +
       '</div>';
   }
@@ -989,16 +991,18 @@ function renderApp(days) {
     if (!day) { box.innerHTML = ''; return; }
     var hc = day.hc7;
     var rows = hc.legs.map(function (leg, i) {
+      var mark = leg.result === 'hit' ? '<span class="hit">红 ✅</span>' : leg.result === 'miss' ? '<span class="miss">黑 ❌</span>' : '<span class="wait">待赛</span>';
       return '<tr><td>' + (i + 1) + '</td>' +
         '<td><span class="d7-league">' + esc(leg.league || '—') + '</span></td>' +
         '<td>' + esc(leg.match) + '</td>' +
         '<td><span class="d7-pick">' + esc(leg.pick) + '</span></td>' +
         '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
-        '<td class="d7-reason">' + esc(leg.reason) + '</td></tr>';
+        '<td class="d7-reason">' + esc(leg.reason) + '</td>' +
+        '<td>' + mark + '</td></tr>';
     }).join('');
     box.innerHTML =
       '<div class="panel hc7-panel"><h2>🎯 竞彩让球7关<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 全中约 ' + esc(hc.totalOdds || '—') + ' · 竞彩让球胜平负口径</span></h2>' +
-      '<table class="d7-table"><tr><th>关</th><th>联赛</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th></tr>' + rows + '</table>' +
+      '<table class="d7-table"><tr><th>关</th><th>联赛</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th><th>红黑</th></tr>' + rows + '</table>' +
       (hc.note ? '<div class="plan-note">⚠️ ' + esc(hc.note) + '</div>' : '') +
       '</div>';
   }
