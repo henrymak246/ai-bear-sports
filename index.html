@@ -88,6 +88,11 @@
 
   /* ---- 🪙 小熊摇卦栏目 ---- */
   .yaogua-panel { border-top:4px solid #B7791F; text-align:center; }
+  .yg-match { display:flex; align-items:center; justify-content:center; gap:10px; margin:2px 0 12px; flex-wrap:wrap; }
+  .yg-match-lbl { font-size:13px; font-weight:700; color:var(--brown); }
+  .yg-match-sel { border:1px solid var(--line); background:var(--card); border-radius:10px; padding:8px 12px; font-size:13px; color:var(--brown); font-family:inherit; max-width:340px; cursor:pointer; }
+  .yg-match-sel:focus { outline:none; border-color:var(--honey); }
+  .yg-hex .gh-target { font-size:13px; font-weight:700; color:var(--honey-dark); margin-bottom:6px; }
   .yaogua-stage { margin:14px auto 6px; max-width:360px; }
   .yaogua-stage svg { width:100%; max-width:230px; display:block; margin:0 auto; transform-origin:50% 72%; }
   .yaogua-stage.shaking svg { animation:ygShake .7s ease-in-out; }
@@ -431,6 +436,12 @@
     <section id="sec-yaogua">
       <div class="panel yaogua-panel">
         <h2>🪙 小熊摇卦<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">三枚铜钱 · 六爻纳甲 · 摇六次成卦</span></h2>
+        <div class="yg-match">
+          <span class="yg-match-lbl">🎯 选择比赛</span>
+          <select id="ygMatch" class="yg-match-sel">
+            <option value="">— 先选一场比赛再摇 —</option>
+          </select>
+        </div>
         <div class="yaogua-stage" id="ygStage">
           <svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="小熊摇卦">
             <circle cx="88" cy="48" r="18" fill="#A9713D"/><circle cx="152" cy="48" r="18" fill="#A9713D"/>
@@ -475,6 +486,20 @@ var SUPABASE_ANON_KEY = 'sb_publishable_QVvDcCQFfcTvVpVFmeqEQA_N1xNjGZW';
 
 function esc(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ---- 摇卦：把最新一天竞彩场次填入比赛选择下拉框 ----
+function fillYgMatches(days) {
+  var sel = document.getElementById('ygMatch');
+  if (!sel) return;
+  var day = (days && days.length) ? days[0] : null;
+  var matches = day ? (day.matches || []) : [];
+  var html = '<option value="">— 先选一场比赛再摇 —</option>';
+  matches.forEach(function (m) {
+    var val = m.id + ' ' + m.home + ' vs ' + m.away;
+    html += '<option value="' + esc(val) + '">' + esc(val) + '（' + esc(m.league) + '）</option>';
+  });
+  sel.innerHTML = html;
 }
 
 // ---- 顶部分区导航：点击高亮当前 Tab ----
@@ -598,7 +623,10 @@ function esc(s) {
     var sym = TSYM[key >> 3] + ' ' + TSYM[key & 7];
     var moving = lines.filter(function (l) { return l === 'old-yang' || l === 'old-yin'; }).length;
     var varNote = moving === 0 ? '六爻安静 · 卦象稳定' : '动爻 ' + moving + ' 处 · 变数较大';
+    var sel = document.getElementById('ygMatch');
+    var target = sel && sel.value ? '<div class="gh-target">🎯 为「' + esc(sel.value) + '」所摇</div>' : '<div class="gh-target">🎯 未选择比赛（通用卦象）</div>';
     hexBox.innerHTML =
+      target +
       '<div class="gh-name">' + info[0] + '</div>' +
       '<div class="gh-sym">' + sym + '</div>' +
       '<div class="gh-text">⚽ ' + info[1] + '</div>' +
@@ -853,6 +881,7 @@ function renderApp(days) {
   }
   document.getElementById('dataInfo').textContent =
     '小熊已记录 ' + days.length + ' 天 · 最新：' + (days[0] ? days[0].date : '—') + ' 🐾';
+  fillYgMatches(days);
 
   function pct(r) { return r === null ? '—' : Math.round(r * 100) + '%'; }
   function planBadge(t) {
