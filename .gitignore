@@ -1,5 +1,6 @@
 dist/
 football-site-pages.zip
 data/predictions.js
+data/_*.txt
 tools/.env
 tools/node_modules/
