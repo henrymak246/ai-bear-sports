@@ -85,6 +85,52 @@
   .d7-pick { font-weight:800; color:var(--honey-dark); white-space:nowrap; }
   .d7-odds { font-variant-numeric:tabular-nums; font-weight:700; color:var(--brown); white-space:nowrap; }
   .d7-reason { color:var(--brown-soft); font-size:12px; line-height:1.6; }
+
+  /* ---- 🪙 小熊摇卦栏目 ---- */
+  .yaogua-panel { border-top:4px solid #B7791F; text-align:center; }
+  .yaogua-stage { margin:14px auto 6px; max-width:360px; }
+  .yaogua-stage svg { width:100%; max-width:230px; display:block; margin:0 auto; transform-origin:50% 72%; }
+  .yaogua-stage.shaking svg { animation:ygShake .7s ease-in-out; }
+  @keyframes ygShake {
+    0%,100% { transform:rotate(0); }
+    20% { transform:rotate(-10deg); }
+    40% { transform:rotate(9deg); }
+    60% { transform:rotate(-6deg); }
+    80% { transform:rotate(5deg); }
+  }
+  .yg-coins { display:flex; justify-content:center; gap:14px; margin:8px 0 2px; min-height:54px; align-items:center; }
+  .yg-coin {
+    width:52px; height:52px; border-radius:50%; position:relative;
+    background:radial-gradient(circle at 35% 35%, #F7D774, #D9A62E 60%, #B8860B);
+    box-shadow:0 3px 8px rgba(139,90,43,.35), inset 0 0 0 3px #C89B3C;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .yg-coin::after { content:''; width:18px; height:18px; background:#B8860B; border-radius:3px; }
+  .yg-coin.back { background:radial-gradient(circle at 35% 35%, #8B7355, #5C4A32 70%); box-shadow:0 3px 8px rgba(74,58,40,.35), inset 0 0 0 3px #4A3220; }
+  .yg-coin.back::after { background:#3A2A1A; }
+  .yg-coin.pop { animation:ygPop .38s ease; }
+  @keyframes ygPop { 0% { transform:translateY(-22px) scale(.5); opacity:0; } 70% { transform:translateY(3px) scale(1.12); } 100% { transform:translateY(0) scale(1); opacity:1; } }
+  .yg-btn {
+    display:inline-block; border:none; border-radius:999px; padding:11px 30px; font-size:15px; font-weight:800;
+    background:var(--honey); color:#fff; cursor:pointer; font-family:inherit;
+    box-shadow:0 4px 14px rgba(245,166,35,.35); transition:transform .15s ease, background .15s ease;
+  }
+  .yg-btn:hover { background:var(--honey-dark); transform:translateY(-2px); }
+  .yg-btn:disabled { opacity:.6; cursor:default; transform:none; }
+  .yg-lines { display:flex; flex-direction:column-reverse; gap:6px; align-items:center; margin:16px 0; }
+  .yg-line { display:flex; align-items:center; justify-content:center; gap:12px; font-size:12.5px; color:var(--brown-soft); min-height:26px; padding:3px 10px; border-radius:8px; }
+  .yg-line .seg { display:inline-block; height:11px; border-radius:5px; background:var(--brown); }
+  .yg-line .seg.yang { width:56px; }
+  .yg-line .seg.yin { width:23px; }
+  .yg-line .seg.yin + .seg.yin { margin-left:10px; }
+  .yg-line .seg.old { background:var(--coral); }
+  .yg-line .lbl { min-width:34px; font-weight:700; }
+  .yg-line.current { background:var(--amber-bg); font-weight:800; color:var(--brown); }
+  .yg-hex { margin-top:12px; padding-top:14px; border-top:1px dashed var(--line); }
+  .yg-hex .gh-name { font-size:19px; font-weight:800; color:var(--brown); }
+  .yg-hex .gh-sym { font-size:38px; margin:6px 0; letter-spacing:6px; }
+  .yg-hex .gh-text { font-size:13px; color:var(--brown-soft); line-height:1.75; text-align:left; max-width:520px; margin:0 auto; }
+  .yg-hex .gh-var { margin-top:8px; font-size:12.5px; color:var(--honey-dark); font-weight:700; }
   .plan-group-title { font-size:13.5px; font-weight:800; color:var(--brown); margin:16px 0 10px; display:flex; align-items:center; gap:8px; }
   .plan-group-title:first-of-type { margin-top:0; }
   .plan-group-title .pg-tag { font-size:10.5px; color:var(--muted); font-weight:400; }
@@ -333,6 +379,7 @@
       <a href="#sec-today" class="sec-nav-item active">📌 今日</a>
       <a href="#sec-history" class="sec-nav-item">📈 历史战绩</a>
       <a href="#sec-columns" class="sec-nav-item">🗂 专栏</a>
+      <a href="#sec-yaogua" class="sec-nav-item">🪙 摇卦</a>
     </nav>
 
     <section id="sec-today">
@@ -380,6 +427,36 @@
         <div id="beidanBody"></div>
       </div>
     </section>
+
+    <section id="sec-yaogua">
+      <div class="panel yaogua-panel">
+        <h2>🪙 小熊摇卦<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">三枚铜钱 · 六爻纳甲 · 摇六次成卦</span></h2>
+        <div class="yaogua-stage" id="ygStage">
+          <svg viewBox="0 0 240 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="小熊摇卦">
+            <circle cx="88" cy="48" r="18" fill="#A9713D"/><circle cx="152" cy="48" r="18" fill="#A9713D"/>
+            <circle cx="88" cy="48" r="9" fill="#EFC9A2"/><circle cx="152" cy="48" r="9" fill="#EFC9A2"/>
+            <circle cx="120" cy="82" r="42" fill="#BC8150"/>
+            <path d="M120 40 q2 -10 10 -12" stroke="#A9713D" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <circle cx="106" cy="74" r="5.5" fill="#3A2A1A"/><circle cx="134" cy="74" r="5.5" fill="#3A2A1A"/>
+            <circle cx="108" cy="72" r="2" fill="#fff"/><circle cx="136" cy="72" r="2" fill="#fff"/>
+            <ellipse cx="94" cy="90" rx="8" ry="5" fill="#F5A3A3" opacity=".85"/><ellipse cx="146" cy="90" rx="8" ry="5" fill="#F5A3A3" opacity=".85"/>
+            <ellipse cx="120" cy="94" rx="18" ry="14" fill="#F7DCB9"/><ellipse cx="120" cy="88" rx="6" ry="5" fill="#4A3220"/>
+            <path d="M120 93 v4 M120 97 q-5 5 -10 2 M120 97 q5 5 10 2" stroke="#4A3220" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <ellipse cx="120" cy="168" rx="48" ry="46" fill="#BC8150"/>
+            <ellipse cx="120" cy="172" rx="30" ry="30" fill="#F7DCB9"/>
+            <ellipse cx="78" cy="158" rx="16" ry="22" fill="#BC8150" transform="rotate(28 78 158)"/>
+            <ellipse cx="162" cy="158" rx="16" ry="22" fill="#BC8150" transform="rotate(-28 162 158)"/>
+            <ellipse cx="120" cy="160" rx="34" ry="26" fill="#6B4F3A"/>
+            <ellipse cx="120" cy="156" rx="30" ry="22" fill="#8A6B4F"/>
+            <path d="M120 134 v44 M98 148 h44 M109 140 l22 40 M131 140 l-22 40" stroke="#6B4F3A" stroke-width="2.5" fill="none"/>
+          </svg>
+        </div>
+        <div class="yg-coins" id="ygCoins" aria-live="polite"></div>
+        <button type="button" class="yg-btn" id="ygBtn">🪙 开始摇卦</button>
+        <div class="yg-lines" id="ygLines"></div>
+        <div class="yg-hex" id="ygHex"></div>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -410,6 +487,150 @@ function esc(s) {
       a.classList.add('active');
     });
   });
+})();
+
+// ---- 🪙 小熊摇卦（三枚铜钱 · 六爻纳甲） ----
+(function () {
+  var stage = document.getElementById('ygStage');
+  var btn = document.getElementById('ygBtn');
+  var coinsBox = document.getElementById('ygCoins');
+  var linesBox = document.getElementById('ygLines');
+  var hexBox = document.getElementById('ygHex');
+  if (!btn) return;
+
+  var TSYM = { 7:'☰', 6:'☱', 5:'☲', 4:'☳', 3:'☴', 2:'☵', 1:'☶', 0:'☷' };
+  // 六十四卦：索引 = 上卦键*8 + 下卦键（八卦键：乾7兑6离5震4巽3坎2艮1坤0）
+  var HEX = [
+    ['坤为地','纯阴守成，闷局低比分，顺势守正'],
+    ['地山谦','谦逊稳进，小胜格局，低进失'],
+    ['地水师','纪律用兵，靠防守与秩序取胜'],
+    ['地风升','稳步上升，强队渐入佳境'],
+    ['地雷复','一阳来复，回暖反弹，防冷门'],
+    ['地火明夷','光明受损，热门队被压制，防翻车'],
+    ['地泽临','临近上升，气势占优但勿冒进'],
+    ['地天泰','通泰顺遂，正路格局，强队稳'],
+    ['山地剥','剥落衰退，阳被层层消解，不宜冒进重注'],
+    ['艮为山','静止沉闷，节奏慢，小球倾向'],
+    ['山水蒙','未明难决，谨慎观望，勿盲下注'],
+    ['山风蛊','拨乱反正，变数大，防意外'],
+    ['山雷颐','颐养守正，稳守反击，低比分'],
+    ['山火贲','表面光鲜，实力未及，防虚火'],
+    ['山泽损','损己利人，消耗战，双方都难大胜'],
+    ['山天大畜','大积蓄，强队底蕴厚，正路但穿盘难'],
+    ['水地比','亲比和气，均势，易平'],
+    ['水山蹇','艰难险阻，进球难，小球强信号'],
+    ['坎为水','重险重重，胶着苦战，防拖平'],
+    ['水风井','稳定不变，低进球，节奏慢'],
+    ['水雷屯','初创艰难，开局僵持，后程才开'],
+    ['水火既济','已成但盛极防变，正路小胜'],
+    ['水泽节','节制收敛，小球，防守局'],
+    ['水天需','等待时机，宜守不宜攻，小球'],
+    ['风地观','观察等待，谨慎试探，低比分'],
+    ['风山渐','渐进慢热，节奏舒缓，后程发力'],
+    ['风水涣','涣散失守，防防线崩，大球倾向'],
+    ['巽为风','渗透渗透，技术流，小胜'],
+    ['风雷益','增益进攻，双方有球，大球倾向'],
+    ['风火家人','内部有序，稳健队受益'],
+    ['风泽中孚','诚信稳定，正路，不宜追高'],
+    ['风天小畜','蓄势未发，小成，1球小胜'],
+    ['雷地豫','愉悦但防懈怠，强队易被偷袭'],
+    ['雷山小过','小有过度，宜守不宜冒进，小胜'],
+    ['雷水解','解除缓解，后程发力，先闷后开'],
+    ['雷风恒','恒久守常，稳定队受益，胶着'],
+    ['震为雷','震动激烈，对抗强，进球难料'],
+    ['雷火丰','丰盛大场面，盛极防变，大球但防翻车'],
+    ['雷泽归妹','名分不正，防翻车爆冷'],
+    ['雷天大壮','强盛但忌逞强，强队正路，防红牌'],
+    ['火地晋','晋升前进，主队势头足'],
+    ['火山旅','旅途漂泊，客队不利，主队占优'],
+    ['火水未济','未成待定，变数未定，谨慎'],
+    ['火风鼎','鼎新正路，强队体系受益'],
+    ['火雷噬嗑','咬合突破，激烈对攻，大球'],
+    ['离为火','双火对攻，进球多，大球倾向'],
+    ['火泽睽','背离分歧，防爆冷，双选'],
+    ['火天大有','大有所获，强队完胜，正路'],
+    ['泽地萃','人气聚集，主场气势旺'],
+    ['泽山咸','感应平和，均势，易平'],
+    ['泽水困','困顿闷局，预期不兑现，小球+防平'],
+    ['泽风大过','负担过重，变数极大，防翻车'],
+    ['泽雷随','顺势跟随，正路，稳定'],
+    ['泽火革','变革动荡，变数大，防爆冷'],
+    ['兑为泽','喜悦对攻，双方有球，大球'],
+    ['泽天夬','决断分胜负，强队胜但防险'],
+    ['天地否','闭塞不通，强队受阻，防冷门'],
+    ['天山遁','退避泄力，强队留力，小胜'],
+    ['天水讼','争执纠纷，防红牌判罚，胶着'],
+    ['天风姤','偶发相遇，防意外进球，变数'],
+    ['天雷无妄','不妄动则吉，守正者胜，防冒进'],
+    ['天火同人','同心协力，正路，稳胜'],
+    ['天泽履','踩虎尾，谨慎前行，小胜'],
+    ['乾为天','纯阳强健，正路碾压，但防穿盘'],
+  ];
+
+  var lines = [];
+  var running = false;
+  function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function randBit() { return Math.random() < 0.5 ? 0 : 1; }
+
+  function lineHTML(line, i, current) {
+    var seg;
+    if (line === 'yang' || line === 'old-yang') {
+      seg = '<span class="seg yang' + (line === 'old-yang' ? ' old' : '') + '"></span>';
+    } else {
+      seg = '<span class="seg yin' + (line === 'old-yin' ? ' old' : '') + '"></span><span class="seg yin' + (line === 'old-yin' ? ' old' : '') + '"></span>';
+    }
+    var lbl = line === 'old-yang' ? '老阳○动' : line === 'yang' ? '少阳' : line === 'old-yin' ? '老阴×动' : '少阴';
+    return '<div class="yg-line' + (current === i ? ' current' : '') + '"><span class="lbl">' + (i + 1) + '爻</span>' + seg + '<span class="lbl">' + lbl + '</span></div>';
+  }
+  function renderLines(current) {
+    linesBox.innerHTML = lines.map(function (l, i) { return lineHTML(l, i, current); }).join('');
+  }
+  function toBit(t) { return (t === 'yang' || t === 'old-yang') ? 1 : 0; }
+  function keyOf(bits) { return bits[0] * 1 + bits[1] * 2 + bits[2] * 4; }
+  function hexOf(ls) {
+    var low = keyOf([toBit(ls[0]), toBit(ls[1]), toBit(ls[2])]);
+    var high = keyOf([toBit(ls[3]), toBit(ls[4]), toBit(ls[5])]);
+    return high * 8 + low;
+  }
+  function renderHex() {
+    var key = hexOf(lines);
+    var info = HEX[key] || ['未知', ''];
+    var sym = TSYM[key >> 3] + ' ' + TSYM[key & 7];
+    var moving = lines.filter(function (l) { return l === 'old-yang' || l === 'old-yin'; }).length;
+    var varNote = moving === 0 ? '六爻安静 · 卦象稳定' : '动爻 ' + moving + ' 处 · 变数较大';
+    hexBox.innerHTML =
+      '<div class="gh-name">' + info[0] + '</div>' +
+      '<div class="gh-sym">' + sym + '</div>' +
+      '<div class="gh-text">⚽ ' + info[1] + '</div>' +
+      '<div class="gh-var">' + varNote + '</div>';
+  }
+
+  async function shake() {
+    if (running) return;
+    running = true;
+    btn.disabled = true;
+    lines = [];
+    coinsBox.innerHTML = '';
+    linesBox.innerHTML = '';
+    hexBox.innerHTML = '';
+    for (var i = 0; i < 6; i++) {
+      stage.classList.remove('shaking');
+      void stage.offsetWidth;
+      stage.classList.add('shaking');
+      await delay(430);
+      var coins = [randBit(), randBit(), randBit()];
+      var backs = coins[0] + coins[1] + coins[2];
+      var line = backs === 3 ? 'old-yang' : backs === 2 ? 'yang' : backs === 1 ? 'yin' : 'old-yin';
+      lines.push(line);
+      coinsBox.innerHTML = coins.map(function (c) { return '<div class="yg-coin' + (c ? ' back' : '') + ' pop"></div>'; }).join('');
+      renderLines(i);
+      await delay(700);
+    }
+    renderHex();
+    btn.disabled = false;
+    running = false;
+  }
+  btn.addEventListener('click', shake);
 })();
 
 // ---- 会员门：dev 模式 → 本地数据直渲；占位配置 → 整理中；否则走登录四态（注册→📧邮箱确认→🍯审核→内容） ----
