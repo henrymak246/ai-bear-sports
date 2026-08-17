@@ -1446,12 +1446,18 @@ function renderApp(days) {
           spCell = hcpCell;
         }
       } else {
-        var hh = '';
-        if (Array.isArray(m.hhad) && m.hhad.length === 3) {
-          hh = '<span class="sp-hcp">让' + esc(m.spHandicap) + '</span><span class="sp">' + esc(m.hhad[0]) + '/' + esc(m.hhad[1]) + '/' + esc(m.hhad[2]) + '</span>';
+        var parts = [];
+        if (m.ah && m.ah.name) {
+          parts.push('<span class="sp-hcp">' + esc(m.ah.name) + '(' + esc(m.ah.goals) + ')</span><span class="sp">' + esc(m.ah.home) + '/' + esc(m.ah.away) + '</span>');
+        } else if (Array.isArray(m.hhad) && m.hhad.length === 3) {
+          parts.push('<span class="sp-hcp">让' + esc(m.spHandicap) + '</span><span class="sp">' + esc(m.hhad[0]) + '/' + esc(m.hhad[1]) + '/' + esc(m.hhad[2]) + '</span>');
         }
-        var ou = (m.overUnder && m.overUnder !== '放弃') ? '<span class="sp-sub"> · ' + esc(m.overUnder) + '</span>' : '';
-        spCell = hh + ou;
+        if (m.ouOdds && m.ouOdds.name) {
+          parts.push('<span class="sp-sub">' + esc(m.ouOdds.name) + ' 大' + esc(m.ouOdds.over) + '/小' + esc(m.ouOdds.under) + '</span>');
+        } else if (m.overUnder && m.overUnder !== '放弃') {
+          parts.push('<span class="sp-sub">' + esc(m.overUnder) + '</span>');
+        }
+        spCell = parts.join('<br>');
       }
       var anBtn = m.note ? '<button class="an-btn" type="button" title="展开/收起本场分析">🔍</button>' : '';
       return '<tr><td>' + anBtn + '</td><td>' + esc(m.id) + '</td><td>' + esc(m.league) + ' ' + esc(m.time) + '</td>' +
