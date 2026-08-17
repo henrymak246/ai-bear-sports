@@ -80,6 +80,9 @@
   .plan-note { font-size:12px; color:var(--honey-dark); background:var(--amber-bg); border-radius:10px; padding:8px 12px; margin-top:12px; line-height:1.65; }
   .dream7-panel { border-top:4px solid #8B5CF6; }
   .hc7-panel { border-top:4px solid #0284C7; }
+  .dpost-panel { border-top:4px solid #F25C5C; }
+  .dpost-title { font-size:15px; font-weight:800; color:var(--brown); margin-bottom:10px; }
+  .dpost-content { white-space:pre-wrap; font-size:13px; line-height:1.9; color:#4A3A28; background:#FFF8EC; border-radius:12px; padding:14px 16px; }
   .d7-table td { font-size:12.5px; vertical-align:top; }
   .d7-table td:first-child { width:30px; font-weight:800; color:var(--honey-dark); }
   .d7-league { font-weight:700; color:var(--brown); white-space:nowrap; }
@@ -402,6 +405,7 @@
       <div id="planBlocks"></div>
       <div id="dream7Blocks"></div>
       <div id="hc7Blocks"></div>
+      <div id="dailyPostBox"></div>
     </section>
 
     <section id="sec-history">
@@ -1008,6 +1012,21 @@ function renderApp(days) {
       '<div class="panel hc7-panel"><h2>🎯 竞彩让球7关<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 全中约 ' + esc(hc.totalOdds || '—') + ' · 竞彩让球胜平负口径</span></h2>' +
       '<table class="d7-table"><tr><th>关</th><th>联赛</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th><th>红黑</th></tr>' + rows + '</table>' +
       (hc.note ? '<div class="plan-note">⚠️ ' + esc(hc.note) + '</div>' : '') +
+      '</div>';
+  }
+
+  // ---- 📮 每日发布专栏：最新一天 dailyPost 字段（微博/小红书风 + 小熊特色文案） ----
+  renderDailyPost(days);
+  function renderDailyPost(days) {
+    var box = document.getElementById('dailyPostBox');
+    if (!box) return;
+    var day = days.find(function (d) { return d.dailyPost && d.dailyPost.content; });
+    if (!day) { box.innerHTML = ''; return; }
+    var dp = day.dailyPost;
+    box.innerHTML =
+      '<div class="panel dpost-panel"><h2>📮 每日发布<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 小熊特色社媒文案</span></h2>' +
+      '<div class="dpost-title">' + esc(dp.title) + '</div>' +
+      '<div class="dpost-content">' + esc(dp.content) + '</div>' +
       '</div>';
   }
 
