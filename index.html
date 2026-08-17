@@ -266,6 +266,7 @@
   .sp { font-variant-numeric: tabular-nums; color:var(--brown-soft); }
   .sp-hot { color:var(--honey-dark); font-weight:800; }
   .sp-hcp { display:inline-block; margin-right:4px; font-size:11px; color:var(--muted); }
+  .sp-sub-wrap { display:block; font-size:10.5px; color:var(--muted); margin-top:2px; line-height:1.4; }
   .sp-win { color:var(--green); font-weight:800; }
   .final { font-weight:800; color:var(--brown); white-space:nowrap; }
   .table-legend { font-size:11px; color:var(--muted); margin-top:6px; }
@@ -1434,6 +1435,14 @@ function renderApp(days) {
       } else if (hcpCell) {
         spCell = hcpCell;
       }
+      var spSub = '';
+      if (Array.isArray(m.hhad) && m.hhad.length === 3) {
+        spSub += '<span class="sp-sub">让胜' + esc(m.hhad[0]) + '/平' + esc(m.hhad[1]) + '/负' + esc(m.hhad[2]) + '</span>';
+      }
+      if (m.overUnder && m.overUnder !== '放弃') {
+        spSub += '<span class="sp-sub"> · ' + esc(m.overUnder) + '</span>';
+      }
+      if (spSub) spCell += '<span class="sp-sub-wrap">' + spSub + '</span>';
       var anBtn = m.note ? '<button class="an-btn" type="button" title="展开/收起本场分析">🔍</button>' : '';
       return '<tr><td>' + anBtn + '</td><td>' + esc(m.id) + '</td><td>' + esc(m.league) + ' ' + esc(m.time) + '</td>' +
         '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
