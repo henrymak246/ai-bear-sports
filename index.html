@@ -267,6 +267,8 @@
   .sp-hot { color:var(--honey-dark); font-weight:800; }
   .sp-hcp { display:inline-block; margin-right:4px; font-size:11px; color:var(--muted); }
   .sp-sub-wrap { display:block; font-size:10.5px; color:var(--muted); margin-top:2px; line-height:1.4; }
+  .sp-toggle { border:1px solid var(--line); background:var(--card); border-radius:8px; padding:3px 8px; font-size:12px; font-weight:700; color:var(--honey-dark); cursor:pointer; font-family:inherit; white-space:nowrap; }
+  .sp-toggle:hover { background:var(--amber-bg); }
   .sp-win { color:var(--green); font-weight:800; }
   .final { font-weight:800; color:var(--brown); white-space:nowrap; }
   .table-legend { font-size:11px; color:var(--muted); margin-top:6px; }
@@ -894,6 +896,7 @@ function renderApp(days) {
   function frac(b) { return b.score + '/' + b.total; }
 
   var TIER_COLORS = ['#2F9E63', '#D97706', '#F25C5C', '#0284C7', '#8B5CF6', '#B7791F'];
+  var spMode = 'had'; // SP列显示模式：had=胜平负SP，hhad=让球+大小球
 
   // ---- 左侧栏：月历（方向命中=红，失手=黑；点日期主区展开当日） ----
   var byDate = {};
@@ -1128,6 +1131,12 @@ function renderApp(days) {
       Array.prototype.forEach.call(rows, function (r) { r.style.display = showing ? 'none' : ''; });
       fb.setAttribute('data-open', showing ? '0' : '1');
       fb.textContent = showing ? '展开更早 ' + rows.length + ' 场 ▾' : '收起 ▲';
+      return;
+    }
+    var spTg = el.closest('.sp-toggle');
+    if (spTg) {
+      spMode = spMode === 'had' ? 'hhad' : 'had';
+      renderDetail();
       return;
     }
     var xt = el.closest('.xs-toggle');
@@ -1423,26 +1432,27 @@ function renderApp(days) {
         hcpCell = '<span class="sp-hcp">让' + esc(m.spHandicap) + (hcpRes ? '(<b class="sp-win">' + hcpRes + '</b>)' : '') + '</span>';
       }
       var spCell = '<span class="wait">—</span>';
-      if (Array.isArray(m.sp) && m.sp.length === 3) {
-        var hotIdx = m.direction === '主胜' ? 0 : m.direction === '平' ? 1 : m.direction === '客胜' ? 2 : -1;
-        var spTxt = m.sp.map(function (v, i) {
-          var cls = [];
-          if (i === hotIdx) cls.push('sp-hot');
-          if (i === actIdx) cls.push('sp-win');
-          return cls.length ? '<b class="' + cls.join(' ') + '">' + esc(v) + '</b>' : esc(v);
-        }).join(' / ');
-        spCell = hcpCell + '<span class="sp">' + spTxt + '</span>';
-      } else if (hcpCell) {
-        spCell = hcpCell;
+      if (spMode === 'had') {
+        if (Array.isArray(m.sp) && m.sp.length === 3) {
+          var hotIdx = m.direction === '主胜' ? 0 : m.direction === '平' ? 1 : m.direction === '客胜' ? 2 : -1;
+          var spTxt = m.sp.map(function (v, i) {
+            var cls = [];
+            if (i === hotIdx) cls.push('sp-hot');
+            if (i === actIdx) cls.push('sp-win');
+            return cls.length ? '<b class="' + cls.join(' ') + '">' + esc(v) + '</b>' : esc(v);
+          }).join(' / ');
+          spCell = hcpCell + '<span class="sp">' + spTxt + '</span>';
+        } else if (hcpCell) {
+          spCell = hcpCell;
+        }
+      } else {
+        var hh = '';
+        if (Array.isArray(m.hhad) && m.hhad.length === 3) {
+          hh = '<span class="sp-hcp">让' + esc(m.spHandicap) + '</span><span class="sp">' + esc(m.hhad[0]) + '/' + esc(m.hhad[1]) + '/' + esc(m.hhad[2]) + '</span>';
+        }
+        var ou = (m.overUnder && m.overUnder !== '放弃') ? '<span class="sp-sub"> · ' + esc(m.overUnder) + '</span>' : '';
+        spCell = hh + ou;
       }
-      var spSub = '';
-      if (Array.isArray(m.hhad) && m.hhad.length === 3) {
-        spSub += '<span class="sp-sub">让胜' + esc(m.hhad[0]) + '/平' + esc(m.hhad[1]) + '/负' + esc(m.hhad[2]) + '</span>';
-      }
-      if (m.overUnder && m.overUnder !== '放弃') {
-        spSub += '<span class="sp-sub"> · ' + esc(m.overUnder) + '</span>';
-      }
-      if (spSub) spCell += '<span class="sp-sub-wrap">' + spSub + '</span>';
       var anBtn = m.note ? '<button class="an-btn" type="button" title="展开/收起本场分析">🔍</button>' : '';
       return '<tr><td>' + anBtn + '</td><td>' + esc(m.id) + '</td><td>' + esc(m.league) + ' ' + esc(m.time) + '</td>' +
         '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
@@ -1453,7 +1463,7 @@ function renderApp(days) {
         '<td>' + judge + '</td></tr>' +
         (m.note ? '<tr class="an-row" style="display:none"><td colspan="8">📋 ' + esc(m.note) + '</td></tr>' : '');
     }).join('');
-    return '<table><tr><th></th><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th><th>预测（方向/大小/比分(赔率)）</th><th>SP（胜/平/负）</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
+    return '<table><tr><th></th><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th><th>预测（方向/大小/比分(赔率)）</th><th><button type="button" class="sp-toggle">' + (spMode === 'had' ? 'SP 胜平负 ⇄' : '让球/大小 ⇄') + '</button></th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
       '<div class="table-legend">SP 标注：<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>（SP 为胜平负无让球口径，按 90 分钟赛果判定）；「让X(绿字)」= 让球胜平负实际结果（赛果+让球数后比较，如 0-0 让-1 → 让负）；判定三列依次为 方向/大小/比分；点 🔍 展开本场完整分析</div>';
   }
 }
