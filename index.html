@@ -80,6 +80,7 @@
   .plan-note { font-size:12px; color:var(--honey-dark); background:var(--amber-bg); border-radius:10px; padding:8px 12px; margin-top:12px; line-height:1.65; }
   .dream7-panel { border-top:4px solid #8B5CF6; }
   .hc7-panel { border-top:4px solid #0284C7; }
+  .asian7-panel { border-top:4px solid #059669; }
   .dpost-panel { border-top:4px solid #F25C5C; }
   .dpost-title { font-size:15px; font-weight:800; color:var(--brown); margin-bottom:10px; }
   .dpost-content { white-space:pre-wrap; font-size:13px; line-height:1.9; color:#4A3A28; background:#FFF8EC; border-radius:12px; padding:14px 16px; }
@@ -405,6 +406,7 @@
       <div id="planBlocks"></div>
       <div id="dream7Blocks"></div>
       <div id="hc7Blocks"></div>
+      <div id="asian7Blocks"></div>
       <div id="dailyPostBox"></div>
     </section>
 
@@ -1012,6 +1014,31 @@ function renderApp(days) {
       '<div class="panel hc7-panel"><h2>🎯 竞彩让球7关<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 全中约 ' + esc(hc.totalOdds || '—') + ' · 竞彩让球胜平负口径</span></h2>' +
       '<table class="d7-table"><tr><th>关</th><th>联赛</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th><th>红黑</th></tr>' + rows + '</table>' +
       (hc.note ? '<div class="plan-note">⚠️ ' + esc(hc.note) + '</div>' : '') +
+      '</div>';
+  }
+
+  // ---- 🎲 非竞彩亚盘7场：最新一天 asian7 字段（非竞彩场次亚洲让球盘推荐） ----
+  renderAsian7(days);
+  function renderAsian7(days) {
+    var box = document.getElementById('asian7Blocks');
+    if (!box) return;
+    var day = days.find(function (d) { return d.asian7 && Array.isArray(d.asian7.legs) && d.asian7.legs.length > 0; });
+    if (!day) { box.innerHTML = ''; return; }
+    var a7 = day.asian7;
+    var rows = a7.legs.map(function (leg, i) {
+      var mark = leg.result === 'hit' ? '<span class="hit">红 ✅</span>' : leg.result === 'miss' ? '<span class="miss">黑 ❌</span>' : '<span class="wait">待赛</span>';
+      return '<tr><td>' + (i + 1) + '</td>' +
+        '<td><span class="d7-league">' + esc(leg.league || '—') + '</span></td>' +
+        '<td>' + esc(leg.match) + '</td>' +
+        '<td><span class="d7-pick">' + esc(leg.pick) + '</span></td>' +
+        '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
+        '<td class="d7-reason">' + esc(leg.reason) + '</td>' +
+        '<td>' + mark + '</td></tr>';
+    }).join('');
+    box.innerHTML =
+      '<div class="panel asian7-panel"><h2>🎲 非竞彩亚盘7场<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 全中约 ' + esc(a7.totalOdds || '—') + ' · 亚洲让球盘推荐</span></h2>' +
+      '<table class="d7-table"><tr><th>关</th><th>联赛</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th><th>红黑</th></tr>' + rows + '</table>' +
+      (a7.note ? '<div class="plan-note">⚠️ ' + esc(a7.note) + '</div>' : '') +
       '</div>';
   }
 
