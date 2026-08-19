@@ -2,5 +2,7 @@ dist/
 football-site-pages.zip
 data/predictions.js
 data/_*.txt
+data/_watch-*.log
+data/_watch-alerts.log
 tools/.env
 tools/node_modules/
