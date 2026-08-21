@@ -179,11 +179,13 @@
   // ---- 北单专栏：id 以「北单」开头的场次单独累计（含竞彩方向对照 + 北单方案块） ----
   function isBeidan(m) { return !!m && String(m.id || '').indexOf('北单') === 0; }
 
-  // ---- 日韩专栏：id 以「日职」或「韩K」开头的场次单独累计 ----
+  // ---- 日韩专栏：id 以「日职/韩K」开头，或 league 含「日职/韩K/韩职」的场次单独累计 ----
   function isJK(m) {
     if (!m) return false;
     const id = String(m.id || '');
-    return id.indexOf('日职') === 0 || id.indexOf('韩K') === 0;
+    const lg = String(m.league || '');
+    if (id.indexOf('日职') === 0 || id.indexOf('韩K') === 0) return true;
+    return lg.indexOf('日职') >= 0 || lg.indexOf('韩K') >= 0 || lg.indexOf('韩职') >= 0;
   }
 
   // direction/overUnder/score 只累计北单场；jcDirection 累计竞彩组（非北单非日韩）场次方向作对照；
