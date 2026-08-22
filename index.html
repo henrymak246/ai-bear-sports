@@ -965,14 +965,15 @@ function renderApp(days) {
     calState.m = ((mm - 1) % 12 + 12) % 12 + 1;
     renderCal();
   }
+  // 选中日期优先，否则回退到最新一天
+  function pickDay(pred) { var sel = byDate[calState.sel]; return (sel && pred(sel)) ? sel : days.find(pred); }
   renderCal(); renderDetail();
 
-  // ---- 梦想7关板块：最新一天 dream7 字段的过关串（7 关，娱乐小注） ----
-  renderDream7(days);
+  // ---- 梦想7关板块：选中日期 dream7 字段的过关串（7 关，娱乐小注） ----
   function renderDream7(days) {
     var box = document.getElementById('dream7Blocks');
     if (!box) return;
-    var day = days.find(function (d) { return d.dream7 && Array.isArray(d.dream7.legs) && d.dream7.legs.length > 0; });
+    var day = pickDay(function (d) { return d.dream7 && Array.isArray(d.dream7.legs) && d.dream7.legs.length > 0; });
     if (!day) { box.innerHTML = ''; return; }
     var d7 = day.dream7;
     var rows = d7.legs.map(function (leg, i) {
@@ -993,11 +994,10 @@ function renderApp(days) {
   }
 
   // ---- 竞彩让球7关板块：最新一天 hc7 字段（竞彩让球胜平负口径，7关） ----
-  renderHc7(days);
   function renderHc7(days) {
     var box = document.getElementById('hc7Blocks');
     if (!box) return;
-    var day = days.find(function (d) { return d.hc7 && Array.isArray(d.hc7.legs) && d.hc7.legs.length > 0; });
+    var day = pickDay(function (d) { return d.hc7 && Array.isArray(d.hc7.legs) && d.hc7.legs.length > 0; });
     if (!day) { box.innerHTML = ''; return; }
     var hc = day.hc7;
     var rows = hc.legs.map(function (leg, i) {
@@ -1018,11 +1018,10 @@ function renderApp(days) {
   }
 
   // ---- 🎲 非竞彩亚盘7场：最新一天 asian7 字段（非竞彩场次亚洲让球盘推荐） ----
-  renderAsian7(days);
   function renderAsian7(days) {
     var box = document.getElementById('asian7Blocks');
     if (!box) return;
-    var day = days.find(function (d) { return d.asian7 && Array.isArray(d.asian7.legs) && d.asian7.legs.length > 0; });
+    var day = pickDay(function (d) { return d.asian7 && Array.isArray(d.asian7.legs) && d.asian7.legs.length > 0; });
     if (!day) { box.innerHTML = ''; return; }
     var a7 = day.asian7;
     var rows = a7.legs.map(function (leg, i) {
@@ -1043,11 +1042,10 @@ function renderApp(days) {
   }
 
   // ---- 📮 每日发布专栏：最新一天 dailyPost 字段（微博/小红书风 + 小熊特色文案） ----
-  renderDailyPost(days);
   function renderDailyPost(days) {
     var box = document.getElementById('dailyPostBox');
     if (!box) return;
-    var day = days.find(function (d) { return d.dailyPost && d.dailyPost.content; });
+    var day = pickDay(function (d) { return d.dailyPost && d.dailyPost.content; });
     if (!day) { box.innerHTML = ''; return; }
     var dp = day.dailyPost;
     box.innerHTML =
@@ -1058,10 +1056,9 @@ function renderApp(days) {
   }
 
   // ---- 中间首页：最新一天方案方块（竞彩/标准大小盘分组，点击跳转详解弹窗） ----
-  renderPlanBlocks(days);
   function renderPlanBlocks(days) {
     var box = document.getElementById('planBlocks');
-    var day = days.find(function (d) { return Array.isArray(d.plan) && d.plan.length > 0; });
+    var day = pickDay(function (d) { return Array.isArray(d.plan) && d.plan.length > 0; });
     if (!day) { box.innerHTML = ''; return; }
     // 比赛全部结束的日子：方案内容折叠为一条可展开横条
     var dayEnded = (day.matches || []).length > 0 && day.matches.every(function (m) { return !!m.finalScore; });
@@ -1398,6 +1395,8 @@ function renderApp(days) {
     document.getElementById('dailyList').innerHTML = day
       ? dayDetail(day)
       : '<div class="panel wait">还没有记录，等小熊的第一场预测 🐻</div>';
+    // 过关方案/每日发布/方案方块也跟随选中日期
+    renderDream7(days); renderHc7(days); renderAsian7(days); renderDailyPost(days); renderPlanBlocks(days);
   }
 
   function dayDetail(day) {
