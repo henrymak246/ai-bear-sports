@@ -407,6 +407,7 @@
       <div id="dream7Blocks"></div>
       <div id="hc7Blocks"></div>
       <div id="asian7Blocks"></div>
+      <div id="score3Blocks"></div>
       <div id="dailyPostBox"></div>
     </section>
 
@@ -987,7 +988,7 @@ function renderApp(days) {
       return '<tr><td>' + (i + 1) + '</td>' +
         '<td><span class="d7-league">' + esc(leg.league || '—') + '</span></td>' +
         '<td>' + esc(leg.match) + '</td>' +
-        '<td><span class="d7-pick">' + esc(leg.pick) + '</span></td>' +
+        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
         '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
         '<td class="d7-reason">' + esc(leg.reason) + '</td>' +
         '<td>' + mark + '</td></tr>';
@@ -1011,7 +1012,7 @@ function renderApp(days) {
       return '<tr><td>' + (i + 1) + '</td>' +
         '<td><span class="d7-league">' + esc(leg.league || '—') + '</span></td>' +
         '<td>' + esc(leg.match) + '</td>' +
-        '<td><span class="d7-pick">' + esc(leg.pick) + '</span></td>' +
+        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
         '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
         '<td class="d7-reason">' + esc(leg.reason) + '</td>' +
         '<td>' + mark + '</td></tr>';
@@ -1035,7 +1036,7 @@ function renderApp(days) {
       return '<tr><td>' + (i + 1) + '</td>' +
         '<td><span class="d7-league">' + esc(leg.league || '—') + '</span></td>' +
         '<td>' + esc(leg.match) + '</td>' +
-        '<td><span class="d7-pick">' + esc(leg.pick) + '</span></td>' +
+        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
         '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
         '<td class="d7-reason">' + esc(leg.reason) + '</td>' +
         '<td>' + mark + '</td></tr>';
@@ -1044,6 +1045,30 @@ function renderApp(days) {
       '<div class="panel asian7-panel"><h2>🎲 非竞彩亚盘7场<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 全中约 ' + esc(a7.totalOdds || '—') + ' · 亚洲让球盘推荐</span></h2>' +
       '<table class="d7-table"><tr><th>关</th><th>联赛</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th><th>红黑</th></tr>' + rows + '</table>' +
       (a7.note ? '<div class="plan-note">⚠️ ' + esc(a7.note) + '</div>' : '') +
+      '</div>';
+  }
+
+  // ---- 💚 幸福比分三关：最新一天 score3 字段（3关比分串，梦想小注） ----
+  function renderScore3(days) {
+    var box = document.getElementById('score3Blocks');
+    if (!box) return;
+    var day = pickDay(function (d) { return d.score3 && Array.isArray(d.score3.legs) && d.score3.legs.length > 0; });
+    if (!day) { box.innerHTML = ''; return; }
+    var s3 = day.score3;
+    var rows = s3.legs.map(function (leg, i) {
+      var mark = leg.result === 'hit' ? '<span class="hit">红 ✅</span>' : leg.result === 'miss' ? '<span class="miss">黑 ❌</span>' : '<span class="wait">待赛</span>';
+      return '<tr><td>' + (i + 1) + '</td>' +
+        '<td><span class="d7-league">' + esc(leg.league || '—') + '</span></td>' +
+        '<td>' + esc(leg.match) + '</td>' +
+        '<td><span class="d7-pick">' + esc(leg.pick) + '</span></td>' +
+        '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
+        '<td class="d7-reason">' + esc(leg.reason) + '</td>' +
+        '<td>' + mark + '</td></tr>';
+    }).join('');
+    box.innerHTML =
+      '<div class="panel score3-panel"><h2>💚 幸福比分三关<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 全中约 ' + esc(s3.totalOdds || '—') + ' · 比分串梦想小注</span></h2>' +
+      '<table class="d7-table"><tr><th>关</th><th>联赛</th><th>场次</th><th>比分</th><th>赔率</th><th>依据</th><th>红黑</th></tr>' + rows + '</table>' +
+      (s3.note ? '<div class="plan-note">⚠️ ' + esc(s3.note) + '</div>' : '') +
       '</div>';
   }
 
@@ -1427,7 +1452,7 @@ function renderApp(days) {
       ? dayDetail(day)
       : '<div class="panel wait">还没有记录，等小熊的第一场预测 🐻</div>';
     // 过关方案/每日发布/方案方块也跟随选中日期
-    renderDream7(days); renderHc7(days); renderAsian7(days); renderDailyPost(days); renderPlanBlocks(days);
+    renderDream7(days); renderHc7(days); renderAsian7(days); renderScore3(days); renderDailyPost(days); renderPlanBlocks(days);
   }
 
   function dayDetail(day) {
