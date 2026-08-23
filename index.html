@@ -442,6 +442,12 @@
         <h2>🀄 北单专栏<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">与竞彩分开累计 · 方向/大小/比分 + 方案块</span></h2>
         <div id="beidanBody"></div>
       </div>
+
+      <div class="panel" id="eplPanel">
+        <h2>🦁 英超专栏<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">竞彩英超场次单独累计 · 方向/大小/比分 + 小熊英超专家视角</span></h2>
+        <div id="eplBody"></div>
+        <div id="eplInsight"></div>
+      </div>
     </section>
 
     <section id="sec-yaogua">
@@ -1344,6 +1350,31 @@ function renderApp(days) {
       item('📊 对照·竞彩方向', frac(bd.jcDirection), pct(bd.jcDirection.rate)) +
       '</div>';
     renderColumnPanel('beidanBody', bd, '还没有北单场次记录，小熊等补充场 🐾', sum);
+  }
+
+  // ---- 英超专栏（league 含「英超」的场次单独累计 + 专家视角） ----
+  var EPL_INSIGHT_HTML =
+    '<div style="margin-top:10px;padding:11px 13px;background:var(--amber-bg);border:1px solid #F5C96B;border-radius:10px;font-size:12.5px;line-height:1.75">' +
+    '<b>🐻 小熊英超专家视角 · 2026/27</b><br>' +
+    '🏆 <b>争冠/欧战</b>：阿森纳（卫冕）、曼城、利物浦、纽卡；黑马 布伦特（上季第4）、水晶宫（第8）<br>' +
+    '⚠️ <b>落魄豪门</b>：曼联（上季第16·揭幕0-2负升班马赫尔城）、热刺（上季垫底20·揭幕0-3负布伦特）<br>' +
+    '🆕 <b>升班马</b>：赫尔城（揭幕2-0斩曼联）、考文垂（0-3负阿森纳）<br>' +
+    '📌 <b>心得</b>：①班霸让球穿盘难——曼联1.22让1.25爆冷、热刺0-3崩盘，深赔班霸忌日只做双选/受让；②升班马主场有爆发力，别拿历史身价压；③化忌日客场名门防翻车。</div>';
+  renderEPL(days);
+  function renderEPL(days) {
+    if (typeof StatsLib.computeEPL !== 'function') return;
+    var ep = StatsLib.computeEPL(days);
+    function item(lbl, fracTxt, rateTxt) {
+      return '<span class="bd-item"><b>' + rateTxt + '</b>' + lbl + '（' + fracTxt + '）</span>';
+    }
+    var sum = '<div class="bd-sum">' +
+      item('🦁 英超方向', frac(ep.direction), pct(ep.direction.rate)) +
+      item('⚽ 大小', frac(ep.overUnder), pct(ep.overUnder.rate)) +
+      item('🏅 比分', frac(ep.score), pct(ep.score.rate)) +
+      '</div>';
+    renderColumnPanel('eplBody', ep, '还没有英超场次记录，小熊等补充场 🐾', sum);
+    var insight = document.getElementById('eplInsight');
+    if (insight) insight.innerHTML = EPL_INSIGHT_HTML;
   }
 
   // ---- 小熊成绩单 ----

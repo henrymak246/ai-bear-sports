@@ -261,6 +261,38 @@
     };
   }
 
+  // ---- 英超专栏：league 含「英超」的场次单独累计（方向/大小/比分，无方案块） ----
+  function isEPL(m) {
+    if (!m) return false;
+    return String(m.league || '').indexOf('英超') >= 0;
+  }
+
+  function computeEPL(days) {
+    const dir = { score: 0, total: 0 }, ou = { score: 0, total: 0 }, sc = { score: 0, total: 0 };
+    const list = [];
+    (days || []).forEach(day => {
+      (day.matches || []).forEach(m => {
+        if (!isEPL(m)) return;
+        const d = judgeDirection(m.direction, m.finalScore);
+        if (d !== null) { dir.score += d; dir.total += 1; }
+        const o = judgeOverUnder(m.overUnder, m.finalScore);
+        if (o !== null) { ou.score += o; ou.total += 1; }
+        const b = judgeScore(m.score, m.finalScore);
+        if (b !== null) { sc.score += b; sc.total += 1; }
+        list.push({ date: day.date, id: m.id, league: m.league, home: m.home, away: m.away,
+          direction: m.direction, overUnder: m.overUnder, finalScore: m.finalScore || null,
+          score: m.score || [], scoreSp: m.scoreSp || null, d, o, b });
+      });
+    });
+    list.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+    return {
+      direction: { score: dir.score, total: dir.total, rate: rate(dir) },
+      overUnder: { score: ou.score, total: ou.total, rate: rate(ou) },
+      score: { score: sc.score, total: sc.total, rate: rate(sc) },
+      matches: list,
+    };
+  }
+
   // ---- 心水公布记录：day.xinshui.picks[]（label + result: hit/miss/缺省=待赛）累计 ----
   function computeXinshui(days) {
     var hit = 0, miss = 0, pending = 0;
@@ -280,5 +312,5 @@
     return { hit: hit, miss: miss, pending: pending, total: total, rate: rate({ score: hit, total: total }), entries: entries };
   }
 
-  return { parseScore, judgeDirection, judgeOverUnder, judgeScore, computeDayStats, computeOverall, computeTrend, planTypeOf, planStats, isBeidan, computeBeidan, isJK, computeJK, computeXinshui };
+  return { parseScore, judgeDirection, judgeOverUnder, judgeScore, computeDayStats, computeOverall, computeTrend, planTypeOf, planStats, isBeidan, computeBeidan, isJK, computeJK, isEPL, computeEPL, computeXinshui };
 });
