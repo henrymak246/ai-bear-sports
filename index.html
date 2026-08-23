@@ -409,6 +409,7 @@
       <div id="asian7Blocks"></div>
       <div id="score3Blocks"></div>
       <div id="zucai310Blocks"></div>
+      <div id="max7Blocks"></div>
       <div id="dailyPostBox"></div>
     </section>
 
@@ -1099,6 +1100,30 @@ function renderApp(days) {
       '</div>';
   }
 
+  // ---- 💥 综合过关7关：最新一天 max7 字段（大小球+让球+不让球混合，追最大SP） ----
+  function renderMax7(days) {
+    var box = document.getElementById('max7Blocks');
+    if (!box) return;
+    var day = pickDay(function (d) { return d.max7 && Array.isArray(d.max7.legs) && d.max7.legs.length > 0; });
+    if (!day) { box.innerHTML = ''; return; }
+    var m7 = day.max7;
+    var rows = m7.legs.map(function (leg, i) {
+      var mark = leg.result === 'hit' ? '<span class="hit">红 ✅</span>' : leg.result === 'miss' ? '<span class="miss">黑 ❌</span>' : '<span class="wait">待赛</span>';
+      return '<tr><td>' + (i + 1) + '</td>' +
+        '<td><span class="d7-league">' + esc(leg.play || '—') + '</span></td>' +
+        '<td>' + esc(leg.match) + '</td>' +
+        '<td><span class="d7-pick">' + esc(leg.pick) + '</span></td>' +
+        '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
+        '<td class="d7-reason">' + esc(leg.reason) + '</td>' +
+        '<td>' + mark + '</td></tr>';
+    }).join('');
+    box.innerHTML =
+      '<div class="panel max7-panel"><h2>💥 综合过关7关（最大SP）<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 全中约 ' + esc(m7.totalOdds || '—') + ' · 大小球+让球+不让球混合</span></h2>' +
+      '<table class="d7-table"><tr><th>关</th><th>玩法</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th><th>红黑</th></tr>' + rows + '</table>' +
+      (m7.note ? '<div class="plan-note">⚠️ ' + esc(m7.note) + '</div>' : '') +
+      '</div>';
+  }
+
   // ---- 📮 每日发布专栏：最新一天 dailyPost 字段（微博/小红书风 + 小熊特色文案） ----
   function renderDailyPost(days) {
     var box = document.getElementById('dailyPostBox');
@@ -1479,7 +1504,7 @@ function renderApp(days) {
       ? dayDetail(day)
       : '<div class="panel wait">还没有记录，等小熊的第一场预测 🐻</div>';
     // 过关方案/每日发布/方案方块也跟随选中日期
-    renderDream7(days); renderHc7(days); renderAsian7(days); renderScore3(days); renderZucai310(days); renderDailyPost(days); renderPlanBlocks(days);
+    renderDream7(days); renderHc7(days); renderAsian7(days); renderScore3(days); renderZucai310(days); renderMax7(days); renderDailyPost(days); renderPlanBlocks(days);
   }
 
   function dayDetail(day) {
