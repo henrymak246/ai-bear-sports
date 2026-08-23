@@ -408,6 +408,7 @@
       <div id="hc7Blocks"></div>
       <div id="asian7Blocks"></div>
       <div id="score3Blocks"></div>
+      <div id="zucai310Blocks"></div>
       <div id="dailyPostBox"></div>
     </section>
 
@@ -1072,6 +1073,32 @@ function renderApp(days) {
       '</div>';
   }
 
+  // ---- 🎫 足彩310：最新一天 zucai310 字段（胜负彩14场 + 任选9场） ----
+  function renderZucai310(days) {
+    var box = document.getElementById('zucai310Blocks');
+    if (!box) return;
+    var day = pickDay(function (d) { return d.zucai310 && Array.isArray(d.zucai310.legs) && d.zucai310.legs.length > 0; });
+    if (!day) { box.innerHTML = ''; return; }
+    var zc = day.zucai310;
+    var rows = zc.legs.map(function (leg, i) {
+      return '<tr><td>' + (i + 1) + '</td>' +
+        '<td>' + esc(leg.match) + '</td>' +
+        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td></tr>';
+    }).join('');
+    var r9 = zc.rensuan9 || {};
+    var r9html = (r9.dan || r9.tuo)
+      ? '<div style="margin-top:8px;padding:9px 11px;background:var(--amber-bg);border:1px solid #F5C96B;border-radius:10px;font-size:12.5px;line-height:1.7">' +
+        '<b>🎯 任选9场</b><br>胆：' + esc((r9.dan || []).join('、')) + '<br>拖：' + esc((r9.tuo || []).join('、')) +
+        (r9.note ? '<br>' + esc(r9.note) : '') + '</div>'
+      : '';
+    box.innerHTML =
+      '<div class="panel zucai310-panel"><h2>🎫 足彩310（胜负彩14场）<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 3=主胜 1=平 0=客胜 · 复式注数=各场选择数乘积</span></h2>' +
+      '<table class="d7-table"><tr><th>关</th><th>场次</th><th>310选择</th></tr>' + rows + '</table>' +
+      (zc.note ? '<div class="plan-note">⚠️ ' + esc(zc.note) + '</div>' : '') +
+      r9html +
+      '</div>';
+  }
+
   // ---- 📮 每日发布专栏：最新一天 dailyPost 字段（微博/小红书风 + 小熊特色文案） ----
   function renderDailyPost(days) {
     var box = document.getElementById('dailyPostBox');
@@ -1452,7 +1479,7 @@ function renderApp(days) {
       ? dayDetail(day)
       : '<div class="panel wait">还没有记录，等小熊的第一场预测 🐻</div>';
     // 过关方案/每日发布/方案方块也跟随选中日期
-    renderDream7(days); renderHc7(days); renderAsian7(days); renderScore3(days); renderDailyPost(days); renderPlanBlocks(days);
+    renderDream7(days); renderHc7(days); renderAsian7(days); renderScore3(days); renderZucai310(days); renderDailyPost(days); renderPlanBlocks(days);
   }
 
   function dayDetail(day) {
