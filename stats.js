@@ -36,12 +36,15 @@
     return (side === '大') === overWin ? 1 : 0;
   }
 
-  // 大小球命中：.25/.75 拆双段；返回 1 / 0.5 / 0 / null(放弃或整盘走水)
+  // 总进球/大小球命中：总进球「X球」直接比对总进球数；大小球「大2.5/小2.5」按盘口拆段；返回 1 / 0.5 / 0 / null(放弃或整盘走水)
   function judgeOverUnder(pred, finalScore) {
-    const p = parseOverUnder(pred);
     const s = parseScore(finalScore);
-    if (!p || !s) return null;
+    if (!s) return null;
     const goals = s.home + s.away;
+    const t = String(pred || '').trim().match(/^(\d+)\s*球$/); // 竞彩总进球数：X球
+    if (t) return goals === parseInt(t[1], 10) ? 1 : 0;
+    const p = parseOverUnder(pred); // 亚盘大小球：大/小 + 盘口
+    if (!p) return null;
     const quarter = Math.round(p.line * 100) % 50 === 25; // .25/.75 → 双段
     const lines = quarter ? [p.line - 0.25, p.line + 0.25] : [p.line];
     const results = lines.map(l => judgeSegment(p.side, l, goals));
