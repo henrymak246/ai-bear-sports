@@ -911,7 +911,7 @@ function renderApp(days) {
   function frac(b) { return b.score + '/' + b.total; }
 
   var TIER_COLORS = ['#2F9E63', '#D97706', '#F25C5C', '#0284C7', '#8B5CF6', '#B7791F'];
-  var spMode = 'had'; // SP列显示模式：had=胜平负SP，hhad=让球+大小球
+  var spMode = 'had'; // SP列显示模式：had=胜平负SP，hhad=竞彩让球，ah=亚洲让球+大小
 
   // ---- 左侧栏：月历（方向命中=红，失手=黑；点日期主区展开当日） ----
   var byDate = {};
@@ -1261,7 +1261,7 @@ function renderApp(days) {
     }
     var spTg = el.closest('.sp-toggle');
     if (spTg) {
-      spMode = spMode === 'had' ? 'hhad' : 'had';
+      spMode = spMode === 'had' ? 'hhad' : spMode === 'hhad' ? 'ah' : 'had';
       renderDetail();
       return;
     }
@@ -1433,8 +1433,8 @@ function renderApp(days) {
   var EPL_INSIGHT_HTML =
     '<div style="margin-top:10px;padding:11px 13px;background:var(--amber-bg);border:1px solid #F5C96B;border-radius:10px;font-size:12.5px;line-height:1.75">' +
     '<b>🐻 小熊英超专家视角 · 2026/27</b><br>' +
-    '🏆 <b>争冠/欧战</b>：阿森纳（卫冕）、曼城、利物浦、纽卡；黑马 布伦特（上季第4）、水晶宫（第8）<br>' +
-    '⚠️ <b>落魄豪门</b>：曼联（上季第16·揭幕0-2负升班马赫尔城）、热刺（上季垫底20·揭幕0-3负布伦特）<br>' +
+    '🏆 <b>争冠/欧战</b>：阿森纳（卫冕）、曼城、利物浦、纽卡；黑马 布伦特、水晶宫<br>' +
+    '⚠️ <b>落魄豪门</b>：曼联（揭幕0-2负升班马赫尔城）、热刺（揭幕0-3负布伦特）<br>' +
     '🆕 <b>升班马</b>：赫尔城（揭幕2-0斩曼联）、考文垂（0-3负阿森纳）<br>' +
     '📌 <b>心得</b>：①班霸让球穿盘难——曼联1.22让1.25爆冷、热刺0-3崩盘，深赔班霸忌日只做双选/受让；②升班马主场有爆发力，别拿历史身价压；③化忌日客场名门防翻车。</div>';
   renderEPL(days);
@@ -1589,11 +1589,9 @@ function renderApp(days) {
         } else {
           spCell = '<span class="wait">未开售</span>';
         }
-      } else {
+      } else if (spMode === 'hhad') {
         var parts = [];
-        if (m.ah && m.ah.name) {
-          parts.push('<span class="sp-hcp">' + esc(m.ah.name) + '(' + esc(m.ah.goals) + ')</span><span class="sp">' + esc(m.ah.home) + '/' + esc(m.ah.away) + '</span>');
-        } else if (Array.isArray(m.hhad) && m.hhad.length === 3) {
+        if (Array.isArray(m.hhad) && m.hhad.length === 3) {
           var hcpRes = '';
           if (fs) {
             var adj = Number(fs[1]) + Number(m.spHandicap) - Number(fs[2]);
@@ -1601,12 +1599,23 @@ function renderApp(days) {
           }
           parts.push('<span class="sp-hcp">让' + esc(m.spHandicap) + (hcpRes ? '(结算:<b class="sp-win">' + hcpRes + '</b>)' : '') + '</span><span class="sp">' + esc(m.hhad[0]) + '/' + esc(m.hhad[1]) + '/' + esc(m.hhad[2]) + '</span>');
         }
-        if (m.ouOdds && m.ouOdds.name) {
-          parts.push('<span class="sp-sub">' + esc(m.ouOdds.name) + ' 大' + esc(m.ouOdds.over) + '/小' + esc(m.ouOdds.under) + '</span>');
-        } else if (m.overUnder && m.overUnder !== '放弃') {
+        if (m.overUnder && m.overUnder !== '放弃') {
           parts.push('<span class="sp-sub">' + esc(m.overUnder) + '</span>');
         }
         spCell = parts.join('<br>') || '<span class="wait">—</span>';
+      } else {
+        var ahParts = [];
+        if (m.ah && m.ah.name) {
+          ahParts.push('<span class="sp-hcp">' + esc(m.ah.name) + '(' + esc(m.ah.goals) + ')</span><span class="sp">' + esc(m.ah.home) + '/' + esc(m.ah.away) + '</span>');
+        } else {
+          ahParts.push('<span class="wait">无亚盘</span>');
+        }
+        if (m.ouOdds && m.ouOdds.name) {
+          ahParts.push('<span class="sp-sub">' + esc(m.ouOdds.name) + ' 大' + esc(m.ouOdds.over) + '/小' + esc(m.ouOdds.under) + '</span>');
+        } else {
+          ahParts.push('<span class="wait">无大小盘</span>');
+        }
+        spCell = ahParts.join('<br>');
       }
       var anBtn = m.note ? '<button class="an-btn" type="button" title="展开/收起本场分析">🔍</button>' : '';
       return '<tr><td>' + anBtn + '</td><td>' + esc(m.id) + '</td><td>' + esc(m.league) + ' ' + esc(m.time) + '</td>' +
@@ -1618,8 +1627,8 @@ function renderApp(days) {
         '<td>' + judge + '</td></tr>' +
         (m.note ? '<tr class="an-row" style="display:none"><td colspan="8">📋 ' + esc(m.note) + '</td></tr>' : '');
     }).join('');
-    return '<table><tr><th></th><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th><th>预测（方向｜大小｜比分）</th><th><button type="button" class="sp-toggle">' + (spMode === 'had' ? 'SP 胜平负 ⇄' : '让球/大小 ⇄') + '</button></th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
-      '<div class="table-legend">「方向」列 = 竞彩胜平负三选一（主胜/平/客胜）；「SP 胜平负」列（默认）显示对应三个赔率：<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>（按 90 分钟赛果判定）。点表头按钮切「让球/大小」：显示亚洲让球盘口+水位与大小球；竞彩让球场标注「结算:让胜/让平/让负」（赛果+让球数后比较）。判定三列依次为 方向/大小/比分；点 🔍 展开本场完整分析</div>';
+    return '<table><tr><th></th><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th><th>预测（方向｜大小｜比分）</th><th><button type="button" class="sp-toggle">' + (spMode === 'had' ? 'SP 胜平负 ⇄' : spMode === 'hhad' ? '竞彩让球 ⇄' : '亚洲让球+大小 ⇄') + '</button></th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
+      '<div class="table-legend">「方向」列=竞彩胜平负三选一。点表头按钮循环切换三档：<b>SP胜平负</b>（默认，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>）→ <b>竞彩让球</b>（让球数+让胜平负SP，赛果标「结算:让胜/让平/让负」）→ <b>亚洲让球+大小</b>（真·亚盘盘口+水位 & 大小球盘口+水位，来自球探网，仅重点场有）。判定三列=方向/大小/比分；点 🔍 展开本场分析</div>';
   }
 }
 </script>
