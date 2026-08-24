@@ -990,7 +990,7 @@ function renderApp(days) {
       return '<tr><td>' + (i + 1) + '</td>' +
         '<td><span class="d7-league">' + esc(leg.league || '—') + '</span></td>' +
         '<td>' + esc(leg.match) + '</td>' +
-        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
+        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.sel ? ' <span style="background:#4A90D9;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">双选</span>' : '') + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
         '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
         '<td class="d7-reason">' + esc(leg.reason) + '</td>' +
         '<td>' + mark + '</td></tr>';
@@ -1014,7 +1014,7 @@ function renderApp(days) {
       return '<tr><td>' + (i + 1) + '</td>' +
         '<td><span class="d7-league">' + esc(leg.league || '—') + '</span></td>' +
         '<td>' + esc(leg.match) + '</td>' +
-        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
+        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.sel ? ' <span style="background:#4A90D9;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">双选</span>' : '') + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
         '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
         '<td class="d7-reason">' + esc(leg.reason) + '</td>' +
         '<td>' + mark + '</td></tr>';
@@ -1038,7 +1038,7 @@ function renderApp(days) {
       return '<tr><td>' + (i + 1) + '</td>' +
         '<td><span class="d7-league">' + esc(leg.league || '—') + '</span></td>' +
         '<td>' + esc(leg.match) + '</td>' +
-        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
+        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.sel ? ' <span style="background:#4A90D9;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">双选</span>' : '') + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
         '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
         '<td class="d7-reason">' + esc(leg.reason) + '</td>' +
         '<td>' + mark + '</td></tr>';
