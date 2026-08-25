@@ -1082,9 +1082,10 @@ function renderApp(days) {
     if (!day) { box.innerHTML = ''; return; }
     var zc = day.zucai310;
     var rows = zc.legs.map(function (leg, i) {
+      var mark = leg.result === 'hit' ? ' <span class="hit">红✅</span>' : leg.result === 'miss' ? ' <span class="miss">黑❌</span>' : '';
       return '<tr><td>' + (i + 1) + '</td>' +
         '<td>' + esc(leg.match) + '</td>' +
-        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td></tr>';
+        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + mark + '</td></tr>';
     }).join('');
     var r9 = zc.rensuan9 || {};
     var r9html = (r9.dan || r9.tuo)
