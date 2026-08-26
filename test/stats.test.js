@@ -201,4 +201,46 @@ assert.strictEqual(xs.entries[0].date, '2026-08-10'); // 日期倒序
 assert.strictEqual(S.computeXinshui([]).rate, null);
 assert.doesNotThrow(function () { S.computeXinshui([{ date: '2026-08-07' }]); });
 
+// ---- judgeOverUnder：竞彩总进球「X球」直接比对（2026-08-24 起数据实际写法为 "2球"/"3球"） ----
+assert.strictEqual(S.judgeOverUnder('3球', '2-1'), 1);   // 总进球 3 = 命中
+assert.strictEqual(S.judgeOverUnder('3球', '2-0'), 0);
+assert.strictEqual(S.judgeOverUnder('2球', '1-1'), 1);
+assert.strictEqual(S.judgeOverUnder('2球', '2-1'), 0);
+assert.strictEqual(S.judgeOverUnder('3球', null), null);  // 待回填不计入
+assert.strictEqual(S.judgeOverUnder(null, '2-1'), null);  // 无预测不计入
+
+// ---- computeEPL：英超（league 含「英超」）单独累计，无方案块 ----
+const eplDays = [
+  { date: '2026-08-23', matches: [
+    { id: '周日009', league: '英超', direction: '主胜', overUnder: '大2.5', score: ['2-1'], finalScore: '2-1' },
+    { id: '周日010', league: '英超', direction: '客胜', overUnder: '小2.5', score: ['0-1'], finalScore: '1-0' },
+    { id: '周日001', league: '日职', direction: '主胜', overUnder: '大2.5', score: [], finalScore: '2-0' }, // 非英超不计
+  ]},
+  { date: '2026-08-22', matches: [
+    { id: '周六009', league: '英超', direction: '主胜', overUnder: '放弃', score: [], finalScore: null }, // 待回填
+  ]},
+];
+const epl = S.computeEPL(eplDays);
+assert.strictEqual(S.isEPL({ league: '英超' }), true);
+assert.strictEqual(S.isEPL({ league: '英联赛杯' }), false);
+assert.strictEqual(S.isEPL({ league: '英冠' }), false);
+assert.strictEqual(epl.direction.score, 1);             // 009✓、010✗
+assert.strictEqual(epl.direction.total, 2);             // 待回填不计
+assert.strictEqual(epl.direction.rate, 0.5);
+assert.strictEqual(epl.overUnder.score, 2);             // 009 大2.5✓、010 小2.5(1-0)✓
+assert.strictEqual(epl.overUnder.total, 2);
+assert.strictEqual(epl.score.score, 1);                 // 009 2-1✓、010 0-1✗
+assert.strictEqual(epl.score.total, 2);
+assert.strictEqual(epl.matches.length, 3);              // 含待回填场，非英超不入列
+assert.strictEqual(epl.matches[0].id, '周日009');       // 日期倒序
+assert.strictEqual(epl.matches[2].id, '周六009');
+assert.strictEqual(epl.matches[2].finalScore, null);
+assert.doesNotThrow(function () { S.computeEPL([]); });
+assert.doesNotThrow(function () { S.computeEPL([{ date: '2026-08-23' }]); });
+// 英超场次不混入北单/日韩专栏对照：英超既非北单也非日韩，落入竞彩对照组
+const eplBd = S.computeBeidan(eplDays);
+assert.strictEqual(eplBd.jcDirection.total, 2);         // 英超2场入竞彩对照（日职场除外，待回填不计）
+const eplJk = S.computeJK(eplDays);
+assert.strictEqual(eplJk.jcDirection.total, 2);
+
 console.log('stats.test.js 全部通过 ✓');

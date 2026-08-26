@@ -1,5 +1,8 @@
 # Cloudflare Pages 部署指南（AI小熊 · 体育心得分享）
 
+> **⚠️ 已废弃（2026-08-26）**：现役部署为 GitHub Pages（`git push` 后从 master 分支根目录自动发布，见 `gh-deploy-flow.sh` 与 README）。
+> 本文提及的 `dist/` 与 `football-site-pages.zip` 已删除（定格在 2026-07-29，比现役版本少一个月功能，照本文部署等于回滚网站）。仅留档参考。
+
 > 站点为纯静态零依赖，部署 = 上传发布包即可，无需任何构建。
 
 ## 首次部署（约 5 分钟）

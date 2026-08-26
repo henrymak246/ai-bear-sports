@@ -1539,7 +1539,7 @@ function renderApp(days) {
       var stat = ds.direction.total > 0 ? ' · 方向 ' + ds.direction.score + '/' + ds.direction.total : '';
       return '<div class="plan-group-title">' + title +
         '<span style="font-size:11px;color:var(--muted);font-weight:400">' + stat + ' · ' + matches.length + ' 场</span></div>' +
-        matchTable({ matches: matches });
+        matchTable({ matches: matches, max7: day.max7 });
     }
     return group('⚽ 竞彩', jc) + group('🎌 日韩', jk) + group('🀄 北单', bd);
   }
@@ -1563,6 +1563,14 @@ function renderApp(days) {
   }
 
   function matchTable(day) {
+    // 胆标记：综合过关(max7) key=true 的腿对应的对阵，在「对阵」列加胆徽章
+    var keyLegs = (day.max7 && Array.isArray(day.max7.legs) ? day.max7.legs : []).filter(function (l) { return l && l.key; });
+    function isKeyMatch(m) {
+      return keyLegs.some(function (l) {
+        var t = String(l.match || '');
+        return t.indexOf(m.home) !== -1 && t.indexOf(m.away) !== -1;
+      });
+    }
     var rows = day.matches.map(function (m) {
       var pending = !m.finalScore;
       var judge = pending ? '<span class="wait">—</span>'
@@ -1594,8 +1602,9 @@ function renderApp(days) {
         var parts = [];
         if (Array.isArray(m.hhad) && m.hhad.length === 3) {
           var hcpRes = '';
-          if (fs) {
-            var adj = Number(fs[1]) + Number(m.spHandicap) - Number(fs[2]);
+          var hcp = Number(m.spHandicap);
+          if (fs && isFinite(hcp)) {
+            var adj = Number(fs[1]) + hcp - Number(fs[2]);
             hcpRes = adj > 0 ? '让胜' : adj === 0 ? '让平' : '让负';
           }
           parts.push('<span class="sp-hcp">让' + esc(m.spHandicap) + (hcpRes ? '(结算:<b class="sp-win">' + hcpRes + '</b>)' : '') + '</span><span class="sp">' + esc(m.hhad[0]) + '/' + esc(m.hhad[1]) + '/' + esc(m.hhad[2]) + '</span>');
@@ -1620,7 +1629,7 @@ function renderApp(days) {
       }
       var anBtn = m.note ? '<button class="an-btn" type="button" title="展开/收起本场分析">🔍</button>' : '';
       return '<tr><td>' + anBtn + '</td><td>' + esc(m.id) + '</td><td>' + esc(m.league) + ' ' + esc(m.time) + '</td>' +
-        '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
+        '<td>' + esc(m.home) + ' vs ' + esc(m.away) + (isKeyMatch(m) ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
         '<td>' + finalCell + '</td>' +
         '<td>' + esc(m.direction) + '｜' + esc(m.overUnder) + '｜' + scoreTxt +
         ' <span class="stars">' + '★'.repeat(m.confidence || 0) + '</span></td>' +
@@ -1629,7 +1638,7 @@ function renderApp(days) {
         (m.note ? '<tr class="an-row" style="display:none"><td colspan="8">📋 ' + esc(m.note) + '</td></tr>' : '');
     }).join('');
     return '<table><tr><th></th><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th><th>预测（方向｜大小｜比分）</th><th><button type="button" class="sp-toggle">' + (spMode === 'had' ? 'SP 胜平负 ⇄' : spMode === 'hhad' ? '竞彩让球 ⇄' : '亚洲让球+大小 ⇄') + '</button></th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
-      '<div class="table-legend">「方向」列=竞彩胜平负三选一。点表头按钮循环切换三档：<b>SP胜平负</b>（默认，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>）→ <b>竞彩让球</b>（让球数+让胜平负SP，赛果标「结算:让胜/让平/让负」）→ <b>亚洲让球+大小</b>（真·亚盘盘口+水位 & 大小球盘口+水位，来自球探网，仅重点场有）。判定三列=方向/大小/比分；点 🔍 展开本场分析</div>';
+      '<div class="table-legend">「方向」列=竞彩胜平负三选一。点表头按钮循环切换三档：<b>SP胜平负</b>（默认，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>）→ <b>竞彩让球</b>（让球数+让胜平负SP，赛果标「结算:让胜/让平/让负」）→ <b>亚洲让球+大小</b>（真·亚盘盘口+水位 & 大小球盘口+水位，来自球探网，仅重点场有）。判定三列=方向/大小/比分；点 🔍 展开本场分析；对阵旁 <span style="background:#F5A623;color:#fff;border-radius:4px;padding:0 4px;font-weight:800">胆</span> = 当日综合过关胆拖的最有信心单选</div>';
   }
 }
 </script>
