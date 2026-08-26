@@ -1113,13 +1113,13 @@ function renderApp(days) {
       return '<tr><td>' + (i + 1) + '</td>' +
         '<td><span class="d7-league">' + esc(leg.play || '—') + '</span></td>' +
         '<td>' + esc(leg.match) + '</td>' +
-        '<td><span class="d7-pick">' + esc(leg.pick) + '</span></td>' +
+        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
         '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
         '<td class="d7-reason">' + esc(leg.reason) + '</td>' +
         '<td>' + mark + '</td></tr>';
     }).join('');
     box.innerHTML =
-      '<div class="panel max7-panel"><h2>💥 综合过关7关（最大SP）<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 全中约 ' + esc(m7.totalOdds || '—') + ' · 大小球+让球+不让球混合</span></h2>' +
+      '<div class="panel max7-panel"><h2>💥 综合过关（胆拖）<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 全中约 ' + esc(m7.totalOdds || '—') + ' · 🎯胆=最有信心单选</span></h2>' +
       '<table class="d7-table"><tr><th>关</th><th>玩法</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th><th>红黑</th></tr>' + rows + '</table>' +
       (m7.note ? '<div class="plan-note">⚠️ ' + esc(m7.note) + '</div>' : '') +
       '</div>';
