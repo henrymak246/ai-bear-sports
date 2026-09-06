@@ -1624,6 +1624,7 @@ function renderApp(days) {
       var ahOdds = '';
       if (m.ah && m.ah.name) ahOdds += ' <span class="odds">' + esc(m.ah.name) + ' ' + esc(m.ah.home) + '/' + esc(m.ah.away) + '</span>';
       if (m.ouOdds && m.ouOdds.name) ahOdds += ' <span class="odds">大小' + esc(m.ouOdds.name) + ' 大' + esc(m.ouOdds.over) + '/小' + esc(m.ouOdds.under) + '</span>';
+      var anBtn = m.note ? '<button class="an-btn" type="button" title="展开/收起本场分析">🔍</button>' : '';
       // 🎫竞彩列(独立): 合成观点+方向+徽章｜总进球｜比分+★, 竞彩SP/让球SP 随行
       var jcCell = (m.synthesis ? '<div class="syn">💡 ' + esc(m.synthesis) + '</div>' : '') +
         esc(m.direction) + dtagHtml(m.dirTag) + '｜' + esc(m.overUnder) + '｜' + scoreTxt +
