@@ -311,7 +311,7 @@
   .stars { color:var(--honey); }
   .syn { display:inline-block; font-size:12px; font-weight:800; color:var(--brown); background:var(--amber-bg); border-left:3px solid var(--honey); border-radius:6px; padding:2px 7px; margin-bottom:4px; }
   .pred-line { display:block; font-size:12px; line-height:1.6; }
-  .ah-col { border-left:2px solid var(--line); background:#FFFDF8; }
+  .ah-col { border-right:2px solid var(--line); background:#FFFDF8; }
   .pred-sys { font-size:10px; font-weight:800; border-radius:4px; padding:0 4px; margin-right:4px; }
   .pred-jc { background:#4A90D9; color:#fff; }
   .pred-ah { background:var(--honey); color:#fff; }
@@ -1625,31 +1625,35 @@ function renderApp(days) {
       if (m.ah && m.ah.name) ahOdds += ' <span class="odds">' + esc(m.ah.name) + ' ' + esc(m.ah.home) + '/' + esc(m.ah.away) + '</span>';
       if (m.ouOdds && m.ouOdds.name) ahOdds += ' <span class="odds">大小' + esc(m.ouOdds.name) + ' 大' + esc(m.ouOdds.over) + '/小' + esc(m.ouOdds.under) + '</span>';
       var anBtn = m.note ? '<button class="an-btn" type="button" title="展开/收起本场分析">🔍</button>' : '';
-      // 🎫竞彩列(独立): 合成观点+方向+徽章｜总进球｜比分+★, 竞彩SP/让球SP 随行
-      var jcCell = (m.synthesis ? '<div class="syn">💡 ' + esc(m.synthesis) + '</div>' : '') +
-        esc(m.direction) + dtagHtml(m.dirTag) + '｜' + esc(m.overUnder) + '｜' + scoreTxt +
-        ' <span class="stars">' + '★'.repeat(m.confidence || 0) + '</span>' + jcOdds;
-      // 🌏亚盘列(独立, 排在竞彩右边): 让球观点★｜大小观点★, 澳门盘口水位换行随行; 旧日(无 ahPick)只显盘口数据
+      // 列序: 🌏亚盘列在左 / 🎫竞彩列在右; 单元格内条目换行堆叠上下对齐(不用 ｜ 分隔)
+      // 亚盘列行序: 让球观点★ → 大小观点★ → 亚盘指数(盘口水位); 旧日(无 ahPick)只显盘口数据
       var ahCell = '';
       if (day._showAhCol) {
         if (day._hasAhPred) {
           var ahTxt = m.ahPick ? esc(m.ahPick) + (m.ahConf ? ' <span class="stars">' + '★'.repeat(m.ahConf) + '</span>' : '') : (m.dirTag === '弃选' ? '弃选' : '—');
           var ouTxt = m.ouPick ? esc(m.ouPick) + (m.ouConf ? ' <span class="stars">' + '★'.repeat(m.ouConf) + '</span>' : '') : '—';
-          ahCell = '让球 <b>' + ahTxt + '</b> ｜ 大小 <b>' + ouTxt + '</b>' + (ahOdds ? '<br>' + ahOdds : '');
+          ahCell = '<div><b>' + ahTxt + '</b></div><div><b>' + ouTxt + '</b></div>' + (ahOdds ? '<div>' + ahOdds + '</div>' : '');
         } else {
-          ahCell = ahOdds || '<span class="wait">—</span>';
+          ahCell = ahOdds ? '<div>' + ahOdds + '</div>' : '<span class="wait">—</span>';
         }
       }
+      // 竞彩列行序: 方向+徽章★ → 总进球 → 比分 → 竞彩指数(SP+让球); 💡合成观点在对阵列
+      var jcLines = ['<div>' + esc(m.direction) + dtagHtml(m.dirTag) + ' <span class="stars">' + '★'.repeat(m.confidence || 0) + '</span></div>',
+        '<div>' + esc(m.overUnder) + '</div>'];
+      if (scoreTxt) jcLines.push('<div>' + scoreTxt + '</div>');
+      jcLines.push('<div>' + jcOdds + '</div>');
+      var jcCell = jcLines.join('');
       return '<tr><td>' + anBtn + '</td><td>' + esc(m.id) + '</td><td>' + esc(m.league) + ' ' + esc(m.time) + '</td>' +
-        '<td>' + esc(m.home) + ' vs ' + esc(m.away) + (isKeyMatch(m) ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
+        '<td>' + esc(m.home) + ' vs ' + esc(m.away) + (isKeyMatch(m) ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') +
+        (m.synthesis ? '<div class="syn">💡 ' + esc(m.synthesis) + '</div>' : '') + '</td>' +
         '<td>' + finalCell + '</td>' +
-        '<td>' + jcCell + '</td>' +
         (day._showAhCol ? '<td class="ah-col">' + ahCell + '</td>' : '') +
+        '<td>' + jcCell + '</td>' +
         '<td>' + judge + '</td></tr>' +
         (m.note ? '<tr class="an-row" style="display:none"><td colspan="' + (day._showAhCol ? 8 : 7) + '">📋 ' + esc(m.note) + '</td></tr>' : '');
     }).join('');
-    return '<table><tr><th></th><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th><th>🎫竞彩（方向｜总进球｜比分）</th>' + (day._showAhCol ? '<th>🌏亚盘（让球｜大小）</th>' : '') + '<th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
-      '<div class="table-legend">「🎫竞彩」「🌏亚盘」两列独立并排：竞彩列=竞彩口径（胜平负方向+徽章｜总进球｜比分，SP 胜平负+让球胜平负赔率随行，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>，赛后让球标「结算:让胜/让平/让负」）；亚盘列=亚洲盘口径（让球观点+信心★ ｜ 大小观点+信心★，第二行为球探澳门盘临场盘口水位；<b>每场定位场必推</b>，★1=低信心只展示、★2-3=可入 asian7/大小盘串关）。两体系独立判断，允许表达不同（如诱盘场竞彩不反向、亚盘推下盘）。方向旁徽章=信心标签(单选>双选>入拖>弃选)；💡 行=方向×程度合成观点(仅 8-28 起新日期有)；9-5 及更早日期亚盘列只显盘口数据无观点，无盘口数据日期整列隐藏。判定列=竞彩口径方向/大小/比分；点 🔍 展开本场分析；对阵旁 <span style="background:#F5A623;color:#fff;border-radius:4px;padding:0 4px;font-weight:800">胆</span> = 当日综合过关胆拖的最有信心单选</div>';
+    return '<table><tr><th></th><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th>' + (day._showAhCol ? '<th>🌏亚盘（让球/大小/盘口）</th>' : '') + '<th>🎫竞彩（方向/总进球/比分/SP）</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
+      '<div class="table-legend">「🌏亚盘」列在左、「🎫竞彩」列在右，两列独立并排、单元格内条目逐行对齐：亚盘列=亚洲盘口径（第1行让球观点+信心★ / 第2行大小球观点+信心★ / 第3行球探澳门盘临场盘口水位；<b>每场定位场必推</b>，★1=低信心只展示、★2-3=可入 asian7/大小盘串关）；竞彩列=竞彩口径（第1行胜平负方向+徽章+★ / 第2行总进球 / 第3行比分 / 第4行 SP 胜平负+让球胜平负赔率，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>，赛后让球标「结算:让胜/让平/让负」）。两体系独立判断，允许表达不同（如诱盘场竞彩不反向、亚盘推下盘）。方向旁徽章=信心标签(单选>双选>入拖>弃选)；💡 合成观点在对阵列(仅 8-28 起新日期有)；9-5 及更早日期亚盘列只显盘口数据无观点，无盘口数据日期整列隐藏。判定列=竞彩口径方向/大小/比分；点 🔍 展开本场分析；对阵旁 <span style="background:#F5A623;color:#fff;border-radius:4px;padding:0 4px;font-weight:800">胆</span> = 当日综合过关胆拖的最有信心单选</div>';
   }
 }
 </script>
