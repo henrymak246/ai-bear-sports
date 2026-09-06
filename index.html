@@ -310,6 +310,10 @@
   .xs-pick { background:var(--amber-bg); border-radius:8px; padding:2px 8px; }
   .stars { color:var(--honey); }
   .syn { display:inline-block; font-size:12px; font-weight:800; color:var(--brown); background:var(--amber-bg); border-left:3px solid var(--honey); border-radius:6px; padding:2px 7px; margin-bottom:4px; }
+  .pred-line { display:block; font-size:12px; line-height:1.6; }
+  .pred-sys { font-size:10px; font-weight:800; border-radius:4px; padding:0 4px; margin-right:4px; }
+  .pred-jc { background:#4A90D9; color:#fff; }
+  .pred-ah { background:var(--honey); color:#fff; }
   .dtag { font-size:10px; font-weight:800; border-radius:4px; padding:0 4px; margin-left:3px; }
   .dtag-dan { background:var(--coral); color:#fff; }
   .dtag-shuang { background:#4A90D9; color:#fff; }
@@ -1582,6 +1586,7 @@ function renderApp(days) {
         return t.indexOf(m.home) !== -1 && t.indexOf(m.away) !== -1;
       });
     }
+    day._hasAhPred = day.matches.some(function (x) { return x.ahPick || x.ouPick; });
     var rows = day.matches.map(function (m) {
       var pending = !m.finalScore;
       var judge = pending ? '<span class="wait">—</span>'
@@ -1639,18 +1644,27 @@ function renderApp(days) {
         spCell = ahParts.join('<br>');
       }
       var anBtn = m.note ? '<button class="an-btn" type="button" title="展开/收起本场分析">🔍</button>' : '';
+      // 预测列：当日有 ahPick/ouPick 字段起，分「🎫竞彩」「🌏亚盘」两行体系展示；旧日期回退单行
+      var predMain = esc(m.direction) + dtagHtml(m.dirTag) + '｜' + esc(m.overUnder) + '｜' + scoreTxt +
+        ' <span class="stars">' + '★'.repeat(m.confidence || 0) + '</span>';
+      var predCell = (m.synthesis ? '<div class="syn">💡 ' + esc(m.synthesis) + '</div>' : '') + predMain;
+      if (day._hasAhPred) {
+        var ahTxt = m.ahPick ? esc(m.ahPick) : (m.dirTag === '弃选' ? '弃选' : (m.ah ? '观望' : '无亚盘数据'));
+        var ouTxt = m.ouPick ? esc(m.ouPick) : (m.ouOdds ? '观望' : '—');
+        predCell = (m.synthesis ? '<div class="syn">💡 ' + esc(m.synthesis) + '</div>' : '') +
+          '<div class="pred-line"><span class="pred-sys pred-jc">🎫竞彩</span>' + predMain + '</div>' +
+          '<div class="pred-line"><span class="pred-sys pred-ah">🌏亚盘</span>让球 ' + ahTxt + ' ｜ 大小 ' + ouTxt + '</div>';
+      }
       return '<tr><td>' + anBtn + '</td><td>' + esc(m.id) + '</td><td>' + esc(m.league) + ' ' + esc(m.time) + '</td>' +
         '<td>' + esc(m.home) + ' vs ' + esc(m.away) + (isKeyMatch(m) ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
         '<td>' + finalCell + '</td>' +
-        '<td>' + (m.synthesis ? '<div class="syn">💡 ' + esc(m.synthesis) + '</div>' : '') +
-          esc(m.direction) + dtagHtml(m.dirTag) + '｜' + esc(m.overUnder) + '｜' + scoreTxt +
-        ' <span class="stars">' + '★'.repeat(m.confidence || 0) + '</span></td>' +
+        '<td>' + predCell + '</td>' +
         '<td>' + spCell + '</td>' +
         '<td>' + judge + '</td></tr>' +
         (m.note ? '<tr class="an-row" style="display:none"><td colspan="8">📋 ' + esc(m.note) + '</td></tr>' : '');
     }).join('');
     return '<table><tr><th></th><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th><th>预测（方向｜大小｜比分）</th><th><button type="button" class="sp-toggle">' + (spMode === 'had' ? 'SP 胜平负 ⇄' : spMode === 'hhad' ? '竞彩让球 ⇄' : '亚洲让球+大小 ⇄') + '</button></th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
-      '<div class="table-legend">「方向」列=竞彩胜平负三选一，方向旁徽章=信心标签(单选>双选>入拖>弃选)；💡 行=方向×程度合成观点(仅 8-28 起新日期有)。点表头按钮循环切换三档：<b>SP胜平负</b>（默认，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>）→ <b>竞彩让球</b>（让球数+让胜平负SP，赛果标「结算:让胜/让平/让负」）→ <b>亚洲让球+大小</b>（真·亚盘盘口+水位 & 大小球盘口+水位，来自球探网，仅重点场有）。判定三列=方向/大小/比分；点 🔍 展开本场分析；对阵旁 <span style="background:#F5A623;color:#fff;border-radius:4px;padding:0 4px;font-weight:800">胆</span> = 当日综合过关胆拖的最有信心单选</div>';
+      '<div class="table-legend">「预测」列自 9-6 起分两体系：<span class="pred-sys pred-jc">🎫竞彩</span>行=竞彩口径（胜平负方向+徽章｜总进球｜比分）；<span class="pred-sys pred-ah">🌏亚盘</span>行=亚洲盘口径（真·亚盘让球观点 ｜ 大小球观点，来自球探网澳门盘临场双证，仅重点场有正式推荐，其余=观望/无亚盘数据）。方向旁徽章=信心标签(单选>双选>入拖>弃选)；💡 行=方向×程度合成观点(仅 8-28 起新日期有)。点表头按钮循环切换三档：<b>SP胜平负</b>（默认，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>）→ <b>竞彩让球</b>（让球数+让胜平负SP，赛果标「结算:让胜/让平/让负」）→ <b>亚洲让球+大小</b>（真·亚盘盘口+水位 & 大小球盘口+水位）。判定三列=方向/大小/比分；点 🔍 展开本场分析；对阵旁 <span style="background:#F5A623;color:#fff;border-radius:4px;padding:0 4px;font-weight:800">胆</span> = 当日综合过关胆拖的最有信心单选</div>';
   }
 }
 </script>
