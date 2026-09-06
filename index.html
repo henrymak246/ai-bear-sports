@@ -463,6 +463,11 @@
         <div id="eplBody"></div>
         <div id="eplInsight"></div>
       </div>
+
+      <div class="panel" id="nePanel">
+        <h2>🚄 深夜快车<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">下半夜至白天(00:00-17:59)开赛场次单独累计 · 方向/大小/比分 · 夜猫子专线</span></h2>
+        <div id="neBody"></div>
+      </div>
     </section>
 
     <section id="sec-yaogua">
@@ -1371,7 +1376,7 @@ function renderApp(days) {
     list.forEach(function (m) { (recentSet[m.date] ? visible : hidden).push(m); });
     return { visible: visible, hidden: hidden };
   }
-  function renderColumnPanel(bodyId, col, emptyText, sumHtml) {
+  function renderColumnPanel(bodyId, col, emptyText, sumHtml, showTime) {
     var body = document.getElementById(bodyId);
     if (!body) return;
     if (col.matches.length === 0) {
@@ -1379,7 +1384,9 @@ function renderApp(days) {
       return;
     }
     function rowHtml(m) {
-      return '<tr><td>' + esc(m.date.slice(5)) + '</td><td>' + esc(m.id) + '</td>' +
+      return '<tr><td>' + esc(m.date.slice(5)) + '</td>' +
+        (showTime ? '<td>' + esc(m.time || '—') + '</td>' : '') +
+        '<td>' + esc(m.id) + '</td>' +
         '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
         '<td>' + esc(m.direction) + ' / ' + esc(m.overUnder) + '</td>' +
         '<td>' + (m.finalScore ? '<span class="final">' + esc(m.finalScore) + '</span>' : '<span class="wait">待赛</span>') + '</td>' +
@@ -1389,7 +1396,8 @@ function renderApp(days) {
     var rows = sp.visible.map(rowHtml).join('') +
       sp.hidden.map(function (m) { return rowHtml(m).replace('<tr>', '<tr class="old-row" style="display:none">'); }).join('');
     var html = sumHtml +
-      '<table><tr><th>日期</th><th>编号</th><th>对阵</th><th>预测（方向/大小）</th><th>赛果</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>';
+      '<table><tr><th>日期</th>' + (showTime ? '<th>开赛</th>' : '') +
+      '<th>编号</th><th>对阵</th><th>预测（方向/大小）</th><th>赛果</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>';
     if (sp.hidden.length > 0) {
       html += '<button type="button" class="fold-more-btn" data-open="0">展开更早 ' + sp.hidden.length + ' 场 ▾</button>';
     }
@@ -1459,6 +1467,22 @@ function renderApp(days) {
     renderColumnPanel('eplBody', ep, '还没有英超场次记录，小熊等补充场 🐾', sum);
     var insight = document.getElementById('eplInsight');
     if (insight) insight.innerHTML = EPL_INSIGHT_HTML;
+  }
+
+  // ---- 深夜快车专栏（下半夜至白天 time<18:00 开赛场次单独累计 + 开赛时间列） ----
+  renderNightExpress(days);
+  function renderNightExpress(days) {
+    if (typeof StatsLib.computeNightExpress !== 'function') return;
+    var ne = StatsLib.computeNightExpress(days);
+    function item(lbl, fracTxt, rateTxt) {
+      return '<span class="bd-item"><b>' + rateTxt + '</b>' + lbl + '（' + fracTxt + '）</span>';
+    }
+    var sum = '<div class="bd-sum">' +
+      item('🚄 深夜方向', frac(ne.direction), pct(ne.direction.rate)) +
+      item('⚽ 大小', frac(ne.overUnder), pct(ne.overUnder.rate)) +
+      item('🏅 比分', frac(ne.score), pct(ne.score.rate)) +
+      '</div>';
+    renderColumnPanel('neBody', ne, '还没有深夜/白天场次记录，小熊等补充场 🐾', sum, true);
   }
 
   // ---- 小熊成绩单 ----

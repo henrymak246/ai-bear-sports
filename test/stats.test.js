@@ -243,4 +243,41 @@ assert.strictEqual(eplBd.jcDirection.total, 2);         // 英超2场入竞彩�
 const eplJk = S.computeJK(eplDays);
 assert.strictEqual(eplJk.jcDirection.total, 2);
 
+// ---- computeNightExpress：深夜快车（time < 18:00 下半夜至白天场）单独累计 ----
+const neDays = [
+  { date: '2026-09-06', matches: [
+    { id: '周日018', league: '意甲', time: '00:00', direction: '主胜', overUnder: '2球', score: ['1-0'], finalScore: '1-0' },
+    { id: '周日021', league: '意甲', time: '02:45', direction: '客胜', overUnder: '2球', score: ['0-1'], finalScore: '0-1' },
+    { id: '周日024', league: '巴甲', time: '05:30', direction: '客胜', overUnder: '大2.5', score: [], finalScore: null }, // 待赛
+    { id: '周日013', league: '西甲', time: '22:15', direction: '客胜', overUnder: '3球', score: [], finalScore: '0-5' }, // 黄金场不计
+    { id: '周日008', league: '英超', time: '21:00', direction: '客胜', overUnder: '3球', score: [], finalScore: '2-2' },  // 黄金场不计
+  ]},
+  { date: '2026-09-05', matches: [
+    { id: '周六029', league: '巴甲', time: '08:30', direction: '主胜', overUnder: '2球', score: [], finalScore: '2-0' },
+    { id: '周六004', league: '英超', time: '19:00', direction: '主胜', overUnder: '2球', score: [], finalScore: '2-2' },  // 黄金场不计
+  ]},
+];
+assert.strictEqual(S.isNightExpress({ time: '00:00' }), true);
+assert.strictEqual(S.isNightExpress({ time: '05:30' }), true);
+assert.strictEqual(S.isNightExpress({ time: '17:59' }), true);
+assert.strictEqual(S.isNightExpress({ time: '18:00' }), false);
+assert.strictEqual(S.isNightExpress({ time: '23:30' }), false);
+assert.strictEqual(S.isNightExpress({ time: '' }), false);
+assert.strictEqual(S.isNightExpress({}), false);
+const ne = S.computeNightExpress(neDays);
+assert.strictEqual(ne.direction.score, 3);              // 018✓、021✓、029✓（待赛与黄金场不计）
+assert.strictEqual(ne.direction.total, 3);
+assert.strictEqual(ne.direction.rate, 1);
+assert.strictEqual(ne.overUnder.score, 1);              // 018 2球✗(1球)、021 2球✗(1球)、029 2球✓
+assert.strictEqual(ne.overUnder.total, 3);
+assert.strictEqual(ne.score.score, 2);                  // 018 1-0✓、021 0-1✓
+assert.strictEqual(ne.score.total, 2);
+assert.strictEqual(ne.matches.length, 4);               // 含待赛场，黄金场不入列
+assert.strictEqual(ne.matches[0].id, '周日018');        // 日期倒序，同日保持原顺序（竞彩编号=开赛序）
+assert.strictEqual(ne.matches[1].id, '周日021');
+assert.strictEqual(ne.matches[2].id, '周日024');
+assert.strictEqual(ne.matches[3].id, '周六029');
+assert.doesNotThrow(function () { S.computeNightExpress([]); });
+assert.doesNotThrow(function () { S.computeNightExpress([{ date: '2026-09-06' }]); });
+
 console.log('stats.test.js 全部通过 ✓');
