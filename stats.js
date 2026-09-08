@@ -218,7 +218,8 @@
       });
       // 北单310 顶层块(2026-09-08 起): legs pick=3/1/0 → 主胜/平/客胜, 复用当日竞彩场 finalScore 自动判定;
       // 2026-09-08 晚起支持复式多选 pick='3/1'(命中其一即红, 对齐竞彩层双选"不败"语义);
-      // 人工回填 leg.result(hit/miss) 优先; 明细进专栏, 方向命中计入 direction
+      // 2026-09-09 更正: 北单官方对阵表每场带让球数(leg.handicap, 负数=主让), 判定时主队比分+让球数后再定3/1/0;
+      // leg.result 人工回填(hit/miss)优先, 'push'=腿无效(如北单未开售该场)不计入; 明细进专栏, 方向命中计入 direction
       var b310 = day.beidan310;
       if (b310 && Array.isArray(b310.legs)) {
         if (['hit', 'half', 'miss', 'push'].indexOf(b310.result) !== -1) plan[b310.result] += 1;
@@ -230,19 +231,23 @@
           const picks = String(leg.pick || '').split('/').map(s => pickMap[s.trim()]).filter(Boolean);
           if (picks.length === 0) return;
           const dirTxt = picks.join('/');
+          const hc = parseInt(leg.handicap, 10) || 0;
+          const hcTxt = hc !== 0 ? '[让' + String(leg.handicap).replace(/^\+?(-?\d+)$/, (m, g) => (hc > 0 ? '+' : '') + g) + ']' : '';
           let d = null;
           if (leg.result === 'hit') d = 1;
           else if (leg.result === 'miss') d = 0;
+          else if (leg.result === 'push') d = null; // 无效腿不计入
           else {
             const s = parseScore(mm.finalScore);
             if (s) {
-              const actual = s.home > s.away ? '主胜' : s.home < s.away ? '客胜' : '平';
+              const adjH = s.home + hc; // 北单让球后比分定 3/1/0
+              const actual = adjH > s.away ? '主胜' : adjH < s.away ? '客胜' : '平';
               d = picks.indexOf(actual) >= 0 ? 1 : 0;
             }
           }
           if (d !== null) { dir.score += d; dir.total += 1; }
           list.push({ date: day.date, id: num + '单', league: mm.league, home: mm.home, away: mm.away,
-            direction: dirTxt + (leg.odds ? '(SP' + leg.odds + ')' : ''), overUnder: '—', finalScore: mm.finalScore || null,
+            direction: dirTxt + hcTxt + (leg.odds ? '(SP' + leg.odds + ')' : ''), overUnder: '—', finalScore: mm.finalScore || null,
             score: [], scoreSp: null, d, o: null, b: null });
         });
       }

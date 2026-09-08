@@ -189,6 +189,29 @@ assert.strictEqual(bdMulti.matches[0].direction.indexOf('主胜/平'), 0); // �
 assert(bdMulti.matches[0].direction.includes('1.48/4.30'), '多选带双 SP');
 assert.strictEqual(bdMulti.matches[2].d, 0);           // 人工 miss 优先于多选判定
 
+// ---- beidan310 让球判定（2026-09-09 更正）：leg.handicap 负数=主让, 主队比分+让球数后定3/1/0; result='push' 腿无效不计入 ----
+const bdHc = S.computeBeidan([
+  { date: '2026-09-09', matches: [
+    { id: '周三002', league: '欧冠', home: '雅典AEK', away: 'LASK', direction: '主胜', finalScore: '1-0' },
+    { id: '周三004', league: '荷甲', home: '奈梅亨', away: '精英', direction: '主胜', finalScore: '2-2' },
+    { id: '周三009', league: '欧冠', home: '多特', away: '黄潜', direction: '主胜', finalScore: '3-2' },
+    { id: '周三011', league: '欧冠', home: '波尔图', away: '曼城', direction: '客胜', finalScore: '0-2' },
+    { id: '周三005', league: '沙职', home: '胡巴卡德', away: '国民', direction: '主胜', finalScore: '3-2' },
+  ], plan: [], beidan310: { legs: [
+    { play: '北单310', match: '002 雅典AEK vs LASK', pick: '3', odds: '1.74', handicap: '-1', result: null },      // 1-0让-1→平, 单选3黑
+    { play: '北单310', match: '004 奈梅亨 vs 精英', pick: '3/1', odds: '1.90/3.74', handicap: '-1', result: null }, // 2-2让-1→客胜, 黑
+    { play: '北单310', match: '009 多特 vs 黄潜', pick: '3/1', odds: '1.72/4.06', handicap: '-1', result: null },   // 3-2让-1→平, 防平红
+    { play: '北单310', match: '011 波尔图 vs 曼城', pick: '0/1', odds: '1.64/4.01', handicap: '+1', result: null }, // 0-2让+1→客胜, 红
+    { play: '北单310', match: '005 胡巴卡德 vs 国民', pick: '3/1', odds: '1.75/3.80', handicap: null, result: 'push' }, // 北单未开售腿无效
+  ], result: 'miss' } },
+]);
+assert.strictEqual(bdHc.direction.score, 2);           // 009✓ + 011✓
+assert.strictEqual(bdHc.direction.total, 4);           // push 腿不计入
+assert.strictEqual(bdHc.matches[0].d, 0);              // 让球后 1-0 主胜变黑(关键反直觉用例)
+assert.strictEqual(bdHc.matches[2].d, 1);              // 让-1 下主胜1球=让球平, 3/1 红
+assert(bdHc.matches[0].direction.includes('[让-1]'), '明细应显示让球数');
+assert.strictEqual(bdHc.plan.miss, 1);
+
 // ---- computeJK：日韩（id 以「日职」/「韩K」开头）单独累计 + 竞彩对照 + 日韩方案块 ----
 const jkDays = [
   { date: '2026-08-08', matches: [
