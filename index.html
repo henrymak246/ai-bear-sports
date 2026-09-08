@@ -1182,6 +1182,7 @@ function renderApp(days) {
     var groups = [
       { key: 'jc', title: '🇨🇳 竞彩方案', tag: '胜平负/让球/比分，官方SP' },
       { key: 'std', title: '📊 标准盘', tag: '亚洲让球/大小盘，主流盘口单独结算' },
+      { key: 'bd', title: '🀄 北单方案', tag: '北京单场310·浮动SP·7串1' },
     ];
     var html = '<h2 class="sec-title" style="margin-top:4px">💰 ' + esc(day.date) + ' 投资方案<span class="sec-sub">点方块看详解</span></h2>';
     groups.forEach(function (g) {
@@ -1434,7 +1435,13 @@ function renderApp(days) {
     function item(lbl, fracTxt, rateTxt) {
       return '<span class="bd-item"><b>' + rateTxt + '</b>' + lbl + '（' + fracTxt + '）</span>';
     }
-    var sum = '<div class="bd-sum">' +
+    // 北单310玩法说明卡(2026-09-08 起): 3=主胜/1=平/0=客胜, 浮动SP按投注分布定价, 2元×SP连乘×65%返奖;
+    // 与竞彩区别: 竞彩固定赔率出票锁定(返奖约70%), 北单SP临场才定、冷热偏差大时冷门SP常超预期; 单关~15关, 6关以上单注封顶100万
+    var BD310_INSIGHT = '<div class="bd-sum" style="display:block;line-height:1.7">'
+      + '<b>🀄 北单310玩法</b>：北京单场胜平负——<b>3=主胜 / 1=平 / 0=客胜</b>；浮动 SP 按投注分布定价（临场才定，以出票为准），单注奖金=2元×各关SP连乘×65%。'
+      + '与竞彩区别：竞彩固定赔率出票即锁定（返奖约70%），北单 SP 浮动（返奖65%）但冷热偏差大时冷门 SP 常有超额价值；单关~15 关均可，6 关以上单注封顶 100 万。'
+      + '本专栏每日 <b>10 关复式</b>（稳健多选：胆场单选锚定，其余场次双选防平，命中其一即该关红）小注娱乐，选场与竞彩/亚盘/外部预测网站交叉验证；明细按北单 pick 判定（多选命中其一即红），SP 为竞彩参考值。</div>';
+    var sum = BD310_INSIGHT + '<div class="bd-sum">' +
       item('🎯 北单方向', frac(bd.direction), pct(bd.direction.rate)) +
       item('⚽ 大小', frac(bd.overUnder), pct(bd.overUnder.rate)) +
       item('🏅 比分', frac(bd.score), pct(bd.score.rate)) +
@@ -1677,7 +1684,7 @@ function renderApp(days) {
         (m.note ? '<tr class="an-row" style="display:none"><td colspan="' + (day._showAhCol ? 8 : 7) + '">📋 ' + esc(m.note) + '</td></tr>' : '');
     }).join('');
     return '<table><tr><th></th><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th>' + (day._showAhCol ? '<th>🌏亚盘（让球/大小/盘口）</th>' : '') + '<th>🎫竞彩（方向/总进球/比分/SP）</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
-      '<div class="table-legend">「🌏亚盘」列在左、「🎫竞彩」列在右，两列独立并排、单元格内条目逐行对齐：亚盘列=亚洲盘口径（第1行让球观点+信心★ / 第2行大小球观点+信心★ / 第3行球探澳门盘临场盘口水位；<b>每场定位场必推</b>，★1=低信心只展示、★2-3=可入 asian7/大小盘串关）；竞彩列=竞彩口径（第1行胜平负方向+徽章+★ / 第2行总进球 / 第3行比分 / 第4行 SP 胜平负+让球胜平负赔率，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>，赛后让球标「结算:让胜/让平/让负」）。两体系独立判断，允许表达不同（如诱盘场竞彩不反向、亚盘推下盘）。方向旁徽章=信心标签(单选>双选>入拖>弃选)；💡 合成观点在对阵列(仅 8-28 起新日期有)；9-5 及更早日期亚盘列只显盘口数据无观点，无盘口数据日期整列隐藏。判定列=竞彩口径方向/大小/比分；点 🔍 展开本场分析；对阵旁 <span style="background:#F5A623;color:#fff;border-radius:4px;padding:0 4px;font-weight:800">胆</span> = 当日综合过关胆拖的最有信心单选</div>';
+      '<div class="table-legend">「🌏亚盘」列在左、「🎫竞彩」列在右，两列独立并排、单元格内条目逐行对齐：亚盘列=亚洲盘口径（第1行让球观点+信心★ / 第2行大小球观点+信心★ / 第3行球探澳门盘临场盘口水位；<b>每场定位场必推</b>，信心★为1-5星：★1-2=低信心只展示、★3-4=可入 asian7/大小盘串关、★5=胆级）；竞彩列=竞彩口径（第1行胜平负方向+徽章+信心★(1-5星，★5=当日胆) / 第2行总进球 / 第3行比分 / 第4行 SP 胜平负+让球胜平负赔率，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>，赛后让球标「结算:让胜/让平/让负」）。两体系独立判断，允许表达不同（如诱盘场竞彩不反向、亚盘推下盘）。方向旁徽章=信心标签(单选>双选>入拖>弃选)；💡 合成观点在对阵列(仅 8-28 起新日期有)；9-5 及更早日期亚盘列只显盘口数据无观点，无盘口数据日期整列隐藏。判定列=竞彩口径方向/大小/比分；点 🔍 展开本场分析；对阵旁 <span style="background:#F5A623;color:#fff;border-radius:4px;padding:0 4px;font-weight:800">胆</span> = 当日综合过关胆拖的最有信心单选</div>';
   }
 }
 </script>

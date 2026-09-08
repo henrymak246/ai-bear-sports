@@ -146,6 +146,49 @@ assert.strictEqual(S.isBeidan({ id: '周三001' }), false);
 assert.doesNotThrow(function () { S.computeBeidan([]); });
 assert.doesNotThrow(function () { S.computeBeidan([{ date: '2026-07-25' }]); });
 
+// ---- computeBeidan：beidan310 顶层块 legs 明细（2026-09-08 起，pick 3/1/0 复用竞彩场判定） ----
+const bd310Days = [
+  { date: '2026-09-08', matches: [
+    { id: '周二002', league: '欧冠', home: '雅典AEK', away: 'LASK', direction: '主胜', overUnder: '小3', score: [], finalScore: '2-0' },
+    { id: '周二011', league: '欧冠', home: '波尔图', away: '曼城', direction: '客胜', overUnder: '大2.5', score: [], finalScore: '1-2' },
+    { id: '周二003', league: '欧冠', home: '布鲁日', away: '维拉', direction: '主胜', overUnder: '小2.5', score: [], finalScore: null }, // 待赛
+  ], plan: [], beidan310: { legs: [
+    { play: '北单310', match: '002 雅典AEK vs LASK', pick: '3', odds: '1.59', result: null },
+    { play: '北单310', match: '011 波尔图 vs 曼城', pick: '0', odds: '1.48', result: 'miss' }, // 人工回填优先(覆盖自动判定的 hit)
+    { play: '北单310', match: '003 布鲁日 vs 维拉', pick: '3', odds: '2.41', result: null },   // 待赛不计
+  ], result: 'half' } },
+];
+const bd310 = S.computeBeidan(bd310Days);
+assert.strictEqual(bd310.direction.score, 1);          // 002 pick3 主胜✓；011 人工 miss
+assert.strictEqual(bd310.direction.total, 2);
+assert.strictEqual(bd310.plan.half, 1);                // beidan310.result 计入方案块
+assert.strictEqual(bd310.matches.length, 3);           // 三腿全进明细(含待赛)
+assert.strictEqual(bd310.matches[0].d, 1);             // 002 自动判定红
+assert.strictEqual(bd310.matches[1].d, 0);             // 011 人工 miss 优先
+assert.strictEqual(bd310.matches[2].d, null);          // 003 待赛
+assert.strictEqual(bd310.matches[0].direction.indexOf('主胜'), 0); // pick 3 → 主胜
+assert(bd310.matches[0].direction.includes('1.59'), '明细带参考 SP');
+assert.strictEqual(bd310.jcDirection.total, 2);        // 竞彩场方向仍入对照(002✓/011✓)
+
+// ---- beidan310 复式多选（2026-09-08 晚起）：pick '3/1' 命中其一即红 ----
+const bdMulti = S.computeBeidan([
+  { date: '2026-09-08', matches: [
+    { id: '周二004', league: '荷甲', home: '奈梅亨', away: '精英', direction: '主胜', finalScore: '1-1' },
+    { id: '周二005', league: '沙职', home: '胡巴卡德', away: '国民', direction: '主胜', finalScore: '2-1' },
+    { id: '周二006', league: '英冠', home: '南安普敦', away: '斯旺西', direction: '主胜', finalScore: null }, // 待赛
+  ], plan: [], beidan310: { legs: [
+    { play: '北单310', match: '004 奈梅亨 vs 精英', pick: '3/1', odds: '1.48/4.30', result: null },  // 平→防平红
+    { play: '北单310', match: '005 胡巴卡德 vs 国民', pick: '3/1', odds: '1.75/3.80', result: null }, // 主胜→红
+    { play: '北单310', match: '006 南安普敦 vs 斯旺西', pick: '0/1', odds: '1.48/4.05', result: 'miss' }, // 人工回填优先
+  ], result: null } },
+]);
+assert.strictEqual(bdMulti.direction.score, 2);        // 防平✓ + 主胜✓；006 人工 miss
+assert.strictEqual(bdMulti.direction.total, 3);
+assert.strictEqual(bdMulti.matches[0].d, 1);
+assert.strictEqual(bdMulti.matches[0].direction.indexOf('主胜/平'), 0); // 多选显示
+assert(bdMulti.matches[0].direction.includes('1.48/4.30'), '多选带双 SP');
+assert.strictEqual(bdMulti.matches[2].d, 0);           // 人工 miss 优先于多选判定
+
 // ---- computeJK：日韩（id 以「日职」/「韩K」开头）单独累计 + 竞彩对照 + 日韩方案块 ----
 const jkDays = [
   { date: '2026-08-08', matches: [

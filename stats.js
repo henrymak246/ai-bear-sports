@@ -216,6 +216,36 @@
         if (!p || String(p.name || '').indexOf('北单') === -1) return;
         if (['hit', 'half', 'miss', 'push'].indexOf(p.result) !== -1) plan[p.result] += 1;
       });
+      // 北单310 顶层块(2026-09-08 起): legs pick=3/1/0 → 主胜/平/客胜, 复用当日竞彩场 finalScore 自动判定;
+      // 2026-09-08 晚起支持复式多选 pick='3/1'(命中其一即红, 对齐竞彩层双选"不败"语义);
+      // 人工回填 leg.result(hit/miss) 优先; 明细进专栏, 方向命中计入 direction
+      var b310 = day.beidan310;
+      if (b310 && Array.isArray(b310.legs)) {
+        if (['hit', 'half', 'miss', 'push'].indexOf(b310.result) !== -1) plan[b310.result] += 1;
+        var pickMap = { '3': '主胜', '1': '平', '0': '客胜' };
+        b310.legs.forEach(leg => {
+          const num = String(leg.match || '').slice(0, 3);
+          const mm = (day.matches || []).find(x => x.id && String(x.id).slice(-3) === num);
+          if (!mm) return;
+          const picks = String(leg.pick || '').split('/').map(s => pickMap[s.trim()]).filter(Boolean);
+          if (picks.length === 0) return;
+          const dirTxt = picks.join('/');
+          let d = null;
+          if (leg.result === 'hit') d = 1;
+          else if (leg.result === 'miss') d = 0;
+          else {
+            const s = parseScore(mm.finalScore);
+            if (s) {
+              const actual = s.home > s.away ? '主胜' : s.home < s.away ? '客胜' : '平';
+              d = picks.indexOf(actual) >= 0 ? 1 : 0;
+            }
+          }
+          if (d !== null) { dir.score += d; dir.total += 1; }
+          list.push({ date: day.date, id: num + '单', league: mm.league, home: mm.home, away: mm.away,
+            direction: dirTxt + (leg.odds ? '(SP' + leg.odds + ')' : ''), overUnder: '—', finalScore: mm.finalScore || null,
+            score: [], scoreSp: null, d, o: null, b: null });
+        });
+      }
     });
     list.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)); // 日期倒序，同日保持原顺序
     return {
