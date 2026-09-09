@@ -247,7 +247,7 @@
           }
           if (d !== null) { dir.score += d; dir.total += 1; }
           list.push({ date: day.date, id: num + '单', league: mm.league, home: mm.home, away: mm.away,
-            direction: pick310 + hcTxt + (leg.odds ? '(SP' + leg.odds + ')' : ''), overUnder: '—', finalScore: mm.finalScore || null,
+            direction: pick310 + hcTxt, overUnder: '—', finalScore: mm.finalScore || null, // SP 不显示(用户拍板 2026-09-09)
             score: [], scoreSp: null, d, o: null, b: null });
         });
       }

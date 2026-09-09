@@ -166,8 +166,8 @@ assert.strictEqual(bd310.matches.length, 3);           // 三腿全进明细(含
 assert.strictEqual(bd310.matches[0].d, 1);             // 002 自动判定红
 assert.strictEqual(bd310.matches[1].d, 0);             // 011 人工 miss 优先
 assert.strictEqual(bd310.matches[2].d, null);          // 003 待赛
-assert.strictEqual(bd310.matches[0].direction.indexOf('3('), 0); // pick 3 → 310记法展示
-assert(bd310.matches[0].direction.includes('1.59'), '明细带参考 SP');
+assert.strictEqual(bd310.matches[0].direction, '3'); // pick 3 → 310记法(不显示SP)
+assert(!bd310.matches[0].direction.includes('SP'), '明细不显示 SP(2026-09-09 起)');
 assert.strictEqual(bd310.jcDirection.total, 2);        // 竞彩场方向仍入对照(002✓/011✓)
 
 // ---- beidan310 复式多选（2026-09-08 晚起）：pick '3/1' 命中其一即红 ----
@@ -185,8 +185,8 @@ const bdMulti = S.computeBeidan([
 assert.strictEqual(bdMulti.direction.score, 2);        // 防平✓ + 主胜✓；006 人工 miss
 assert.strictEqual(bdMulti.direction.total, 3);
 assert.strictEqual(bdMulti.matches[0].d, 1);
-assert.strictEqual(bdMulti.matches[0].direction.indexOf('3/1('), 0); // 多选 310 记法显示
-assert(bdMulti.matches[0].direction.includes('1.48/4.30'), '多选带双 SP');
+assert.strictEqual(bdMulti.matches[0].direction, '3/1'); // 多选 310 记法(不显示SP)
+assert(!bdMulti.matches[0].direction.includes('SP'), '多选明细不显示 SP');
 assert.strictEqual(bdMulti.matches[2].d, 0);           // 人工 miss 优先于多选判定
 
 // ---- beidan310 让球判定（2026-09-09 更正）：leg.handicap 负数=主让, 主队比分+让球数后定3/1/0; result='push' 腿无效不计入 ----
