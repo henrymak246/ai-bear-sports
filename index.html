@@ -1391,7 +1391,7 @@ function renderApp(days) {
         '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
         '<td>' + esc(m.direction) + ' / ' + esc(m.overUnder) + '</td>' +
         '<td>' + (m.finalScore ? '<span class="final">' + esc(m.finalScore) + '</span>' : '<span class="wait">待赛</span>') + '</td>' +
-        '<td>' + mark(m.d) + ' ' + mark(m.o) + ' ' + scoreMark(m.score, m.finalScore, m.scoreSp) + '</td></tr>';
+        '<td>' + mark(m.d) + (m.dTxt ? '<br><span class="final" style="font-size:11px">' + esc(m.dTxt) + '</span>' : '') + ' ' + mark(m.o) + ' ' + scoreMark(m.score, m.finalScore, m.scoreSp) + '</td></tr>';
     }
     var sp = splitByRecentDates(col.matches, 3);
     var rows = sp.visible.map(rowHtml).join('') +

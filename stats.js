@@ -224,31 +224,45 @@
       if (b310 && Array.isArray(b310.legs)) {
         if (['hit', 'half', 'miss', 'push'].indexOf(b310.result) !== -1) plan[b310.result] += 1;
         var pickMap = { '3': '主胜', '1': '平', '0': '客胜' };
+        var revMap = { '主胜': '3', '平': '1', '客胜': '0' };
         b310.legs.forEach(leg => {
           const num = String(leg.match || '').slice(0, 3);
           const mm = (day.matches || []).find(x => x.id && String(x.id).slice(-3) === num);
-          if (!mm) return;
+          // 北单期次场(非竞彩场, 如 056 圣约翰斯通场): 无竞彩 match → 用 leg 自身 finalScore/home/away(2026-09-09 起)
+          const lg = mm ? mm.league : (leg.league || '北单');
+          const home = mm ? mm.home : String(leg.match || '').slice(4).split(' vs ')[0];
+          const away = mm ? mm.away : (String(leg.match || '').split(' vs ')[1] || '');
+          const fs = mm ? mm.finalScore : (leg.finalScore || null);
+          if (!mm && !home) return;
           const picks = String(leg.pick || '').split('/').map(s => pickMap[s.trim()]).filter(Boolean);
           if (picks.length === 0) return;
           const pick310 = String(leg.pick || ''); // 北单原生 310 记法展示(3=主胜/1=平/0=客胜, 玩法卡有对照)
           const hc = parseInt(leg.handicap, 10) || 0;
           const hcTxt = hc !== 0 ? '[让' + String(leg.handicap).replace(/^\+?(-?\d+)$/, (m, g) => (hc > 0 ? '+' : '') + g) + ']' : '';
+          // 官方赛果(让球后 310)+结果 SP(leg.sp3=[胜,平,负]) → 判定列文本
+          let dTxt = null;
+          const s0 = parseScore(fs);
+          let actual = null;
+          if (s0) {
+            const adjH0 = s0.home + hc;
+            actual = adjH0 > s0.away ? '主胜' : adjH0 < s0.away ? '客胜' : '平';
+            const r310 = revMap[actual];
+            let spTxt = '';
+            if (Array.isArray(leg.sp3)) {
+              const idx = r310 === '3' ? 0 : r310 === '1' ? 1 : 2;
+              if (leg.sp3[idx]) spTxt = ' @' + leg.sp3[idx];
+            }
+            dTxt = '赛果' + r310 + spTxt;
+          }
           let d = null;
           if (leg.result === 'hit') d = 1;
           else if (leg.result === 'miss') d = 0;
           else if (leg.result === 'push') d = null; // 无效腿不计入
-          else {
-            const s = parseScore(mm.finalScore);
-            if (s) {
-              const adjH = s.home + hc; // 北单让球后比分定 3/1/0
-              const actual = adjH > s.away ? '主胜' : adjH < s.away ? '客胜' : '平';
-              d = picks.indexOf(actual) >= 0 ? 1 : 0;
-            }
-          }
+          else if (actual) d = picks.indexOf(actual) >= 0 ? 1 : 0;
           if (d !== null) { dir.score += d; dir.total += 1; }
-          list.push({ date: day.date, id: num + '单', league: mm.league, home: mm.home, away: mm.away,
-            direction: pick310 + hcTxt, overUnder: '—', finalScore: mm.finalScore || null, // SP 不显示(用户拍板 2026-09-09)
-            score: [], scoreSp: null, d, o: null, b: null });
+          list.push({ date: day.date, id: num + '单', league: lg, home, away,
+            direction: pick310 + hcTxt, overUnder: '—', finalScore: fs || null, // SP 不显示(用户拍板 2026-09-09)
+            score: [], scoreSp: null, d, o: null, b: null, dTxt });
         });
       }
     });

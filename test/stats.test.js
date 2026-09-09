@@ -212,6 +212,27 @@ assert.strictEqual(bdHc.matches[2].d, 1);              // 让-1 下主胜1球=�
 assert(bdHc.matches[0].direction.includes('[让-1]'), '明细应显示让球数');
 assert.strictEqual(bdHc.plan.miss, 1);
 
+// ---- beidan310 北单期次场(非竞彩场)回退 + 赛果SP判定文本（2026-09-09 起）----
+const bdExt = S.computeBeidan([
+  { date: '2026-09-09', matches: [
+    { id: '周三007', league: '欧冠', home: '那不勒斯', away: '阿森纳', direction: '客胜', finalScore: '0-2' },
+  ], plan: [], beidan310: { legs: [
+    { play: '北单310', match: '007 那不勒斯 vs 阿森纳', pick: '0/1', handicap: '+1', sp3: ['5.54', '3.83', '1.64'], result: null }, // 0-2让+1→客胜0@1.64, 红
+    { play: '北单310', league: '苏超', match: '056 圣约翰斯通 vs 凯尔特人', pick: '0/1', handicap: '+1', sp3: ['5.82', '4.60', '1.45'], finalScore: '1-2', result: null }, // 北单期次场: leg.finalScore 回退, 1-2让+1→让球平1@4.60, 红
+    { play: '北单310', league: '苏超', match: '057 流浪者 vs 圣米伦', pick: '3', handicap: '-2', sp3: ['1.31', '5.31', '8.11'], finalScore: null, result: null }, // 待赛无 dTxt
+  ], result: null } },
+]);
+assert.strictEqual(bdExt.direction.score, 2);            // 007✓ + 056✓
+assert.strictEqual(bdExt.direction.total, 2);
+assert.strictEqual(bdExt.matches.length, 3);             // 非竞彩场也进明细
+assert.strictEqual(bdExt.matches[0].dTxt, '赛果0 @1.64'); // 让球后客胜+结果SP
+assert.strictEqual(bdExt.matches[1].dTxt, '赛果1 @4.60'); // 非竞彩场让球平+结果SP
+assert.strictEqual(bdExt.matches[1].home, '圣约翰斯通'); // 回退主客队名
+assert.strictEqual(bdExt.matches[1].league, '苏超');
+assert.strictEqual(bdExt.matches[1].d, 1);               // 让+1场0/1=客赢球即红(此处让球平)
+assert.strictEqual(bdExt.matches[2].dTxt, null);         // 待赛无赛果文本
+assert.strictEqual(bdExt.matches[2].d, null);
+
 // ---- computeJK：日韩（id 以「日职」/「韩K」开头）单独累计 + 竞彩对照 + 日韩方案块 ----
 const jkDays = [
   { date: '2026-08-08', matches: [
