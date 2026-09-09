@@ -230,7 +230,7 @@
           if (!mm) return;
           const picks = String(leg.pick || '').split('/').map(s => pickMap[s.trim()]).filter(Boolean);
           if (picks.length === 0) return;
-          const dirTxt = picks.join('/');
+          const pick310 = String(leg.pick || ''); // 北单原生 310 记法展示(3=主胜/1=平/0=客胜, 玩法卡有对照)
           const hc = parseInt(leg.handicap, 10) || 0;
           const hcTxt = hc !== 0 ? '[让' + String(leg.handicap).replace(/^\+?(-?\d+)$/, (m, g) => (hc > 0 ? '+' : '') + g) + ']' : '';
           let d = null;
@@ -247,7 +247,7 @@
           }
           if (d !== null) { dir.score += d; dir.total += 1; }
           list.push({ date: day.date, id: num + '单', league: mm.league, home: mm.home, away: mm.away,
-            direction: dirTxt + hcTxt + (leg.odds ? '(SP' + leg.odds + ')' : ''), overUnder: '—', finalScore: mm.finalScore || null,
+            direction: pick310 + hcTxt + (leg.odds ? '(SP' + leg.odds + ')' : ''), overUnder: '—', finalScore: mm.finalScore || null,
             score: [], scoreSp: null, d, o: null, b: null });
         });
       }
