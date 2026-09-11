@@ -260,7 +260,8 @@
           else if (leg.result === 'push') d = null; // 无效腿不计入
           else if (actual) d = picks.indexOf(actual) >= 0 ? 1 : 0;
           if (d !== null) { dir.score += d; dir.total += 1; }
-          list.push({ date: day.date, id: num + '单', league: lg, home, away,
+          // leg.bdNum=北单官方对阵表场次号(2026-09-11 起, 用户拍板: 编号列显示北单号方便对照出票; 判定仍按 leg.match 前三位=竞彩号)
+          list.push({ date: day.date, id: (leg.bdNum ? '北单' + leg.bdNum : num + '单'), league: lg, home, away,
             direction: pick310 + hcTxt, overUnder: '—', finalScore: fs || null, // SP 不显示(用户拍板 2026-09-09)
             score: [], scoreSp: null, d, o: null, b: null, dTxt });
         });
