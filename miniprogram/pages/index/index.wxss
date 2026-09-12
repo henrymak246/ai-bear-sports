@@ -1,0 +1,116 @@
+/* index.wxss — 推荐页样式(通用卡片/徽章/判定/空态在 app.wxss) */
+
+/* 顶栏 */
+.topbar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.topbar-date { font-weight: 800; color: #8B5A2B; font-size: 30rpx; }
+.topbar-updated { font-size: 22rpx; }
+.daily-title {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #B98A5E;
+  line-height: 1.6;
+}
+
+/* Tab 切换 */
+.tabs {
+  display: flex;
+  gap: 12rpx;
+  margin-top: 18rpx;
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 13rpx 0;
+  border-radius: 999rpx;
+  background: #FFF1D6;
+  color: #8B5A2B;
+  font-weight: 700;
+  font-size: 26rpx;
+}
+.tab-on { background: #8B5A2B; color: #FFFFFF; }
+.tab-off { opacity: 0.4; }
+
+/* plan 块 */
+.plan-card { border-top: 6rpx solid #F5A623; }
+.plan-head { display: flex; justify-content: space-between; align-items: baseline; }
+.plan-name { font-weight: 800; color: #8B5A2B; font-size: 26rpx; }
+.plan-pct {
+  font-size: 22rpx;
+  color: #D97706;
+  background: #FFF1D6;
+  border-radius: 999rpx;
+  padding: 3rpx 14rpx;
+  font-weight: 700;
+}
+.plan-text { margin-top: 8rpx; font-size: 24rpx; color: #B98A5E; line-height: 1.65; }
+.plan-note-card { background: #FFF8EC; }
+
+/* 场次卡 */
+.m-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+.m-teams { flex: 1; min-width: 0; }
+.m-league { font-size: 22rpx; }
+.m-vs {
+  margin-top: 4rpx;
+  font-weight: 800;
+  font-size: 30rpx;
+  color: #4A3A28;
+}
+.live-score {
+  color: #D97706;
+  font-weight: 800;
+  font-size: 28rpx;
+  flex: none;
+}
+.m-line {
+  margin-top: 12rpx;
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  flex-wrap: wrap;
+  font-size: 25rpx;
+}
+.m-dir { font-weight: 800; color: #8B5A2B; }
+
+/* 备注折叠 */
+.m-note-toggle {
+  margin-top: 12rpx;
+  color: #D97706;
+  font-size: 24rpx;
+  font-weight: 700;
+}
+.m-note {
+  margin-top: 10rpx;
+  background: #FFF8EC;
+  border-radius: 12rpx;
+  padding: 14rpx 16rpx;
+  color: #8B5A2B;
+  font-size: 23rpx;
+  line-height: 1.65;
+}
+
+/* 北单 SP 三列 */
+.sp3 {
+  display: flex;
+  gap: 10rpx;
+  margin-top: 14rpx;
+}
+.sp3-cell {
+  flex: 1;
+  text-align: center;
+  background: #FFF8EC;
+  border-radius: 10rpx;
+  padding: 10rpx 0;
+  font-weight: 800;
+  color: #8B5A2B;
+  font-size: 26rpx;
+}
+.sp3-label { font-size: 20rpx; font-weight: 400; }

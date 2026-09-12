@@ -1,0 +1,83 @@
+/* app.wxss — 全局通用样式(小熊棕暖色系, 取色对齐站点 index.html :root)
+   --cream:#FFF6E9  --card:#FFFDF8  --line:#F0E2CC
+   --brown:#8B5A2B  --brown-soft:#B98A5E  --muted:#A8A29E
+   --honey:#F5A623  --honey-dark:#D97706
+   --green:#2F9E63  --green-bg:#E8F7EE
+   --coral:#F25C5C  --amber-bg:#FFF1D6 */
+page {
+  background: #FFF6E9;
+  color: #4A3A28;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-size: 28rpx;
+  line-height: 1.5;
+}
+
+.card {
+  background: #FFFDF8;
+  border: 1rpx solid #F0E2CC;
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin: 16rpx 20rpx;
+  box-shadow: 0 4rpx 14rpx rgba(169, 113, 61, 0.10);
+}
+
+.muted { color: #A8A29E; }
+.star { color: #F5A623; font-size: 24rpx; letter-spacing: 2rpx; }
+.strong { font-weight: 800; color: #8B5A2B; }
+
+/* 方向徽章: 胆=金 / 单选=红 / 双选=蓝 / 弃选=灰 */
+.badge {
+  display: inline-block;
+  padding: 3rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.4;
+}
+.badge-gold { background: #F5A623; }
+.badge-red { background: #F25C5C; }
+.badge-blue { background: #5B8DEF; }
+.badge-gray { background: #A8A29E; }
+
+/* 判定徽记: 命中绿 / 失手红 / 走水·待赛灰 */
+.judge {
+  display: inline-block;
+  min-width: 44rpx;
+  text-align: center;
+  padding: 3rpx 12rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+.judge-hit { background: #2F9E63; }
+.judge-miss { background: #F25C5C; }
+.judge-pending { background: #A8A29E; }
+
+/* 错误/提示横幅 */
+.err-banner {
+  margin: 16rpx 20rpx 0;
+  background: #FDE2E2;
+  color: #B91C1C;
+  border: 1rpx solid #F5B5B5;
+  border-radius: 16rpx;
+  padding: 16rpx 20rpx;
+  font-size: 24rpx;
+}
+
+/* 空态 */
+.empty {
+  text-align: center;
+  color: #A8A29E;
+  padding: 80rpx 0;
+  font-size: 26rpx;
+}
+
+/* 加载中 */
+.loading {
+  text-align: center;
+  color: #A8A29E;
+  padding: 60rpx 0;
+  font-size: 26rpx;
+}

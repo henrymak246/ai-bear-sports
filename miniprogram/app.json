@@ -1,0 +1,24 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/bets/bets"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#8B5A2B",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "AI小熊 · 体育心得分享",
+    "backgroundColor": "#FFF6E9"
+  },
+  "tabBar": {
+    "color": "#A8A29E",
+    "selectedColor": "#8B5A2B",
+    "backgroundColor": "#FFFDF8",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "🐻推荐" },
+      { "pagePath": "pages/bets/bets", "text": "📒投注" }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

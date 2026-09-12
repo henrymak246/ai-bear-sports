@@ -1,0 +1,119 @@
+<view class="page">
+  <!-- 顶栏: 日期 + 发布标题 + 三 Tab -->
+  <view class="topbar card">
+    <view class="topbar-row">
+      <text class="topbar-date">📅 {{payload.date || '--'}}</text>
+      <text class="muted topbar-updated" wx:if="{{lastUpdated}}">更新 {{lastUpdated}}</text>
+    </view>
+    <view class="daily-title" wx:if="{{dailyTitle}}">{{dailyTitle}}</view>
+    <view class="tabs">
+      <view class="tab {{tab === 'jc' ? 'tab-on' : ''}}" data-tab="jc" bindtap="switchTab">🎫 竞彩</view>
+      <view class="tab {{tab === 'bd' ? 'tab-on' : ''}} {{bdDisabled ? 'tab-off' : ''}}" data-tab="bd" bindtap="switchTab">🀄 北单</view>
+      <view class="tab {{tab === 'ah' ? 'tab-on' : ''}}" data-tab="ah" bindtap="switchTab">🌏 亚盘</view>
+    </view>
+  </view>
+
+  <view class="err-banner" wx:if="{{errMsg}}">⚠️ {{errMsg}}</view>
+  <view class="loading" wx:if="{{loading && !payload}}">小熊搬运中…</view>
+
+  <!-- ============ 🎫 竞彩 Tab ============ -->
+  <block wx:if="{{tab === 'jc' && payload}}">
+    <view class="card plan-card" wx:for="{{planJc}}" wx:key="name">
+      <view class="plan-head">
+        <text class="plan-name">{{item.name}}</text>
+        <text class="plan-pct" wx:if="{{item.pct}}">{{item.pct}}</text>
+      </view>
+      <view class="plan-text">{{item.text}}</view>
+    </view>
+
+    <view class="card match-card" wx:for="{{groups.jc}}" wx:key="id">
+      <view class="m-head">
+        <view class="m-teams">
+          <text class="m-league muted">{{item.league}} · {{item.id}}</text>
+          <view class="m-vs">{{item.home}} <text class="muted">vs</text> {{item.away}}</view>
+        </view>
+        <text class="live-score">{{item.liveScore || item.time}}</text>
+      </view>
+      <view class="m-line">
+        <text class="badge {{item.badgeClass}}">{{item.dirTag || '方向'}}</text>
+        <text class="m-dir">{{item.direction}}</text>
+        <text class="star" wx:if="{{item.stars}}">{{item.stars}}</text>
+      </view>
+      <view class="m-line muted" wx:if="{{item.spText || item.hhadText}}">
+        <text wx:if="{{item.spText}}">SP {{item.spText}}</text>
+        <text wx:if="{{item.hhadText}}">让球SP {{item.hhadText}}</text>
+      </view>
+      <view class="m-line muted">
+        <text wx:if="{{item.overUnder}}">总进球 {{item.overUnder}}<text wx:if="{{item.ttgSp}}"> @{{item.ttgSp}}</text></text>
+        <text wx:if="{{item.scoreText}}">比分 {{item.scoreText}}</text>
+      </view>
+      <view class="m-note-toggle" wx:if="{{item.note}}" data-id="{{item.id}}" bindtap="toggleNote">
+        ℹ️ {{noteMap[item.id] ? '收起备注' : '备注'}}
+      </view>
+      <view class="m-note" wx:if="{{item.note && noteMap[item.id]}}">{{item.note}}</view>
+      <!-- Wave3 勾选框占位(本阶段隐藏) -->
+      <checkbox class="m-check" wx:if="{{false}}" data-id="{{item.id}}" />
+    </view>
+    <view class="empty" wx:if="{{!groups.jc.length}}">等小熊补充🐾</view>
+  </block>
+
+  <!-- ============ 🀄 北单 Tab ============ -->
+  <block wx:if="{{tab === 'bd' && payload}}">
+    <view class="card plan-note-card" wx:if="{{bdNote}}">
+      <view class="plan-text">{{bdNote}}</view>
+    </view>
+    <view class="card plan-card" wx:for="{{planBd}}" wx:key="name">
+      <view class="plan-head">
+        <text class="plan-name">{{item.name}}</text>
+        <text class="plan-pct" wx:if="{{item.pct}}">{{item.pct}}</text>
+      </view>
+      <view class="plan-text">{{item.text}}</view>
+    </view>
+
+    <view class="card leg-card" wx:for="{{groups.bd}}" wx:key="bdNum">
+      <view class="m-head">
+        <view class="m-teams">
+          <text class="m-league muted">北单{{item.bdNum}}</text>
+          <view class="m-vs">{{item.home}} <text class="muted">vs</text> {{item.away}}</view>
+        </view>
+        <text class="judge {{item.judgeClass}}">{{item.judgeLabel}}</text>
+      </view>
+      <view class="m-line">
+        <text class="badge badge-gold">让{{item.handicap}}</text>
+        <text class="m-dir">推荐 {{item.pick}}</text>
+        <text class="muted" wx:if="{{item.finalScore}}">赛果 {{item.finalScore}}</text>
+      </view>
+      <view class="sp3" wx:if="{{item.sp3.length}}">
+        <view class="sp3-cell"><view class="muted sp3-label">胜</view>{{item.sp3[0] || '-'}}</view>
+        <view class="sp3-cell"><view class="muted sp3-label">平</view>{{item.sp3[1] || '-'}}</view>
+        <view class="sp3-cell"><view class="muted sp3-label">负</view>{{item.sp3[2] || '-'}}</view>
+      </view>
+      <view class="m-note" wx:if="{{item.reason}}">{{item.reason}}</view>
+    </view>
+    <view class="empty" wx:if="{{!groups.bd.length}}">等小熊补充🐾</view>
+  </block>
+
+  <!-- ============ 🌏 亚盘 Tab ============ -->
+  <block wx:if="{{tab === 'ah' && payload}}">
+    <view class="card match-card" wx:for="{{groups.ah}}" wx:key="id">
+      <view class="m-head">
+        <view class="m-teams">
+          <text class="m-league muted">{{item.league}} · {{item.id}}</text>
+          <view class="m-vs">{{item.home}} <text class="muted">vs</text> {{item.away}}</view>
+        </view>
+        <text class="live-score">{{item.time}}</text>
+      </view>
+      <view class="m-line">
+        <text class="m-dir">让球 {{item.ahPick}}</text>
+        <text class="star" wx:if="{{item.ahStars}}">{{item.ahStars}}</text>
+      </view>
+      <view class="m-line" wx:if="{{item.ouPick}}">
+        <text class="m-dir">大小 {{item.ouPick}}</text>
+        <text class="star" wx:if="{{item.ouStars}}">{{item.ouStars}}</text>
+      </view>
+      <view class="m-line muted" wx:if="{{item.ahName}}">盘口 {{item.ahName}} ｜ 主水 {{item.ahHome}} ／ 客水 {{item.ahAway}}</view>
+      <view class="m-line muted" wx:if="{{item.ouName}}">大小 {{item.ouName}} ｜ 大水 {{item.ouOver}} ／ 小水 {{item.ouUnder}}</view>
+    </view>
+    <view class="empty" wx:if="{{!groups.ah.length}}">等小熊补充🐾</view>
+  </block>
+</view>

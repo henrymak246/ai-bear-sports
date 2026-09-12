@@ -1,0 +1,13 @@
+{
+  "description": "AI小熊足球预测站 · 微信小程序(自用开发版)",
+  "appid": "touristappid",
+  "compileType": "miniprogram",
+  "libVersion": "latest",
+  "projectname": "ai-bear-sports-mini",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "postcss": true,
+    "minified": true
+  }
+}
