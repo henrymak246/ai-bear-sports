@@ -199,7 +199,16 @@
     const jcDir = { score: 0, total: 0 };
     const plan = { hit: 0, half: 0, miss: 0, push: 0 };
     const list = [];
+    // 明细只显示当日(2026-09-12 用户拍板): 北单对阵表期次强相关, 历史期次的腿无参考意义;
+    // "当日"=数据中最新含 beidan310 的日期; 统计(方向/大小/比分/方案块/全中彩金)仍全历史累计
+    let latestBdDate = null;
     (days || []).forEach(day => {
+      if (day.beidan310 && day.date && (latestBdDate === null || day.date > latestBdDate)) latestBdDate = day.date;
+    });
+    let payoutTotal = 0, payoutCount = 0; // 理论全中彩金(历史登记 beidan310.fullPayout, 2026-09-12 起)
+    (days || []).forEach(day => {
+      // 无 beidan310 顶层块的历史数据保持旧行为(全显示); 有顶层块后明细只留最新期次
+      const showDay = latestBdDate === null || day.date === latestBdDate;
       (day.matches || []).forEach(m => {
         const d = judgeDirection(m.direction, m.finalScore);
         if (!isBeidan(m)) { if (!isJK(m) && d !== null) { jcDir.score += d; jcDir.total += 1; } return; }
@@ -208,7 +217,7 @@
         if (o !== null) { ou.score += o; ou.total += 1; }
         const b = judgeScore(m.score, m.finalScore);
         if (b !== null) { sc.score += b; sc.total += 1; }
-        list.push({ date: day.date, id: m.id, league: m.league, home: m.home, away: m.away,
+        if (showDay) list.push({ date: day.date, id: m.id, league: m.league, home: m.home, away: m.away,
           direction: m.direction, overUnder: m.overUnder, finalScore: m.finalScore || null,
           score: m.score || [], scoreSp: m.scoreSp || null, d, o, b });
       });
@@ -223,6 +232,7 @@
       var b310 = day.beidan310;
       if (b310 && Array.isArray(b310.legs)) {
         if (['hit', 'half', 'miss', 'push'].indexOf(b310.result) !== -1) plan[b310.result] += 1;
+        if (typeof b310.fullPayout === 'number') { payoutTotal += b310.fullPayout; payoutCount += 1; }
         var pickMap = { '3': '主胜', '1': '平', '0': '客胜' };
         var revMap = { '主胜': '3', '平': '1', '客胜': '0' };
         b310.legs.forEach(leg => {
@@ -261,7 +271,7 @@
           else if (actual) d = picks.indexOf(actual) >= 0 ? 1 : 0;
           if (d !== null) { dir.score += d; dir.total += 1; }
           // leg.bdNum=北单官方对阵表场次号(2026-09-11 起, 用户拍板: 编号列显示北单号方便对照出票; 判定仍按 leg.match 前三位=竞彩号)
-          list.push({ date: day.date, id: (leg.bdNum ? '北单' + leg.bdNum : num + '单'), league: lg, home, away,
+          if (showDay) list.push({ date: day.date, id: (leg.bdNum ? '北单' + leg.bdNum : num + '单'), league: lg, home, away,
             direction: pick310 + hcTxt, overUnder: '—', finalScore: fs || null, // SP 不显示(用户拍板 2026-09-09)
             score: [], scoreSp: null, d, o: null, b: null, dTxt });
         });
@@ -274,6 +284,7 @@
       score: { score: sc.score, total: sc.total, rate: rate(sc) },
       jcDirection: { score: jcDir.score, total: jcDir.total, rate: rate(jcDir) },
       plan,
+      payout: { total: payoutTotal, count: payoutCount }, // 理论全中彩金累计(历史登记值, 仅供参考非实际中奖)
       matches: list,
     };
   }
