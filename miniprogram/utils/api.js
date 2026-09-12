@@ -55,20 +55,20 @@ async function request(path, { method = "GET", body, key, fetcher, extraHeaders 
   return text ? JSON.parse(text) : null;
 }
 
-/* 最新一天推荐 payload(ANON_KEY, 只读) */
+/* 最新一天推荐 payload(SERVICE_KEY; 2026-09-12 实测: RLS 会员门控, ANON_KEY 返回 0 行) */
 async function fetchTodayPayload(opts) {
   const cfg = loadConfig();
   const rows = await request("/rest/v1/prediction_days?select=date,payload&order=date.desc&limit=1",
-    { key: cfg.SUPABASE_ANON_KEY, fetcher: opts && opts.fetcher });
+    { key: cfg.SUPABASE_SERVICE_KEY, fetcher: opts && opts.fetcher });
   return rows && rows[0] ? rows[0].payload : null;
 }
 
-/* 指定日期(YYYY-MM-DD)推荐 payload(ANON_KEY, 只读) */
+/* 指定日期(YYYY-MM-DD)推荐 payload(SERVICE_KEY, 同上原因) */
 async function fetchPayloadByDate(date, opts) {
   const cfg = loadConfig();
   const rows = await request("/rest/v1/prediction_days?select=date,payload&date=eq." + encodeURIComponent(date) +
     "&order=date.desc&limit=1",
-    { key: cfg.SUPABASE_ANON_KEY, fetcher: opts && opts.fetcher });
+    { key: cfg.SUPABASE_SERVICE_KEY, fetcher: opts && opts.fetcher });
   return rows && rows[0] ? rows[0].payload : null;
 }
 
