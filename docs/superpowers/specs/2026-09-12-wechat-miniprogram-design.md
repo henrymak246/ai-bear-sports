@@ -37,8 +37,8 @@
 ## 4. 数据流
 
 ### 4.1 推荐数据(只读)
-- `GET {SUPABASE_URL}/rest/v1/prediction_days?date=eq.<today>&select=payload`,header 带 anon key。
-- 取数组最新一天(倒序第一),payload 结构即站点数据(matches/plan/max7/hc7/asian7/score3/beidan310/zucai310)。
+- `GET {SUPABASE_URL}/rest/v1/prediction_days?select=date,payload&order=date.desc&limit=1`,取最新一天 payload(matches/plan/max7/hc7/asian7/score3/beidan310/zucai310)。
+- **⚠️ 2026-09-12 实测更正: anon 角色对该表返回 `[]`**(RLS=登录+members.approved 审核通过才可读), 故小程序读推荐**统一用 service key**(自用开发版, 与 bets 写同级风险, 用户已拍板接受); 不放宽 RLS(会公开全部历史推荐, 影响会员制), 不接 Supabase Auth(自用过度工程)。
 
 ### 4.2 实时比分(前台轮询)
 - 联赛码注册表+中文队名→ESPN displayName 映射表,**从 `tools/_live0912.js` 的 LEAGUES/TEAM 移植**为 `miniprogram/utils/espn.js` 数据模块(每日 build 时由脚本重新生成,防止漂移:`tools/gen_mini_espn.js` 从最新 `_live<MMDD>.js` 抽取)。

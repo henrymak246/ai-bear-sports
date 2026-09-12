@@ -6,3 +6,4 @@ data/_watch-*.log
 data/_watch-alerts.log
 tools/.env
 tools/node_modules/
+miniprogram/utils/config.js
