@@ -4,6 +4,7 @@
     <view class="topbar-row">
       <text class="topbar-date">📅 {{payload.date || '--'}}</text>
       <text class="muted topbar-updated" wx:if="{{lastUpdated}}">更新 {{lastUpdated}}</text>
+      <text class="muted topbar-updated" wx:if="{{scoreStatus}}"> · {{scoreStatus}}</text>
     </view>
     <view class="daily-title" wx:if="{{dailyTitle}}">{{dailyTitle}}</view>
     <view class="tabs">
@@ -32,7 +33,12 @@
           <text class="m-league muted">{{item.league}} · {{item.id}}</text>
           <view class="m-vs">{{item.home}} <text class="muted">vs</text> {{item.away}}</view>
         </view>
-        <text class="live-score">{{item.liveScore || item.time}}</text>
+        <view class="m-score">
+          <text wx:if="{{item.liveSt === 'MANUAL'}}" class="live-score score-manual">(人工) {{item.liveScore}}</text>
+          <text wx:elif="{{item.liveSt === 'STATUS_FULL_TIME' || item.liveSt === 'STATUS_FINAL_AET' || item.liveSt === 'STATUS_FINAL_PEN'}}" class="live-score score-ft">完场 {{item.liveScore}}</text>
+          <text wx:elif="{{item.liveSt && item.liveSt !== 'STATUS_SCHEDULED' && item.liveScore}}" class="live-score score-live">⚽ {{item.liveScore}}</text>
+          <text wx:else class="live-score">{{item.time}}</text>
+        </view>
       </view>
       <view class="m-line">
         <text class="badge {{item.badgeClass}}">{{item.dirTag || '方向'}}</text>
@@ -51,8 +57,11 @@
         ℹ️ {{noteMap[item.id] ? '收起备注' : '备注'}}
       </view>
       <view class="m-note" wx:if="{{item.note && noteMap[item.id]}}">{{item.note}}</view>
-      <!-- Wave3 勾选框占位(本阶段隐藏) -->
-      <checkbox class="m-check" wx:if="{{false}}" data-id="{{item.id}}" />
+      <!-- 组串勾选(勾选态显示; ⇄ 切换胜平负/让球两种腿) -->
+      <view class="m-cart" wx:if="{{cartMode}}">
+        <checkbox class="m-check" checked="{{!!cartSel['jc:' + item.id]}}" data-key="jc:{{item.id}}" data-type="jc" data-id="{{item.id}}" bindtap="toggleCart" />
+        <text class="m-swap" data-id="{{item.id}}" catchtap="switchJcKind">⇄ {{jcKindMap[item.id] === 'hhad' ? '让球' : '胜平负'}}</text>
+      </view>
     </view>
     <view class="empty" wx:if="{{!groups.jc.length}}">等小熊补充🐾</view>
   </block>
@@ -89,6 +98,10 @@
         <view class="sp3-cell"><view class="muted sp3-label">负</view>{{item.sp3[2] || '-'}}</view>
       </view>
       <view class="m-note" wx:if="{{item.reason}}">{{item.reason}}</view>
+      <!-- 组串勾选: 北单腿整腿可勾 -->
+      <view class="m-cart" wx:if="{{cartMode}}">
+        <checkbox class="m-check" checked="{{!!cartSel['bd:' + item.bdNum]}}" data-key="bd:{{item.bdNum}}" data-type="bd" data-bdnum="{{item.bdNum}}" bindtap="toggleCart" />
+      </view>
     </view>
     <view class="empty" wx:if="{{!groups.bd.length}}">等小熊补充🐾</view>
   </block>
@@ -113,7 +126,46 @@
       </view>
       <view class="m-line muted" wx:if="{{item.ahName}}">盘口 {{item.ahName}} ｜ 主水 {{item.ahHome}} ／ 客水 {{item.ahAway}}</view>
       <view class="m-line muted" wx:if="{{item.ouName}}">大小 {{item.ouName}} ｜ 大水 {{item.ouOver}} ／ 小水 {{item.ouUnder}}</view>
+      <!-- 组串勾选: 亚盘场卡整卡可勾(ah 腿) -->
+      <view class="m-cart" wx:if="{{cartMode}}">
+        <checkbox class="m-check" checked="{{!!cartSel['ah:' + item.id]}}" data-key="ah:{{item.id}}" data-type="ah" data-id="{{item.id}}" bindtap="toggleCart" />
+      </view>
     </view>
     <view class="empty" wx:if="{{!groups.ah.length}}">等小熊补充🐾</view>
   </block>
+
+  <!-- ============ 组串底栏 ============ -->
+  <view class="cart-bar" wx:if="{{payload && !loading}}">
+    <view wx:if="{{!cartMode}}" class="cart-btn" bindtap="toggleCartMode">🎯 组串{{cartCount ? ' (' + cartCount + ')' : ''}}</view>
+    <block wx:else>
+      <view class="cart-btn cart-btn-ghost" bindtap="toggleCartMode">✕ 退出</view>
+      <view class="cart-btn" bindtap="openCart">📋 组串清单 ({{cartCount}})</view>
+    </block>
+  </view>
+
+  <!-- ============ 组串抽屉 ============ -->
+  <view class="cart-mask" wx:if="{{cartOpen}}" bindtap="closeCart"></view>
+  <view class="cart-drawer" wx:if="{{cartOpen}}">
+    <view class="cart-title">
+      <text class="strong">组串清单 ({{cartCount}} 腿)</text>
+      <text wx:if="{{sourceBadge}}" class="badge {{sourceBadge === 'bd' ? 'badge-gold' : sourceBadge === 'ah' ? 'badge-blue' : 'badge-red'}}">{{sourceBadge === 'bd' ? '北单来源' : sourceBadge === 'ah' ? '亚盘来源' : '竞彩来源'}}</text>
+    </view>
+    <scroll-view scroll-y class="cart-legs">
+      <view class="cart-leg" wx:for="{{cartLegs}}" wx:key="_key">
+        <text class="cart-leg-desc">{{item.desc}}</text>
+        <text class="cart-leg-del" data-key="{{item._key}}" bindtap="removeLeg">✕</text>
+      </view>
+      <view class="empty" wx:if="{{!cartLegs.length}}">勾选场次后在此组串</view>
+    </scroll-view>
+    <view class="cart-sum">
+      <text>注数 {{cartCalc.stakes}} 注</text>
+      <text>理论奖金 ≈ {{cartCalc.expectPayout}} 元</text>
+    </view>
+    <view class="cart-amount">
+      <text>单注</text>
+      <input class="cart-input" type="digit" value="{{cartUnit}}" bindinput="onCartUnitInput" />
+      <text>元 ｜ 合计 {{cartAmount}} 元(倍数 ×1)</text>
+    </view>
+    <button class="cart-save" bindtap="saveCart">保存登记</button>
+  </view>
 </view>

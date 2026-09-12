@@ -1,1 +1,57 @@
-<view class="empty">📒 我的投注(建设中)</view>
+<view class="err-banner" wx:if="{{errMsg}}">{{errMsg}}</view>
+
+<!-- 统计卡 -->
+<view class="card stat-card" wx:if="{{stats}}">
+  <view class="stat-row">
+    <view class="stat-item">
+      <view class="stat-num">{{stats.totalAmount}}</view>
+      <view class="stat-label">总投入(元)</view>
+    </view>
+    <view class="stat-item">
+      <view class="stat-num">{{stats.totalPayout}}</view>
+      <view class="stat-label">总回收(元)</view>
+    </view>
+    <view class="stat-item">
+      <view class="stat-num {{stats.profit > 0 ? 'pos' : stats.profit < 0 ? 'neg' : ''}}">{{stats.profit}}</view>
+      <view class="stat-label">净盈亏(元)</view>
+    </view>
+    <view class="stat-item">
+      <view class="stat-num">{{stats.hitRate === null ? '--' : stats.hitRate + '%'}}</view>
+      <view class="stat-label">命中率</view>
+    </view>
+  </view>
+  <view class="stat-sub muted">共 {{stats.count}} 注单 · 已结算 {{stats.settled}} · 待结算 {{stats.pending}}</view>
+</view>
+
+<!-- 刷新比分 -->
+<view class="refresh-row" wx:if="{{bets.length}}">
+  <button class="refresh-btn" bindtap="refreshScores" disabled="{{settling}}">{{settling ? '结算中…' : '↻ 刷新比分'}}</button>
+</view>
+
+<view class="loading" wx:if="{{loading}}">加载中…</view>
+
+<!-- 注单列表 -->
+<view class="card bet-card" wx:for="{{bets}}" wx:key="id">
+  <view class="bet-head">
+    <text class="bet-date muted">{{item.bet_date}}</text>
+    <text class="badge {{item.srcCls}}">{{item.srcLabel}}</text>
+    <text class="cap {{item.capCls}}">{{item.capText}}</text>
+  </view>
+  <view class="leg-row" wx:for="{{item.legRows}}" wx:for-item="leg" wx:key="index">
+    <text class="judge {{leg.markCls}}">{{leg.mark}}</text>
+    <view class="leg-main">
+      <view class="leg-match">
+        {{leg.matchText}}<text class="leg-score" wx:if="{{leg.finalScore}}"> {{leg.finalScore}}</text>
+      </view>
+      <view class="leg-pick muted">{{leg.bdNumText}}{{leg.bdNumText ? ' · ' : ''}}{{leg.pickText}} @ {{leg.oddsText}}</view>
+    </view>
+  </view>
+  <view class="bet-foot">
+    <text class="muted">{{item.stakes}}注 · 投入 {{item.amountText}}</text>
+    <text wx:if="{{item.status !== 'pending'}}" class="profit {{item.profitCls}}">回收 {{item.payoutText}} · {{item.profitText}}</text>
+    <text wx:else class="muted">预期 {{item.expectText || '--'}}</text>
+  </view>
+  <view class="bet-note muted" wx:if="{{item.note}}">{{item.note}}</view>
+</view>
+
+<view class="empty" wx:if="{{!loading && !errMsg && !bets.length}}">还没有登记, 去推荐页组一串🐾</view>

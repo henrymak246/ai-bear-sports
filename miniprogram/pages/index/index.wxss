@@ -114,3 +114,123 @@
   font-size: 26rpx;
 }
 .sp3-label { font-size: 20rpx; font-weight: 400; }
+
+/* 页面底部留白(组串底栏不挡内容) */
+.page { padding-bottom: 140rpx; }
+
+/* 比分状态色: 完场绿 / 进行中红 / 人工灰 */
+.score-ft { color: #2F9E63; }
+.score-live { color: #F25C5C; }
+.score-manual { color: #A8A29E; font-size: 24rpx; }
+
+/* 勾选区 */
+.m-cart {
+  margin-top: 14rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.m-check { transform: scale(1.15); }
+.m-swap {
+  color: #D97706;
+  font-size: 24rpx;
+  font-weight: 700;
+  padding: 4rpx 10rpx;
+}
+
+/* 组串底栏 */
+.cart-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  gap: 16rpx;
+  padding: 16rpx 20rpx calc(16rpx + env(safe-area-inset-bottom));
+  background: rgba(255, 246, 233, 0.96);
+  border-top: 1rpx solid #F0E2CC;
+}
+.cart-btn {
+  flex: 1;
+  text-align: center;
+  background: #8B5A2B;
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 28rpx;
+  border-radius: 999rpx;
+  padding: 18rpx 0;
+}
+.cart-btn-ghost { background: #A8A29E; }
+
+/* 组串抽屉 */
+.cart-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 60;
+}
+.cart-drawer {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 61;
+  background: #FFFDF8;
+  border-radius: 24rpx 24rpx 0 0;
+  padding: 24rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+.cart-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.cart-legs { max-height: 38vh; margin-top: 12rpx; }
+.cart-leg {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid #F0E2CC;
+}
+.cart-leg-desc { flex: 1; font-size: 24rpx; color: #4A3A28; }
+.cart-leg-del {
+  color: #F25C5C;
+  font-weight: 800;
+  padding: 0 12rpx;
+  font-size: 28rpx;
+}
+.cart-sum {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18rpx;
+  font-weight: 800;
+  color: #8B5A2B;
+  font-size: 26rpx;
+}
+.cart-amount {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  color: #B98A5E;
+}
+.cart-input {
+  width: 120rpx;
+  background: #FFF1D6;
+  border-radius: 10rpx;
+  padding: 8rpx 12rpx;
+  text-align: center;
+  color: #8B5A2B;
+  font-weight: 800;
+}
+.cart-save {
+  margin-top: 20rpx;
+  background: #8B5A2B;
+  color: #FFFFFF;
+  font-weight: 800;
+  border-radius: 999rpx;
+  font-size: 30rpx;
+}

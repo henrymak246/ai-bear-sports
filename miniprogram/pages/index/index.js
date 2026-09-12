@@ -6,6 +6,8 @@
 const api = require('../../utils/api.js');
 const judge = require('../../utils/judge.js');
 const fmt = require('../../utils/fmt.js');
+const scorePoller = require('../../utils/scorePoller.js');
+const cart = require('../../utils/cart.js');
 
 const BADGE_CLASS = { '胆': 'badge-gold', '单选': 'badge-red', '双选': 'badge-blue', '弃选': 'badge-gray' };
 const JUDGE_LABEL = { hit: '✓', miss: '✗', push: '走' };
@@ -119,10 +121,31 @@ Page({
     bdDisabled: true,
     dailyTitle: '',
     noteMap: {}, // 备注展开状态, key=match.id
+    scoreStatus: '', // 比分轮询状态: 滚动更新中 / 已暂停
+    // 组串登记
+    cartMode: false, // 勾选态
+    cartOpen: false, // 组串抽屉
+    cartSel: {}, // key → leg; key='jc:'+id / 'bd:'+bdNum / 'ah:'+id
+    cartLegs: [], // cartSel 的数组形态(带 _key)
+    cartCount: 0,
+    cartCalc: { stakes: 0, expectPayout: 0 },
+    cartUnit: 2, // 单注金额输入(默认 2 元)
+    cartAmount: 0, // stakes × cartUnit(本期倍数=1)
+    sourceBadge: '', // bd / ah / jc
+    jcKindMap: {}, // match.id → 'had' | 'hhad'(⇄ 切换, 默认 had)
   },
 
   onShow() {
     this.load();
+    this.checkBetDraft();
+  },
+
+  onHide() {
+    this.stopScores();
+  },
+
+  onUnload() {
+    this.stopScores();
   },
 
   onPullDownRefresh() {
@@ -180,6 +203,206 @@ Page({
       lastUpdated: nowText(),
     });
     this.stopPullDown();
+    this.startScores();
+  },
+
+  /* ---- 比分轮询 ---- */
+  startScores() {
+    this.stopScores(true); // 静默停旧轮询
+    const payload = this.data.payload;
+    if (!payload || !Array.isArray(payload.matches) || !payload.matches.length) return;
+    // 仅在真实小程序环境启动(node 冒烟无 wx.request, 不启动防真实网络请求)
+    if (typeof wx === 'undefined' || typeof wx.request !== 'function') return;
+    this._pollMatches = payload.matches.map((m) => ({
+      id: m.id || '',
+      league: m.league || '',
+      home: m.home || '',
+      away: m.away || '',
+      finalScore: m.finalScore || '',
+      liveScore: '',
+      liveSt: '',
+    }));
+    const self = this;
+    this._poller = scorePoller.createScorePoller({
+      getMatches: () => self._pollMatches || [],
+      onUpdate: (changed) => self.applyScores(changed),
+    });
+    this._poller.start();
+    this.setData({ scoreStatus: '滚动更新中' });
+  },
+
+  /* 仅更新变化场(按 groups.jc 下标路径 setData, 不全量替换) */
+  applyScores(changed) {
+    const list = this.data.groups.jc;
+    const patch = {};
+    (changed || []).forEach((m) => {
+      for (let i = 0; i < list.length; i++) {
+        if (list[i].id === m.id) {
+          patch['groups.jc[' + i + '].liveScore'] = m.liveScore;
+          patch['groups.jc[' + i + '].liveSt'] = m.liveSt;
+          break;
+        }
+      }
+    });
+    if (Object.keys(patch).length) this.setData(patch);
+  },
+
+  stopScores(silent) {
+    if (this._poller) {
+      this._poller.stop();
+      this._poller = null;
+    }
+    if (!silent && this.data.scoreStatus) this.setData({ scoreStatus: '已暂停' });
+  },
+
+  /* ---- 组串登记 ---- */
+  toggleCartMode() {
+    this.setData({ cartMode: !this.data.cartMode, cartOpen: false });
+  },
+
+  openCart() {
+    if (!this.data.cartCount) {
+      wx.showToast({ title: '先勾选场次再组串', icon: 'none' });
+      return;
+    }
+    this.setData({ cartOpen: true });
+  },
+
+  closeCart() {
+    this.setData({ cartOpen: false });
+  },
+
+  toggleCart(e) {
+    const d = e.currentTarget.dataset;
+    const sel = Object.assign({}, this.data.cartSel);
+    if (sel[d.key]) {
+      delete sel[d.key];
+    } else {
+      const leg = this.makeLeg(d);
+      if (!leg) return;
+      sel[d.key] = leg;
+    }
+    this.commitCart(sel);
+  },
+
+  makeLeg(d) {
+    const payload = this.data.payload || {};
+    if (d.type === 'bd') {
+      const legs = (payload.beidan310 && payload.beidan310.legs) || [];
+      const raw = legs.find((l) => String(l.bdNum || '') === String(d.bdnum));
+      return raw ? cart.buildLeg(raw, 'bd') : null;
+    }
+    const m = (payload.matches || []).find((x) => x.id === d.id);
+    if (!m) return null;
+    if (d.type === 'ah') return cart.buildLeg(m, 'ah');
+    const kind = this.data.jcKindMap[d.id] === 'hhad' ? 'jcHhad' : 'jcHad';
+    return cart.buildLeg(m, kind);
+  },
+
+  /* ⇄ 切换竞彩腿 had/hhad; 已勾选则按新腿型重建 */
+  switchJcKind(e) {
+    const id = e.currentTarget.dataset.id;
+    const map = Object.assign({}, this.data.jcKindMap);
+    map[id] = map[id] === 'hhad' ? 'had' : 'hhad';
+    this.setData({ jcKindMap: map });
+    const key = 'jc:' + id;
+    if (this.data.cartSel[key]) {
+      const m = ((this.data.payload || {}).matches || []).find((x) => x.id === id);
+      if (m) {
+        const sel = Object.assign({}, this.data.cartSel);
+        sel[key] = cart.buildLeg(m, map[id] === 'hhad' ? 'jcHhad' : 'jcHad');
+        this.commitCart(sel);
+      }
+    }
+  },
+
+  removeLeg(e) {
+    const key = e.currentTarget.dataset.key;
+    const sel = Object.assign({}, this.data.cartSel);
+    delete sel[key];
+    this.commitCart(sel);
+  },
+
+  /* 选中集 → 派生字段(腿数组/计数/注数/理论奖金/来源/金额) */
+  commitCart(sel) {
+    const legs = Object.keys(sel).map((k) => Object.assign({ _key: k }, sel[k]));
+    const c = cart.calc(legs);
+    const unit = parseFloat(this.data.cartUnit) || 2;
+    this.setData({
+      cartSel: sel,
+      cartLegs: legs,
+      cartCount: legs.length,
+      cartCalc: c,
+      cartAmount: c.stakes * unit,
+      sourceBadge: legs.length ? cart.detectSource(legs) : '',
+    });
+  },
+
+  onCartUnitInput(e) {
+    const v = e.detail.value;
+    const unit = parseFloat(v) || 2;
+    this.setData({ cartUnit: v, cartAmount: this.data.cartCalc.stakes * unit });
+  },
+
+  saveCart() {
+    if (!this.data.cartLegs.length) {
+      wx.showToast({ title: '请先勾选场次', icon: 'none' });
+      return;
+    }
+    const c = this.data.cartCalc;
+    const unit = parseFloat(this.data.cartUnit) || 2;
+    const legs = this.data.cartLegs.map((l) => {
+      const x = Object.assign({}, l);
+      delete x._key;
+      return x;
+    });
+    const bet = {
+      bet_date: (this.data.payload && this.data.payload.date) || '',
+      source: cart.detectSource(legs),
+      legs,
+      stakes: c.stakes,
+      unit: 2,
+      amount: Math.round(c.stakes * unit * 100) / 100, // 本期倍数=1
+      expect_payout: c.expectPayout,
+    };
+    const self = this;
+    api.saveBet(bet)
+      .then(() => {
+        try { wx.removeStorageSync('betDraft'); } catch (e) { /* ignore */ }
+        wx.showToast({ title: '已登记', icon: 'success' });
+        self.commitCart({});
+        self.setData({ cartOpen: false, cartMode: false });
+      })
+      .catch(() => {
+        try { wx.setStorageSync('betDraft', bet); } catch (e) { /* ignore */ }
+        wx.showToast({ title: '保存失败已存草稿', icon: 'none' });
+      });
+  },
+
+  /* onShow 检测未保存草稿, 弹窗一键重试(每次会话只提示一次) */
+  checkBetDraft() {
+    if (this._draftPrompted) return;
+    let draft = null;
+    try { draft = wx.getStorageSync('betDraft'); } catch (e) { /* ignore */ }
+    if (!draft) return;
+    this._draftPrompted = true;
+    wx.showModal({
+      title: '投注草稿',
+      content: '存在未保存的组串登记(' + (draft.bet_date || '未知日期') + '), 是否一键重试?',
+      confirmText: '重试',
+      cancelText: '忽略',
+      success(m) {
+        if (!m.confirm) return;
+        api.saveBet(draft)
+          .then(() => {
+            try { wx.removeStorageSync('betDraft'); } catch (e) { /* ignore */ }
+            wx.showToast({ title: '已登记', icon: 'success' });
+          })
+          .catch(() => {
+            wx.showToast({ title: '仍失败,草稿已保留', icon: 'none' });
+          });
+      },
+    });
   },
 
   stopPullDown() {

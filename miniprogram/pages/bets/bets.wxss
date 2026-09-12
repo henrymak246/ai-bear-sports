@@ -1,1 +1,73 @@
-/* bets.wxss — 占位页样式(复用 app.wxss 的 .empty) */
+/* bets.wxss — 我的投注页样式(通用卡片/徽章/判定/空态在 app.wxss) */
+
+/* 统计卡 */
+.stat-card { border-top: 6rpx solid #F5A623; }
+.stat-row { display: flex; justify-content: space-between; }
+.stat-item { flex: 1; text-align: center; }
+.stat-num { font-size: 32rpx; font-weight: 800; color: #8B5A2B; }
+.stat-label { font-size: 22rpx; color: #A8A29E; margin-top: 4rpx; }
+.stat-sub { margin-top: 14rpx; text-align: center; font-size: 22rpx; }
+
+.pos { color: #2F9E63; }
+.neg { color: #F25C5C; }
+
+/* 刷新按钮 */
+.refresh-row {
+  margin: 4rpx 20rpx 0;
+  display: flex;
+  justify-content: flex-end;
+}
+.refresh-btn {
+  background: #8B5A2B;
+  color: #FFFFFF;
+  font-size: 24rpx;
+  font-weight: 700;
+  border-radius: 999rpx;
+  padding: 6rpx 30rpx;
+  line-height: 1.7;
+}
+.refresh-btn[disabled] { opacity: 0.5; }
+.refresh-btn::after { border: none; }
+
+/* 注单卡 */
+.bet-head { display: flex; align-items: center; gap: 12rpx; }
+.bet-date { font-size: 22rpx; }
+.cap {
+  margin-left: auto;
+  padding: 3rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.4;
+}
+.cap-pending { background: #F5A623; } /* 黄 */
+.cap-hit { background: #2F9E63; }     /* 绿 */
+.cap-miss { background: #F25C5C; }    /* 红 */
+.cap-half { background: #5B8DEF; }    /* 蓝 */
+
+/* 腿明细 */
+.leg-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12rpx;
+  margin-top: 14rpx;
+}
+.leg-main { flex: 1; min-width: 0; }
+.leg-match { font-size: 26rpx; font-weight: 700; color: #4A3A28; }
+.leg-score { color: #D97706; font-weight: 800; }
+.leg-pick { font-size: 22rpx; margin-top: 2rpx; }
+.judge-half { background: #5B8DEF; } /* ◐ 半红蓝 */
+
+/* 底部金额行 */
+.bet-foot {
+  margin-top: 16rpx;
+  padding-top: 12rpx;
+  border-top: 1rpx dashed #F0E2CC;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 24rpx;
+}
+.profit { font-weight: 700; }
+.bet-note { margin-top: 10rpx; font-size: 22rpx; line-height: 1.6; }
