@@ -61,9 +61,9 @@ assert(neHtml.includes('展开更早'), '深夜快车应有折叠按钮(历史>3
 // 2026-09-12 起明细只显示当日(最新期次, 北单期次强相关), 历史期次腿不进明细; 理论全中彩金累计展示
 const bdHtml = boxes.beidanBody.innerHTML;
 assert(bdHtml.includes('北单310玩法'), '北单专栏应有310玩法说明卡');
-assert(bdHtml.includes('纽伦堡'), '最新期次(9-11)北单腿应在明细(只显示当日)');
-assert(bdHtml.includes('北单009'), '明细编号应显示北单官方场次号');
-assert(!bdHtml.includes('蔚山现代'), '历史期次(9-8)腿不应在明细(只显示当日, 2026-09-12起)');
+assert(bdHtml.includes('美因茨'), '最新期次(9-12)北单腿应在明细(只显示当日)');
+assert(bdHtml.includes('北单126'), '明细编号应显示北单官方场次号(9-12=126美因茨)');
+assert(!bdHtml.includes('纽伦堡') && !bdHtml.includes('蔚山现代'), '历史期次腿不应在明细(只显示当日, 2026-09-12起)');
 assert(!bdHtml.includes('(SP2.07)'), '明细不显示SP(2026-09-09起),只显示310选择+让球');
 assert(bdHtml.includes('理论全中彩金'), '应展示历史登记的理论全中彩金累计');
 console.log('渲染冒烟全绿 ✓  jk/beidan/epl/ne 四专栏 + 深夜快车断言全过');
