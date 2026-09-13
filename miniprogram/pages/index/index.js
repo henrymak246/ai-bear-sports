@@ -385,20 +385,25 @@ Page({
   },
 
   /* 保存登记成功后: 渲染投注参考图并全屏预览(真机长按保存/转发);
-     出图失败仅提示, 不影响已落库注单。 */
+     出图失败仅提示, 不影响已落库注单。
+     _slipBusy 闸门防连点并发(共用 canvas 节点, 并发会互清缓冲出空白图) */
   previewSlip(legs) {
+    if (this._slipBusy) return;
     const ls = (legs || this.data.cartLegs || []).filter(Boolean);
     if (!ls.length) return;
     const unit = parseFloat(this.data.cartUnit) || 2;
+    this._slipBusy = true;
+    const release = () => { this._slipBusy = false; };
     slipCanvas.renderSlip({ page: this, canvasId: 'slipCanvas', legs: ls, unit: unit })
       .then((p) => {
         this.setData({ lastSlipPath: p });
         wx.previewImage({
           urls: [p],
           fail: () => wx.showToast({ title: '图片已生成, 预览失败', icon: 'none' }),
+          complete: release, // 预览打开即释放, 不等用户关闭
         });
       })
-      .catch(() => wx.showToast({ title: '已登记成功, 出图失败', icon: 'none' }));
+      .catch(() => { wx.showToast({ title: '已登记成功, 出图失败', icon: 'none' }); release(); });
   },
 
   /* onShow 检测未保存草稿, 弹窗一键重试(每次会话只提示一次) */

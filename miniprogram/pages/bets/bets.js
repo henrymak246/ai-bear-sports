@@ -195,13 +195,21 @@ Page({
     });
   },
 
-  /* 注卡「🖼 投注图」: 对该注单腿重出投注参考图并预览(真机长按保存/转发) */
+  /* 注卡「🖼 投注图」: 对该注单腿重出投注参考图并预览(真机长按保存/转发);
+     _slipBusy 闸门防连点并发(共用 canvas 节点, 并发会互清缓冲出空白图) */
   previewSlip(e) {
+    if (this._slipBusy) return;
     const bet = this.data.bets[e.currentTarget.dataset.index];
     if (!bet) return;
+    this._slipBusy = true;
+    const release = () => { this._slipBusy = false; };
     slipCanvas.renderSlip({ page: this, canvasId: 'slipCanvas', legs: bet.legs || [], unit: bet.unit || 2 })
-      .then((p) => wx.previewImage({ urls: [p], fail: () => wx.showToast({ title: '图片已生成, 预览失败', icon: 'none' }) }))
-      .catch(() => wx.showToast({ title: '出图失败', icon: 'none' }));
+      .then((p) => wx.previewImage({
+        urls: [p],
+        fail: () => wx.showToast({ title: '图片已生成, 预览失败', icon: 'none' }),
+        complete: release, // 预览打开即释放, 不等用户关闭
+      }))
+      .catch(() => { wx.showToast({ title: '出图失败', icon: 'none' }); release(); });
   },
 
   stopPull() {
