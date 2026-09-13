@@ -169,3 +169,5 @@
     <button class="cart-save" bindtap="saveCart">保存登记</button>
   </view>
 </view>
+<!-- 投注参考图屏外画布(出图用, 不可见) -->
+<canvas type="2d" id="slipCanvas" class="slip-canvas" style="width:750px;height:{{slipCanvasH}}px" />

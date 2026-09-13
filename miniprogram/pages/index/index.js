@@ -8,6 +8,7 @@ const judge = require('../../utils/judge.js');
 const fmt = require('../../utils/fmt.js');
 const scorePoller = require('../../utils/scorePoller.js');
 const cart = require('../../utils/cart.js');
+const slipCanvas = require('../../utils/slipCanvas.js');
 
 const BADGE_CLASS = { '胆': 'badge-gold', '单选': 'badge-red', '双选': 'badge-blue', '弃选': 'badge-gray' };
 const JUDGE_LABEL = { hit: '✓', miss: '✗', push: '走' };
@@ -130,6 +131,8 @@ Page({
     cartCount: 0,
     cartCalc: { stakes: 0, expectPayout: 0 },
     cartUnit: 2, // 单注金额输入(默认 2 元)
+    slipCanvasH: 600, // 投注图 canvas CSS 高(renderSlip 动态覆写)
+    lastSlipPath: '', // 最近出图 tempFilePath(验收断言用)
     cartAmount: 0, // stakes × cartUnit(本期倍数=1)
     sourceBadge: '', // bd / ah / jc
     jcKindMap: {}, // match.id → 'had' | 'hhad'(⇄ 切换, 默认 had)
@@ -373,11 +376,25 @@ Page({
         wx.showToast({ title: '已登记', icon: 'success' });
         self.commitCart({});
         self.setData({ cartOpen: false, cartMode: false });
+        self.previewSlip(legs); // 出投注参考图
       })
       .catch(() => {
         try { wx.setStorageSync('betDraft', bet); } catch (e) { /* ignore */ }
         wx.showToast({ title: '保存失败已存草稿', icon: 'none' });
       });
+  },
+
+  /* 保存成功后/投注页重出: 渲染投注参考图并全屏预览(真机长按保存/转发);
+     出图失败仅提示, 不影响已落库注单。 */
+  previewSlip(legs) {
+    const ls = (legs || this.data.cartLegs || []).filter(Boolean);
+    if (!ls.length) return;
+    slipCanvas.renderSlip({ page: this, canvasId: 'slipCanvas', legs: ls, unit: 2 })
+      .then((p) => {
+        this.setData({ lastSlipPath: p });
+        wx.previewImage({ urls: [p] });
+      })
+      .catch(() => wx.showToast({ title: '已登记成功, 出图失败', icon: 'none' }));
   },
 
   /* onShow 检测未保存草稿, 弹窗一键重试(每次会话只提示一次) */

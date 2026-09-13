@@ -234,3 +234,10 @@
   border-radius: 999rpx;
   font-size: 30rpx;
 }
+
+/* 投注参考图屏外画布 */
+.slip-canvas {
+  position: fixed;
+  left: -2000px;
+  top: 0;
+}
