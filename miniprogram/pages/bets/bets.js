@@ -6,6 +6,7 @@
  *   result 就地展示不写库。「↻ 刷新比分」手动重跑一轮。 */
 const api = require('../../utils/api.js');
 const settle = require('../../utils/settle.js');
+const slipCanvas = require('../../utils/slipCanvas.js');
 
 const SRC = {
   jc: { label: '🎫 竞彩', cls: 'badge-red' },
@@ -75,6 +76,7 @@ Page({
     errMsg: '',
     bets: [],
     stats: null,
+    slipCanvasH: 600,
   },
 
   onShow() {
@@ -191,6 +193,15 @@ Page({
       if (changed) self.setData({ bets: bets.map(decorateBet), stats: settle.calcStats(bets) });
       self.setData({ settling: false });
     });
+  },
+
+  /* 注卡「🖼 投注图」: 对该注单腿重出投注参考图并预览(真机长按保存/转发) */
+  previewSlip(e) {
+    const bet = this.data.bets[e.currentTarget.dataset.index];
+    if (!bet) return;
+    slipCanvas.renderSlip({ page: this, canvasId: 'slipCanvas', legs: bet.legs || [], unit: bet.unit || 2 })
+      .then((p) => wx.previewImage({ urls: [p], fail: () => wx.showToast({ title: '图片已生成, 预览失败', icon: 'none' }) }))
+      .catch(() => wx.showToast({ title: '出图失败', icon: 'none' }));
   },
 
   stopPull() {

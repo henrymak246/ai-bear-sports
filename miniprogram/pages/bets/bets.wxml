@@ -50,8 +50,12 @@
     <text class="muted">{{item.stakes}}注 · 投入 {{item.amountText}}</text>
     <text wx:if="{{item.status !== 'pending'}}" class="profit {{item.profitCls}}">回收 {{item.payoutText}} · {{item.profitText}}</text>
     <text wx:else class="muted">预期 {{item.expectText || '--'}}</text>
+    <text class="slip-btn" data-index="{{index}}" bindtap="previewSlip">🖼 投注图</text>
   </view>
   <view class="bet-note muted" wx:if="{{item.note}}">{{item.note}}</view>
 </view>
 
 <view class="empty" wx:if="{{!loading && !errMsg && !bets.length}}">还没有登记, 去推荐页组一串🐾</view>
+
+<!-- 投注参考图屏外画布(出图用, 不可见) -->
+<canvas type="2d" id="slipCanvas" class="slip-canvas" style="width:750px;height:{{slipCanvasH}}px" />

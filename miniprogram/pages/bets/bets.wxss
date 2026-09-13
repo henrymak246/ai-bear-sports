@@ -71,3 +71,18 @@
 }
 .profit { font-weight: 700; }
 .bet-note { margin-top: 10rpx; font-size: 22rpx; line-height: 1.6; }
+
+/* 投注图按钮 */
+.slip-btn {
+  color: #8B5A2B;
+  font-size: 24rpx;
+  padding: 4rpx 12rpx;
+  border: 1rpx solid #D9C7AE;
+  border-radius: 8rpx;
+}
+/* 投注参考图屏外画布 */
+.slip-canvas {
+  position: fixed;
+  left: -2000px;
+  top: 0;
+}
