@@ -58,18 +58,18 @@ function drawAll(ctx, W, H, legs, unit) {
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
 
-  // 腿行: 标题居中黑 / 选项居中灰 / 分隔线
+  // 腿行: 标题居中黑 / 选项居中灰 / 分隔线(每腿 116 = slipHeight 口径)
   ctx.textAlign = 'center';
   rows.forEach((r) => {
-    y += 16;
+    y += 20;
     ctx.fillStyle = '#222222';
     ctx.font = 'bold 30px sans-serif';
     ctx.fillText(r.title, W / 2, y + 15);
-    y += 46;
+    y += 48;
     ctx.fillStyle = GRAY;
     ctx.font = '28px sans-serif';
     ctx.fillText(r.options, W / 2, y + 14);
-    y += 42;
+    y += 48;
     ctx.strokeStyle = LINE;
     ctx.beginPath(); ctx.moveTo(20, y); ctx.lineTo(W - 20, y); ctx.stroke();
   });
@@ -108,14 +108,16 @@ async function renderSlip(opts) {
   const r = await getNode(page, canvasId);
   const node = r.node;
   const dpr = dprOf();
-  node.width = W * dpr;
-  node.height = H * dpr;
+  const bw = Math.round(W * dpr);
+  const bh = Math.round(H * dpr);
+  node.width = bw;
+  node.height = bh;
   const ctx = node.getContext('2d');
   ctx.scale(dpr, dpr);
   drawAll(ctx, W, H, legs, unit);
   return await new Promise((resolve, reject) => {
     wx.canvasToTempFilePath({
-      canvas: node, x: 0, y: 0, width: W, height: H, destWidth: W * dpr, destHeight: H * dpr,
+      canvas: node, x: 0, y: 0, width: W, height: H, destWidth: bw, destHeight: bh,
       success: (res) => resolve(res.tempFilePath),
       fail: (err) => reject(new Error((err && err.errMsg) || 'canvasToTempFilePath 失败')),
     });

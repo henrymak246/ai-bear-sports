@@ -365,7 +365,7 @@ Page({
       source: cart.detectSource(legs),
       legs,
       stakes: c.stakes,
-      unit: 2,
+      unit: unit,
       amount: Math.round(c.stakes * unit * 100) / 100, // 本期倍数=1
       expect_payout: c.expectPayout,
     };
@@ -384,15 +384,19 @@ Page({
       });
   },
 
-  /* 保存成功后/投注页重出: 渲染投注参考图并全屏预览(真机长按保存/转发);
+  /* 保存登记成功后: 渲染投注参考图并全屏预览(真机长按保存/转发);
      出图失败仅提示, 不影响已落库注单。 */
   previewSlip(legs) {
     const ls = (legs || this.data.cartLegs || []).filter(Boolean);
     if (!ls.length) return;
-    slipCanvas.renderSlip({ page: this, canvasId: 'slipCanvas', legs: ls, unit: 2 })
+    const unit = parseFloat(this.data.cartUnit) || 2;
+    slipCanvas.renderSlip({ page: this, canvasId: 'slipCanvas', legs: ls, unit: unit })
       .then((p) => {
         this.setData({ lastSlipPath: p });
-        wx.previewImage({ urls: [p] });
+        wx.previewImage({
+          urls: [p],
+          fail: () => wx.showToast({ title: '图片已生成, 预览失败', icon: 'none' }),
+        });
       })
       .catch(() => wx.showToast({ title: '已登记成功, 出图失败', icon: 'none' }));
   },
