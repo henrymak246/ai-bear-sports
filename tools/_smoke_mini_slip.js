@@ -4,7 +4,7 @@ const assert = require('assert');
 const slip = require('../miniprogram/utils/slip.js');
 
 // 真实 9-13 腿型(cart.buildLeg 产出形态)
-const bdLeg = { kind: 'bd', bdNum: '342', home: '皇家社会', away: '马竞', pick: '0', odds: '1.99', sp3: ['3.20', '3.61', '2.15'], handicap: '0' };
+const bdLeg = { kind: 'bd', bdNum: '342', match: '021 皇家社会 vs 马竞', pick: '0', odds: '1.99', sp3: ['3.20', '3.61', '2.15'], handicap: '0' };
 const jcLeg = { kind: 'jcHad', id: '周日003', home: '塞尔塔', away: '马拉加', pick: '3', odds: '1.53' };
 const hhLeg = { kind: 'jcHhad', id: '周日009', home: '莱红牛', away: '汉堡', pick: '让-1 3', odds: '1.66' };
 const ahLeg = { kind: 'ah', id: '周日011', home: '汉坎', away: '莫尔德', pick: '莫尔德-0.75', odds: '1.96' };
@@ -22,10 +22,12 @@ assert.strictEqual(rows[3].title, '周日011 汉坎 VS 莫尔德');
 assert.strictEqual(rows[3].options, '亚盘: 莫尔德-0.75 @1.96');
 console.log('OK 1/5 四类腿型行格式');
 
-// 2) 北单让球非 0 标题带让球数
+// 2) 北单让球非 0 标题带让球数 + home/away 可选覆盖
 const bdHc = Object.assign({}, bdLeg, { handicap: '-1' });
 assert.strictEqual(slip.slipRows([bdHc])[0].title, '北单342 皇家社会 VS 马竞 [让-1]');
-console.log('OK 2/5 北单让球数入标题');
+const bdOv = Object.assign({}, bdLeg, { home: '皇家社会B', away: '马竞B' });
+assert.strictEqual(slip.slipRows([bdOv])[0].title, '北单342 皇家社会B VS 马竞B');
+console.log('OK 2/5 北单让球数入标题 + home/away 覆盖');
 
 // 3) 复式北单腿顿号连排 + 注数/最高奖金(官方口径: 各腿最大赔率连乘×2)
 const bdDbl = Object.assign({}, bdLeg, { pick: '3/1' });
@@ -46,7 +48,7 @@ assert.strictEqual(t.maxPayout, 6.58);
 console.log('OK 4/5 单选金额对账(1注/2元/6.58元)');
 
 // 5) 缺赔率容错: 无 sp3 无 odds → 无括号, 最高奖金按 1 计不放大
-const bdNo = { kind: 'bd', bdNum: '001', home: '甲', away: '乙', pick: '3', handicap: '0' };
+const bdNo = { kind: 'bd', bdNum: '001', match: '001 甲 vs 乙', pick: '3', handicap: '0' };
 rows = slip.slipRows([bdNo]);
 assert.strictEqual(rows[0].options, '胜');
 t = slip.slipTotals([bdNo, jcLeg], 2);

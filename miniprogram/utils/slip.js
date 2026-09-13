@@ -23,12 +23,13 @@ function pickCodes(pick) {
   return String(pick === undefined || pick === null ? '' : pick).split('/').filter((s) => s !== '');
 }
 
-/* bd 腿各选项赔率: sp3=[胜,平,负] 按 3/1/0 索引; 缺 sp3 退 leg.odds 单值。
+/* bd 腿各选项赔率: sp3=[胜,平,负] 按 3/1/0 显式映射索引; 未知脏码/缺 sp3 退 leg.odds。
  * 返回原始值(字符串原样, 展示保留 '3.20' 两位格式; 数值比较处自动数值化) */
 function bdOdds(leg, code) {
   const sp3 = leg && leg.sp3;
   if (Array.isArray(sp3) && sp3.length >= 3) {
-    return sp3[code === '3' ? 0 : code === '1' ? 1 : 2];
+    const i = { '3': 0, '1': 1, '0': 2 }[code];
+    return i === undefined ? (leg && leg.odds) : sp3[i];
   }
   return leg && leg.odds;
 }
@@ -51,7 +52,12 @@ function slipRows(legs) {
     const kind = leg.kind || 'jcHad';
     if (kind === 'bd') {
       const hc = String(leg.handicap || '0');
-      const title = '北单' + (leg.bdNum || '') + ' ' + (leg.home || '') + ' VS ' + (leg.away || '') +
+      // 真实北单腿无 home/away 字段, 队名在 match 字符串('021 皇家社会 vs 马竞')里,
+      // 解析惯例同 pages/index/index.js buildGroups 北单段; leg.home/away 存在时作可选覆盖
+      const parts = String(leg.match || '').split(/\s+vs\s+/);
+      const home = leg.home || (parts[0] ? parts[0].replace(/^\d+\s*/, '') : '');
+      const away = leg.away || (parts[1] || '');
+      const title = '北单' + (leg.bdNum || '') + ' ' + home + ' VS ' + away +
         (hc && hc !== '0' ? ' [让' + hc + ']' : '');
       const codes = pickCodes(leg.pick);
       const options = (codes.length ? codes : ['3'])
