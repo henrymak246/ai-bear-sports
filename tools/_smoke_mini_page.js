@@ -67,8 +67,8 @@ function newPage() {
 const tick = () => new Promise((r) => setTimeout(r, 100));
 
 (async () => {
-  // 成功: 注入假 fetcher 返回 payload
-  api.setFetcher(async () => fakeRes([{ date: '2026-09-12', payload }]));
+  // 成功: 注入假 fetcher 返回 payload(RPC 通道直接返回 payload 对象, 非 REST 数组包装)
+  api.setFetcher(async () => fakeRes(payload));
   const p1 = newPage();
   p1.onShow();
   await tick();
@@ -86,7 +86,7 @@ const tick = () => new Promise((r) => setTimeout(r, 100));
   const p2 = newPage();
   p2.onShow();
   await tick();
-  assert.strictEqual(p2.data.errMsg, '推荐数据拉取失败,显示缓存');
+  assert(p2.data.errMsg.indexOf('推荐数据拉取失败,显示缓存') === 0, '缓存降级应显示缓存提示+原因');
   assert.strictEqual(p2.data.groups.jc.length, 29, '缓存态竞彩组应为 29');
   console.log('OK 4/4a onShow 失败→缓存降级渲染+横幅');
 
@@ -95,7 +95,7 @@ const tick = () => new Promise((r) => setTimeout(r, 100));
   const p3 = newPage();
   p3.onShow();
   await tick();
-  assert.strictEqual(p3.data.errMsg, '请检查网络后下拉重试');
+  assert(p3.data.errMsg.indexOf('拉取失败') === 0, '无缓存降级应显示拉取失败+原因');
   assert.strictEqual(p3.data.groups.jc.length, 0);
   console.log('OK 4/4b onShow 失败→无缓存提示重试');
 

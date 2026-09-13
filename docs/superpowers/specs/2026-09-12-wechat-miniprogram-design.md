@@ -16,13 +16,13 @@
 
 ```
 微信小程序(手机)
-  ├─ Supabase REST ── prediction_days(anon key 只读, 推荐数据)
-  │                └─ bets(service key 内嵌, 读写, 投注登记)
+  ├─ Supabase RPC ── prediction_days 与 bets 均经 4 个 security-definer 函数
+  │                  (publishable key + 私有令牌 MINI_TOKEN, supabase/mini_rpc.sql)
   └─ ESPN scoreboard API(免 key, 前台每 5 分钟轮询, 实时比分)
 ```
 
 - 无自建后端、无运维依赖、本机不开机也能用(读链路全在云端/ESPN)。
-- service key 内嵌于自用开发版:仅本人手机持有,泄露风险可接受(拍板记录)。
+- **⚠️ 2026-09-13 通道变更(用户拍板方案B)**: 新版 `sb_secret_` key 被 Supabase 按浏览器 UA 硬拦(401 "Secret API keys can only be used in a protected environment"; 实测触发条件=User-Agent 含 Mozilla, 模拟器与真机微信 UA 都带, 小程序端 secret key 彻底不可用) → 改为 publishable key + 4 个令牌校验 RPC(`mini_get_today_payload`/`mini_get_payload_by_date`/`mini_save_bet`/`mini_list_bets`/`mini_update_bet`), 权限面反而更小(只暴露 5 个操作, 不给全库超级权限)。
 - 域名:开发版关闭域名校验,`*.supabase.co` 与 `site.api.espn.com` 直连。
 
 ## 3. 页面结构(3 个主 Tab + 组串抽屉)
@@ -37,8 +37,8 @@
 ## 4. 数据流
 
 ### 4.1 推荐数据(只读)
-- `GET {SUPABASE_URL}/rest/v1/prediction_days?select=date,payload&order=date.desc&limit=1`,取最新一天 payload(matches/plan/max7/hc7/asian7/score3/beidan310/zucai310)。
-- **⚠️ 2026-09-12 实测更正: anon 角色对该表返回 `[]`**(RLS=登录+members.approved 审核通过才可读), 故小程序读推荐**统一用 service key**(自用开发版, 与 bets 写同级风险, 用户已拍板接受); 不放宽 RLS(会公开全部历史推荐, 影响会员制), 不接 Supabase Auth(自用过度工程)。
+- 经 `POST /rest/v1/rpc/mini_get_today_payload`(body `{p_token}`)取最新一天 payload(matches/plan/max7/hc7/asian7/score3/beidan310/zucai310);按日读取走 `mini_get_payload_by_date`。
+- **⚠️ 2026-09-12 实测: anon 角色对该表返回 `[]`**(RLS=登录+members.approved 审核通过才可读); 不放宽 RLS(会公开全部历史推荐, 影响会员制), 不接 Supabase Auth(自用过度工程) → 由 RPC security definer 绕开, 函数体内校验 MINI_TOKEN。
 
 ### 4.2 实时比分(前台轮询)
 - 联赛码注册表+中文队名→ESPN displayName 映射表,**从 `tools/_live0912.js` 的 LEAGUES/TEAM 移植**为 `miniprogram/utils/espn.js` 数据模块(每日 build 时由脚本重新生成,防止漂移:`tools/gen_mini_espn.js` 从最新 `_live<MMDD>.js` 抽取)。
@@ -67,7 +67,7 @@
 | settled_at | timestamptz | 结算时间 |
 | note | text | 备注(可选) |
 
-- 建表 SQL 落盘 `supabase/bets.sql`;**bets 表不挂 RLS**(仅 service key 可读写,anon key 无权限——与 members/prediction_days 的只读 anon 策略隔离)。
+- 建表 SQL 落盘 `supabase/bets.sql`(已并入 `supabase/mini_rpc.sql` 幂等执行);**bets 表不挂 RLS**(直接表访问全禁, 仅经令牌校验 RPC 读写——与 members/prediction_days 的策略隔离)。
 
 ## 5. 自动结算
 

@@ -55,51 +55,52 @@ async function request(path, { method = "GET", body, key, fetcher, extraHeaders 
   return text ? JSON.parse(text) : null;
 }
 
-/* 最新一天推荐 payload(SERVICE_KEY; 2026-09-12 实测: RLS 会员门控, ANON_KEY 返回 0 行) */
-async function fetchTodayPayload(opts) {
+/* RPC 通道(2026-09-13 起): publishable key + 私有令牌调 security-definer 函数(supabase/mini_rpc.sql)。
+   弃用 SERVICE_KEY 直连的原因: 新版 sb_secret_ key 被 Supabase 按浏览器 UA 拦截
+   (模拟器/真机微信 UA 均以 Mozilla 开头, 必然 401), 小程序端任何 secret key 都不可用。 */
+async function rpc(fn, args, opts) {
   const cfg = loadConfig();
-  const rows = await request("/rest/v1/prediction_days?select=date,payload&order=date.desc&limit=1",
-    { key: cfg.SUPABASE_SERVICE_KEY, fetcher: opts && opts.fetcher });
-  return rows && rows[0] ? rows[0].payload : null;
-}
-
-/* 指定日期(YYYY-MM-DD)推荐 payload(SERVICE_KEY, 同上原因) */
-async function fetchPayloadByDate(date, opts) {
-  const cfg = loadConfig();
-  const rows = await request("/rest/v1/prediction_days?select=date,payload&date=eq." + encodeURIComponent(date) +
-    "&order=date.desc&limit=1",
-    { key: cfg.SUPABASE_SERVICE_KEY, fetcher: opts && opts.fetcher });
-  return rows && rows[0] ? rows[0].payload : null;
-}
-
-/* 投注登记插入(SERVICE_KEY) → 插入行 */
-async function saveBet(bet, opts) {
-  const cfg = loadConfig();
-  const rows = await request("/rest/v1/bets", {
-    method: "POST", body: bet, key: cfg.SUPABASE_SERVICE_KEY,
-    extraHeaders: { Prefer: "return=representation" },
+  if (!cfg.MINI_TOKEN) throw new Error("config.js 缺少 MINI_TOKEN(见 config.example.js)");
+  return request("/rest/v1/rpc/" + fn, {
+    method: "POST",
+    body: Object.assign({ p_token: cfg.MINI_TOKEN }, args || {}),
+    key: cfg.SUPABASE_ANON_KEY,
     fetcher: opts && opts.fetcher,
   });
-  return Array.isArray(rows) ? rows[0] : rows;
 }
 
-/* 投注登记列表(SERVICE_KEY) → 数组 */
+/* 最新一天推荐 payload(RLS 会员门控, 经 RPC security definer 读取) */
+async function fetchTodayPayload(opts) {
+  return await rpc("mini_get_today_payload", null, opts);
+}
+
+/* 指定日期(YYYY-MM-DD)推荐 payload */
+async function fetchPayloadByDate(date, opts) {
+  return await rpc("mini_get_payload_by_date", { p_date: date }, opts);
+}
+
+/* 投注登记插入 → 插入行 */
+async function saveBet(bet, opts) {
+  return await rpc("mini_save_bet", { p_bet: bet }, opts);
+}
+
+/* 投注登记列表 → 数组 */
 async function fetchBets(opts) {
-  const cfg = loadConfig();
-  const rows = await request("/rest/v1/bets?order=created_at.desc&limit=200",
-    { key: cfg.SUPABASE_SERVICE_KEY, fetcher: opts && opts.fetcher });
+  const rows = await rpc("mini_list_bets", null, opts);
   return rows || [];
 }
 
-/* 投注登记更新(SERVICE_KEY) → 更新行 */
+/* 投注登记更新(结算回写, 列白名单: status/actual_payout/profit/settled_at/legs) → 更新行 */
 async function updateBet(id, patch, opts) {
-  const cfg = loadConfig();
-  const rows = await request("/rest/v1/bets?id=eq." + encodeURIComponent(id), {
-    method: "PATCH", body: patch, key: cfg.SUPABASE_SERVICE_KEY,
-    extraHeaders: { Prefer: "return=representation" },
-    fetcher: opts && opts.fetcher,
-  });
-  return Array.isArray(rows) ? rows[0] : rows;
+  const p = patch || {};
+  return await rpc("mini_update_bet", {
+    p_id: id,
+    p_status: p.status,
+    p_actual_payout: p.actual_payout,
+    p_profit: p.profit,
+    p_settled_at: p.settled_at,
+    p_legs: p.legs === undefined ? null : p.legs,
+  }, opts);
 }
 
 if (typeof module !== "undefined" && module.exports) {

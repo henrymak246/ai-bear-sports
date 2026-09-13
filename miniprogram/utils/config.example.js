@@ -4,6 +4,6 @@
    注意: SERVICE_KEY 可绕 RLS 写 bets 表, 仅限自用开发版小程序, 勿分发。 */
 module.exports = {
   SUPABASE_URL: "",        // tools/.env 的 SUPABASE_URL
-  SUPABASE_ANON_KEY: "",   // Supabase anon/publishable key(tools/.env 暂无此键, 见 index.html 公开值)
-  SUPABASE_SERVICE_KEY: "",// tools/.env 的 SUPABASE_SERVICE_KEY
+  SUPABASE_ANON_KEY: "",   // Supabase publishable key(见站点 index.html 公开值)
+  MINI_TOKEN: "",          // 小程序 RPC 私有令牌(supabase/mini_rpc.sql 内同一值; 2026-09-13 起取代 SERVICE_KEY 直连)
 };

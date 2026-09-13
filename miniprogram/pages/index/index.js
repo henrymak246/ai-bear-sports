@@ -163,13 +163,14 @@ Page({
         } catch (e) { /* 缓存写失败不阻塞 */ }
         this.renderPayload(payload, '');
       })
-      .catch(() => {
+      .catch((e) => {
+        const reason = '拉取失败: ' + ((e && e.message) || e || '未知错误');
         let cache = null;
         try {
           cache = wx.getStorageSync('payloadCache');
-        } catch (e) { /* ignore */ }
+        } catch (e2) { /* ignore */ }
         if (cache) {
-          this.renderPayload(cache, '推荐数据拉取失败,显示缓存');
+          this.renderPayload(cache, '推荐数据拉取失败,显示缓存 (' + reason + ')');
         } else {
           this.setData({
             loading: false,
@@ -180,7 +181,7 @@ Page({
             bdNote: '',
             bdDisabled: true,
             dailyTitle: '',
-            errMsg: '请检查网络后下拉重试',
+            errMsg: reason,
           });
           this.stopPullDown();
         }
