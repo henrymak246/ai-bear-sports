@@ -1,26 +1,23 @@
 /* tools/_smoke_mini_settle.js — 小程序投注结算模块冒烟(node 环境)
- * ① 虚拟北单串(2026-09-12 真实 beidan310.legs 前 3 腿, 已知比分 009=3-0/008=1-3/012=2-2):
- *   全红情形 status='hit' 且 actual_payout=SP 连乘×unit 精确值; 断 008 腿情形='miss'/0。
+ * ① 合成北单串 fixture(与 data/predictions.js 真实数据彻底解耦, 日抛/人工回填均不影响):
+ *   腿A 让-2 pick'3/1' 3-0 → 让后 1>0 赛果'3' → hit(SP=sp3[0]=1.22);
+ *   腿B 让0 pick'3' 1-3 → 赛果'0' → miss(断腿路径);
+ *   腿C 让-2 pick'1/0' 2-2 → 让后 0<2 赛果'0' → hit(SP=sp3[2]=11.76)。
+ *   全红情形 status='hit' 且 actual_payout=SP 连乘×unit 精确值; 断腿B情形='miss'/0。
  * ② 亚盘 side 推导: {home:'利物浦',away:'富勒姆',pick:'富勒姆+1.25'} 0-0 → win/side=away。
  * ③ 别名容错: {home:'科里蒂巴',away:'巴竞技',pick:'巴拉纳竞技-0.25'} 3-3 → loseHalf/side=away。
  * ④ 统计卡命中率: 2hit+1half+1miss → 62.5%。
  * 附: 伪 Page/wx 环境加载 bets 页面模块不崩。全绿输出 SMOKE_OK。 */
 'use strict';
 const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
 
-const ROOT = path.join(__dirname, '..');
-
-// ---- 真实数据: 2026-09-12 北单前 3 腿 ----
-const src = fs.readFileSync(path.join(ROOT, 'data/predictions.js'), 'utf8');
-const days = new Function(src + ';return PREDICTION_DAYS;')();
-const payload = days.find((d) => d.date === '2026-09-12');
-assert(payload && payload.beidan310 && payload.beidan310.legs.length >= 3, '未找到 2026-09-12 北单数据');
-const legs = payload.beidan310.legs.slice(0, 3);
-assert.strictEqual(legs[0].match.slice(0, 3), '009');
-assert.strictEqual(legs[1].match.slice(0, 3), '008');
-assert.strictEqual(legs[2].match.slice(0, 3), '012');
+// ---- 合成北单腿 fixture(判定路径同原 9-12 用例: 让球/断腿/全红) ----
+const legs = [
+  { match: '009 甲队 vs 乙队', home: '甲队', away: '乙队', pick: '3/1', handicap: '-2', sp3: ['1.22', '6.83', '10.65'], odds: '1.22/6.83', league: '德甲' },
+  { match: '008 丙队 vs 丁队', home: '丙队', away: '丁队', pick: '3', handicap: '0', sp3: ['1.84', '3.97', '3.79'], odds: '1.84', league: '德甲' },
+  { match: '012 戊队 vs 己队', home: '戊队', away: '己队', pick: '1/0', handicap: '-2', sp3: ['1.22', '6.60', '11.76'], odds: '6.60/11.76', league: '英超' },
+];
+const DAY = '2000-01-01'; // 合成注单日期, 仅作 mock 键, 与真实 payload 无关
 
 const settle = require('../miniprogram/utils/settle.js');
 
@@ -85,7 +82,7 @@ const api = require('../miniprogram/utils/api.js');
 settle.fetchScoreForLeg = async () => null; // 确定性: ESPN 通道置为不可得, 走 prediction_days 兜底
 
 const bet = {
-  id: 'b1', bet_date: '2026-09-12', source: 'bd', legs: legs,
+  id: 'b1', bet_date: DAY, source: 'bd', legs: legs,
   stakes: 4, unit: 2, amount: 8, expect_payout: 55, status: 'pending',
   actual_payout: 0, profit: 0,
 };
@@ -98,7 +95,7 @@ const payloadDay = {
 };
 const patched = [];
 api.fetchBets = async () => [bet];
-api.fetchPayloadByDate = async (date) => (date === '2026-09-12' ? payloadDay : null);
+api.fetchPayloadByDate = async (date) => (date === DAY ? payloadDay : null);
 api.updateBet = async (id, patch) => { patched.push({ id, patch }); return Object.assign({ id }, patch); };
 
 const pageMod = require('../miniprogram/pages/bets/bets.js');
@@ -127,7 +124,7 @@ const ctx = Object.assign({}, captured, {
 
   // 部分完场 → 不写库, 腿级结果就地展示
   const bet2 = {
-    id: 'b2', bet_date: '2026-09-12', source: 'jc', stakes: 1, unit: 2, amount: 2,
+    id: 'b2', bet_date: DAY, source: 'jc', stakes: 1, unit: 2, amount: 2,
     status: 'pending', actual_payout: 0, profit: 0,
     legs: [
       { match: '008 美因茨 vs 法兰克福', home: '美因茨', away: '法兰克福', pick: '3', odds: '1.84', league: '德甲' },

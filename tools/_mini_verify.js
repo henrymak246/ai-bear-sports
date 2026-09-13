@@ -34,6 +34,12 @@ async function step(name, fn) {
   }
 
   // 等首页数据就绪(最长 60s); 注意: 任何步骤都可能因重编译导致 page destroyed, 用 curPage() 取新鲜引用
+  // 若停在其他 tab 页(上轮验收残留状态), 先切回推荐页
+  const cur0 = await step('currentPage', () => mini.currentPage());
+  if (cur0 && cur0.path !== 'pages/index/index') {
+    await step('归位→index', () => mini.switchTab('/pages/index/index'));
+    await sleep(4000); // onShow 重新拉数据
+  }
   let page, d;
   for (let i = 0; i < 30; i++) {
     page = await step('currentPage', () => mini.currentPage());
@@ -79,6 +85,8 @@ async function step(name, fn) {
   page = await step('ref page', () => mini.currentPage()) || page;
   await step('tab→jc', () => page.callMethod('switchTab', { currentTarget: { dataset: { tab: 'jc' } } }));
   await sleep(800);
+  // 清空上轮残留勾选(cartSel 跨 onShow 存活, toggle 是反选语义)
+  await step('清空组串', () => page.callMethod('commitCart', {}));
   await step('cartMode on', () => page.callMethod('toggleCartMode'));
   const bd0 = d.groups.bd[0];
   const jc0 = d.groups.jc[0];
@@ -88,8 +96,21 @@ async function step(name, fn) {
   await sleep(800);
   const d3 = await step('cart data', async () => { const p = await mini.currentPage(); return p ? p.data() : undefined; });
   if (d3) console.log('[cart]', JSON.stringify({ count: d3.cartCount, calc: d3.cartCalc, amount: d3.cartAmount, source: d3.sourceBadge }));
+  // 投注参考图: 预览弹层截屏(previewImage 在模拟器渲染为全屏查看器)
+  await step('出投注图', async () => {
+    const p = await mini.currentPage();
+    const dd = await p.data();
+    return p.callMethod('previewSlip', dd.cartLegs);
+  });
+  await sleep(2500);
+  const dSlip = await step('读 lastSlipPath', async () => { const p = await mini.currentPage(); return p.data(); });
+  if (dSlip) console.log('[slip] lastSlipPath=', dSlip.lastSlipPath ? '非空 ✓' : '(空=出图失败)');
+  await step('shot 6_slip', () => mini.screenshot({ path: path.join(SHOTS, '6_slip.png') }));
+  await step('退出预览', () => mini.navigateBack());
+  await sleep(800);
   await step('shot 4_cart', () => mini.screenshot({ path: path.join(SHOTS, '4_cart.png') }));
   await step('closeCart', () => page.callMethod('closeCart'));
+  await step('清空组串收尾', () => page.callMethod('commitCart', {}));
   await step('cartMode off', () => page.callMethod('toggleCartMode'));
 
   await step('switchTab→bets', () => mini.switchTab('/pages/bets/bets'));
