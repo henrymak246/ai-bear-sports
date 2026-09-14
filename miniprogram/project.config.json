@@ -4,6 +4,7 @@
   "compileType": "miniprogram",
   "libVersion": "latest",
   "projectname": "ai-bear-sports-mini",
+  "cloudfunctionRoot": "cloudfunctions/",
   "setting": {
     "urlCheck": false,
     "es6": true,

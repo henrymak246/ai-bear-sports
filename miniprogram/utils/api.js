@@ -1,6 +1,11 @@
 /* api.js — 小程序 Supabase REST 封装(手写)。
    URL/密钥从同目录 config.js 读(由 config.example.js 复制填入, 已 gitignore 不入库)。
-   请求通道默认: 小程序 wx.request; node 冒烟经 setFetcher(全局 fetch) 注入。 */
+   请求通道优先级(2026-09-14 起):
+     ① 注入 fetcher(node 冒烟 setFetcher / opts.fetcher) → 直连 HTTP, 行为与改造前一致;
+     ② 小程序内且 config.USE_CLOUD !== false → 云函数 bear_api(腾讯云内直连 Supabase);
+     ③ 其余 → wx.request 直连(仅开发者工具内可用)。
+   为什么要走云函数: 真机会校验 request 合法域名, 而 supabase.co 属境外域名、无法 ICP 备案,
+   配不进白名单 → 真机必然 request:fail url not in domain list。云函数出网不受该限制。 */
 let _config = null;
 function loadConfig() {
   if (_config) return _config;
@@ -58,9 +63,31 @@ async function request(path, { method = "GET", body, key, fetcher, extraHeaders 
 /* RPC 通道(2026-09-13 起): publishable key + 私有令牌调 security-definer 函数(supabase/mini_rpc.sql)。
    弃用 SERVICE_KEY 直连的原因: 新版 sb_secret_ key 被 Supabase 按浏览器 UA 拦截
    (模拟器/真机微信 UA 均以 Mozilla 开头, 必然 401), 小程序端任何 secret key 都不可用。 */
+/* 云函数通道(2026-09-14): 小程序 → wx.cloud.callFunction → 云函数内直连 Supabase。
+   云函数返回 { ok, data } / { ok, error }, 这里解包成与直连一致的返回值。 */
+function cloudReady() {
+  return typeof wx !== "undefined" && wx.cloud && typeof wx.cloud.callFunction === "function";
+}
+
+async function callCloud(fn, args, cfg) {
+  const res = await wx.cloud.callFunction({
+    name: cfg.CLOUD_FN || "bear_api",
+    data: { fn: fn, args: args || {} },
+  });
+  const r = res && res.result;
+  if (!r || r.ok !== true) {
+    throw new Error("云函数 " + fn + " 失败: " + ((r && r.error) || "无返回(检查云函数 bear_api 是否已部署)"));
+  }
+  return r.data;
+}
+
 async function rpc(fn, args, opts) {
   const cfg = loadConfig();
   if (!cfg.MINI_TOKEN) throw new Error("config.js 缺少 MINI_TOKEN(见 config.example.js)");
+  const injected = (opts && opts.fetcher) || _fetcher;
+  if (!injected && cfg.USE_CLOUD !== false && cloudReady()) {
+    return await callCloud(fn, args, cfg);
+  }
   return request("/rest/v1/rpc/" + fn, {
     method: "POST",
     body: Object.assign({ p_token: cfg.MINI_TOKEN }, args || {}),
@@ -104,5 +131,5 @@ async function updateBet(id, patch, opts) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { request, fetchTodayPayload, fetchPayloadByDate, saveBet, fetchBets, updateBet, setFetcher };
+  module.exports = { request, fetchTodayPayload, fetchPayloadByDate, saveBet, fetchBets, updateBet, setFetcher, cloudReady, callCloud };
 }

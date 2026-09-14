@@ -1,0 +1,9 @@
+{
+  "name": "bear_api",
+  "version": "1.0.0",
+  "description": "AI小熊小程序 → Supabase RPC 中转云函数(绕开真机 request 合法域名白名单)",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "^4.0.2"
+  }
+}

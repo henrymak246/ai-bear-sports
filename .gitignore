@@ -7,5 +7,7 @@ data/_watch-alerts.log
 tools/.env
 tools/node_modules/
 miniprogram/utils/config.js
+miniprogram/cloudfunctions/*/config.js
+miniprogram/cloudfunctions/*/node_modules/
 miniprogram/project.private.config.json
 tools/_mini_shots/
