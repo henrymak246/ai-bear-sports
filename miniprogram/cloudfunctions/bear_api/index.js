@@ -23,6 +23,9 @@ function loadConfig() {
     SUPABASE_URL: process.env.SUPABASE_URL || file.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || file.SUPABASE_ANON_KEY,
     MINI_TOKEN: process.env.MINI_TOKEN || file.MINI_TOKEN,
+    // ESPN 中转(可选, 与 Supabase 无关): 配了就比分走中转(躲开云函数 3s 超时), 未配则直连
+    ESPN_RELAY: process.env.ESPN_RELAY || file.ESPN_RELAY,
+    ESPN_RELAY_TOKEN: process.env.ESPN_RELAY_TOKEN || file.ESPN_RELAY_TOKEN,
   };
   return _cfg;
 }
@@ -31,9 +34,16 @@ exports.main = async function (event) {
   const e = event || {};
   try {
     // ESPN 比分代理: 与 Supabase 无关(不需要 SUPABASE_*/MINI_TOKEN), 故先于配置校验分发
+    // (cfg 只用于读可选的中转地址/令牌; 没配也不影响 —— callEspnScoreboard 会直连)
     if (e.fn === 'espn_scoreboard') {
       const a = e.args || {};
-      return { ok: true, data: await callEspnScoreboard(a.league, a.date) };
+      // args.perf = true 时额外回一段阶段耗时(建连/TTFB/总耗时), 排查"比分时有时无"用; 平时不带
+      if (a.perf) {
+        const perf = {};
+        const rows = await callEspnScoreboard(a.league, a.date, { cfg: loadConfig(), perf: perf });
+        return { ok: true, data: rows, perf: perf };
+      }
+      return { ok: true, data: await callEspnScoreboard(a.league, a.date, { cfg: loadConfig() }) };
     }
     const data = await callSupabaseRpc(e.fn, e.args, loadConfig());
     return { ok: true, data: data };

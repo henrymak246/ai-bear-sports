@@ -7,6 +7,7 @@
      两条路返回同一形态 { ok, status, text }, 保证本地测过的逻辑就是云上跑的逻辑。 */
 'use strict';
 const https = require('https');
+const http = require('http');
 
 /* 允许小程序调用的 Supabase RPC 白名单: 防止云函数被当成任意代理使用 */
 const ALLOWED_FNS = [
@@ -32,26 +33,45 @@ function assertCfg(cfg) {
   return cfg;
 }
 
-/* https.request 版请求(Node 16 兜底), 返回 { ok, status, text } */
+/* ★keepAlive 连接池(Node 16 的全局 agent 默认 keepAlive=false)。
+   云函数超时的大头**不是包大小, 是跨境 TCP 建连**: 腾讯云→东京单次握手 0.6~2s 且抖动很大
+   (实测同一函数连续 4 次: 1701/1725/2077/2395ms, 偶发 >3s 直接 -504003 —— 把 40KB 缩到 255B
+   后仍然如此, 说明瓶颈在建连不在字节)。热容器内复用连接就能把那一段整个省掉。 */
+const HTTP_AGENT = new http.Agent({ keepAlive: true, maxSockets: 4, keepAliveMsecs: 30000 });
+
+/* 原生 http/https 版请求(Node 16 兜底), 返回 { ok, status, text }
+   ★必须按 URL 协议选模块: ESPN 直连是 https, 而中转(东京节点)是**明文 http** —— 早期版本一律用
+     https.request, 打中转时报 "self signed certificate"(TLS 去连一个 HTTP 端口), 云上(无 fetch)
+     必踩, 本地有 fetch 却看不出来。 */
 function httpsRequest(url, options) {
   return new Promise(function (resolve, reject) {
     const u = new URL(url);
-    const req = https.request(
-      {
-        hostname: u.hostname,
-        path: u.pathname + u.search,
-        method: options.method || 'GET',
-        headers: options.headers || {},
-      },
-      function (res) {
-        let data = '';
-        res.setEncoding('utf8');
-        res.on('data', function (c) { data += c; });
-        res.on('end', function () {
-          resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode, text: data });
-        });
-      }
-    );
+    const mod = u.protocol === 'http:' ? http : https;
+    const perf = options.perf || null; // 诊断: 传对象则回填各阶段耗时(见 index.js 的 args.perf)
+    const t0 = Date.now();
+    const reqOpts = {
+      hostname: u.hostname,
+      port: u.port || (u.protocol === 'http:' ? 80 : 443),
+      path: u.pathname + u.search,
+      method: options.method || 'GET',
+      headers: options.headers || {},
+    };
+    if (u.protocol === 'http:') reqOpts.agent = HTTP_AGENT; // 见 HTTP_AGENT 注释
+    const req = mod.request(reqOpts, function (res) {
+      if (perf) perf.ttfbMs = Date.now() - t0;
+      let data = '';
+      res.setEncoding('utf8');
+      res.on('data', function (c) { data += c; });
+      res.on('end', function () {
+        if (perf) perf.totalMs = Date.now() - t0;
+        resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode, text: data });
+      });
+    });
+    req.on('socket', function (s) {
+      if (!perf) return;
+      if (s.connecting) s.once('connect', function () { perf.connectMs = Date.now() - t0; });
+      else perf.connectMs = 0; // 复用了 keepAlive 连接, 没花时间在建连上
+    });
     req.setTimeout(20000, function () { req.destroy(new Error('出网请求超时(20s)')); });
     req.on('error', reject);
     if (options.body) req.write(options.body);
@@ -63,8 +83,11 @@ function httpsRequest(url, options) {
 async function rawRequest(url, options, opts) {
   const injected = (opts && opts.fetch) || (typeof fetch !== 'undefined' ? fetch : null);
   if (injected) {
+    const t0 = Date.now();
     const res = await injected(url, options);
-    return { ok: res.ok, status: res.status, text: await res.text() };
+    const text = await res.text();
+    if (options && options.perf) { options.perf.via = 'fetch'; options.perf.totalMs = Date.now() - t0; }
+    return { ok: res.ok, status: res.status, text: text };
   }
   return await httpsRequest(url, options);
 }
@@ -104,6 +127,31 @@ async function callSupabaseRpc(fn, args, cfg, opts) {
      这一个只读公开接口(路径不可任意拼装, 域名固定), 已被当代理的风险可接受。 */
 const ESPN_LEAGUE_RE = /^[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)*$/;
 
+/* ★ESPN scoreboard 主机名: 必须用 site.web.api.espn.com, 不能用 site.api.espn.com。
+   2026-09-15 实测: site.api.espn.com 被 ESPN 自家 Akamai WAF 按**来源 IP 段**直接 403
+   (东京 Vultr 节点、腾讯云云函数都吃 447 字节的 "Access Denied" 页; 本机国内 IP 反而正常),
+   而**同一台机器**从 site.web.api.espn.com 取同一份数据是 200 —— 差别只在主机名的 WAF 规则,
+   不是 IP 封锁。故换主机即可, 无需自建境外中转。返回体结构两主机完全一致
+   (顶层 {leagues,events,provider}, events[].competitions[0].competitors[] 归一化同口径)。 */
+const ESPN_SCOREBOARD_HOST = 'https://site.web.api.espn.com';
+
+/* ★ESPN 中转(2026-09-15 上线): 直连虽然通, 但腾讯云跨境单程 3~5 秒, **顶着云函数默认 3 秒超时**
+   (实测三次里挂一两次 —— 真机上就是"比分时有时无")。中转把跨境那一段换掉:
+   腾讯云→东京 Vultr(~0.1s) + 东京→ESPN(~0.6s), 稳进超时预算。
+   中转 = 用户自建东京节点上的 systemd 服务 espn-relay(只转发 soccer/<league>/scoreboard 一条路径,
+   须带 x-bear-token 头; 实现见 okx-proxy/espn-relay/relay.py)。
+   ★中转地址/令牌来自**云函数的 config.js**(已 gitignore), 不硬编码在仓库里;
+     未配 ESPN_RELAY 时自动退回直连 site.web.api.espn.com(功能不变, 只是慢)。 */
+function espnTarget(cfg) {
+  const relay = String((cfg && cfg.ESPN_RELAY) || '').trim().replace(/\/+$/, '');
+  if (!relay) return { base: ESPN_SCOREBOARD_HOST, via: 'direct', headers: ESPN_HEADERS };
+  return {
+    base: relay,
+    via: 'relay',
+    headers: Object.assign({}, ESPN_HEADERS, { 'x-bear-token': String((cfg && cfg.ESPN_RELAY_TOKEN) || '') }),
+  };
+}
+
 /* 出网请求头: 用浏览器形态。ESPN 走 Akamai, 光秃秃的 UA(甚至只是 "Mozilla/5.0")很容易被判成
    机器人直接 403 —— 而 403 在小程序侧的表现与"域名配不进白名单"一样(比分永远空), 极难分辨。 */
 const ESPN_HEADERS = {
@@ -121,21 +169,33 @@ function assertEspnArgs(league, date) {
   return { league: lg, date: dt };
 }
 
-/* ESPN scoreboard → [{home, away, hs, as, st}](与小程序 espn.js 的字段一一对应) */
+/* ESPN scoreboard → [{home, away, hs, as, st}](与小程序 espn.js 的字段一一对应)
+   opts.cfg 里若配了 ESPN_RELAY 则走中转(见 espnTarget), 否则直连。
+   中转与 ESPN 的**路径形状完全一致**(都是 /apis/site/v2/sports/soccer/<league>/scoreboard?dates=),
+   所以这里只换 base, 解析逻辑一行不用动。 */
 async function callEspnScoreboard(league, date, opts) {
   const a = assertEspnArgs(league, date);
+  const t = espnTarget(opts && opts.cfg);
+  const perf = (opts && opts.perf) || null;
+  if (perf) perf.upstream = t.via; // relay / direct —— 诊断用, 不影响主流程
   const res = await rawRequest(
-    'https://site.api.espn.com/apis/site/v2/sports/soccer/' + a.league + '/scoreboard?dates=' + a.date,
-    { method: 'GET', headers: ESPN_HEADERS },
+    t.base + '/apis/site/v2/sports/soccer/' + a.league + '/scoreboard?dates=' + a.date,
+    { method: 'GET', headers: t.headers, perf: perf },
     opts
   );
   if (!res.ok) {
     // 把响应体片段带进错误里: 403/451 时正文会写明是谁拦的(Akamai 参考号 / 区域限制), 否则只剩一个数字
     throw new Error('ESPN ' + a.league + '@' + a.date + ' HTTP ' + res.status
-      + ': ' + String(res.text || '').replace(/\s+/g, ' ').slice(0, 160));
+      + '[' + t.via + ']: ' + String(res.text || '').replace(/\s+/g, ' ').slice(0, 160));
   }
   let j = {};
   try { j = JSON.parse(res.text || '{}'); } catch (e) { return []; }
+  /* 两种返回形态:
+     · 中转(espn-relay)回传 {rows:[...]} —— 它已按同一口径归一化(见 relay.py normalize),
+       且只有约 0.4KB(ESPN 原始包 40KB, 跨境回传要 1~2.5s, 是云函数超时的主因);
+     · 直连 site.web.api.espn.com 回传 {events:[...]} 原始结构 —— 这里自己归一化。
+     两边字段口径必须一致(home/away/hs/as/st), 冒烟 ⑮ 用同一份 fixture 交叉核对。 */
+  if (Array.isArray(j.rows)) return j.rows;
   return (j.events || []).map(function (e) {
     const comp = (e.competitions || [])[0] || {};
     const cs = comp.competitors || [];
@@ -152,4 +212,4 @@ async function callEspnScoreboard(league, date, opts) {
 }
 
 module.exports = { ALLOWED_FNS, assertFn, assertCfg, httpsRequest, rawRequest, callSupabaseRpc,
-  ESPN_LEAGUE_RE, assertEspnArgs, callEspnScoreboard };
+  ESPN_LEAGUE_RE, ESPN_SCOREBOARD_HOST, espnTarget, assertEspnArgs, callEspnScoreboard };

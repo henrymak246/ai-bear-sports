@@ -4,13 +4,16 @@
    死链联赛(如 kor.1)在 LEAGUE_MAP 中显式为 null, 调用方据此回退人工回填比分。
 
    ★真机取不到 ESPN 比分, 而且是**两条路都堵**(2026-09-15 实测):
-     ① wx.request 直连: 受「request 合法域名」限制, site.api.espn.com 属境外域名、无法 ICP 备案,
+     ① wx.request 直连: 受「request 合法域名」限制, ESPN 属境外域名、无法 ICP 备案,
         配不进白名单 → request:fail url not in domain list;
-     ② 云函数出网(bear_api 的 espn_scoreboard): 腾讯云到 site.api.espn.com 被 ESPN 自家 CDN 拒
-        —— 403 + Akamai「Access Denied」页(换浏览器请求头无效, 属 IP 段封锁)。
-   所以真机上**不做无谓请求**: 直接判"ESPN 不可达", 让调用方(结算)回退 prediction_days 的
-   finalScore —— 该值由本机流水线(tools/_live<MMDD>.js)用 ESPN 回填后 sync 进 Supabase,
-   这条才是真机唯一可用的比分来源(见 docs/云函数通道.md「比分从哪来」)。
+     ② 云函数出网(bear_api 的 espn_scoreboard): 腾讯云到 **site.api.espn.com** 被 ESPN 自家
+        CDN 拒 —— 403 + Akamai「Access Denied」页(换浏览器请求头无效)。
+   ★★2026-09-15 追查结论: ②的 403 是**主机名级**的(不是 IP 段封锁)—— 同一台机器/同一个云函数
+     换成 **site.web.api.espn.com** 取同一份数据就是 200(东京 Vultr 节点、腾讯云、本机三处实测一致),
+     故云通道已改用该主机(core.js 的 ESPN_SCOREBOARD_HOST), 真机实时比分因此复活:
+     `config.js` 置 `ESPN_CLOUD: true` 即走云通道。若某天这条也断了, 兜底仍是当日
+     prediction_days.finalScore(由 tools/_live<MMDD>.js 本机回填 → sync-data.js 同步),
+     见 docs/云函数通道.md「比分从哪来」。
    取数通道优先级:
      ① 注入 fetcher(node 冒烟 / 页面透传) → 直连, 行为与改造前一致;
      ② config.ESPN_CLOUD === true 且云可用 → 云函数代理(★仅在将来接了境外中转时才开);
@@ -83,8 +86,15 @@ function pickChannel() {
   return espnDirect() ? defaultFetcher : unreachableFetcher;
 }
 
+/* ★云函数超时(3 秒)是硬墙, 只有控制台能改(CLI 无此参数, 本机也没有腾讯云凭据)。
+   而「腾讯云↔东京」那一段偶发抖动实测能到 1.8s(同一函数连打 8 次, 函数内出网 266~2070ms),
+   顶爆 3 秒就是真机上"比分时有时无"。抖动是瞬时的 → 失败重试一次基本就过。
+   ★只重试这一路**只读取数**; 任何写操作(下注/改单)一律不重试。 */
+const ESPN_CLOUD_RETRY = 1;
+const ESPN_CLOUD_RETRY_DELAY = 400;
+
 /* 云函数 espn_scoreboard 代理 → [{home,away,hs,as,st}](服务端已归一化, 这里不再解析 ESPN 结构) */
-async function cloudScoreboard(leagueCode, yyyymmdd) {
+async function cloudScoreboardOnce(leagueCode, yyyymmdd) {
   const res = await wx.cloud.callFunction({
     name: cloudFnName(),
     data: { fn: "espn_scoreboard", args: { league: leagueCode, date: yyyymmdd } },
@@ -94,6 +104,17 @@ async function cloudScoreboard(leagueCode, yyyymmdd) {
     throw new Error("云函数 espn_scoreboard 失败: " + ((r && r.error) || "无返回(检查云函数 bear_api 是否已部署)"));
   }
   return r.data || [];
+}
+
+async function cloudScoreboard(leagueCode, yyyymmdd) {
+  let last = null;
+  for (let i = 0; i <= ESPN_CLOUD_RETRY; i++) {
+    if (i) await new Promise((r) => setTimeout(r, ESPN_CLOUD_RETRY_DELAY));
+    try {
+      return await cloudScoreboardOnce(leagueCode, yyyymmdd);
+    } catch (e) { last = e; }
+  }
+  throw new Error(String((last && last.message) || last) + "(已重试 " + ESPN_CLOUD_RETRY + " 次)");
 }
 
 function defaultFetcher(url) {
@@ -117,8 +138,11 @@ function defaultFetcher(url) {
   return Promise.reject(new Error("无可用请求通道(小程序需 wx.request, node 需注入 fetcher)"));
 }
 
+/* ★主机名与云函数(core.js 的 ESPN_SCOREBOARD_HOST)保持一致: site.api.espn.com 被 ESPN 的
+   Akamai WAF 按主机名 403(见文件头), site.web.api.espn.com 才是通的。云通道 cloudFetcher
+   只从 URL 里正则取「联赛码+日期」(与主机名无关), 故改这里不影响云通道。 */
 function boardUrl(leagueCode, yyyymmdd) {
-  return "https://site.api.espn.com/apis/site/v2/sports/soccer/" + leagueCode +
+  return "https://site.web.api.espn.com/apis/site/v2/sports/soccer/" + leagueCode +
     "/scoreboard?dates=" + yyyymmdd;
 }
 
@@ -183,7 +207,7 @@ function findScore(boards, homeCn, awayCn) {
 }
 
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { LEAGUE_MAP, TEAM_MAP, MATCH_LEAGUES, DATES, fetchBoard, findScore, defaultFetcher,
+  module.exports = { LEAGUE_MAP, TEAM_MAP, MATCH_LEAGUES, DATES, fetchBoard, findScore, defaultFetcher, boardUrl,
     cloudFetcher, makeBoardFetcher, cloudReady, cloudScoreboard, cloudFnName,
     espnCloudEnabled, espnDirect, unreachableFetcher, pickChannel };
 }

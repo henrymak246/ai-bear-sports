@@ -2,7 +2,10 @@
    覆盖三件事:
      1) 云函数核心 core.js: 白名单拦截 + 配置校验 + 真实调 Supabase(用云函数自己的 config.js);
      2) 小程序 api.js 的云通道分支: 造 wx.cloud.callFunction 桩, 断言走云、不走 HTTP、正确解包;
-     3) 失败形态: 云函数返回 {ok:false} 时, api 必须抛出带原因的错误(页面才能显示到横幅)。
+     3) 失败形态: 云函数返回 {ok:false} 时, api 必须抛出带原因的错误(页面才能显示到横幅);
+     4) ESPN 比分通道(⑦–⑬): 参数校验 + 真实出网 + 入口分发 + 三种通道状态(config 桩注入)
+        + 主机名闸门(全链路必须 site.web.api.espn.com, site.api 被 ESPN 的 Akamai 403)。
+   ESPN 主机名/开关的任何改动都要连跑: 本文件 + 重新部署云函数 + tools/_diag_espn.js(模拟器直调云上函数)。
    用法: node tools/_smoke_mini_cloudfn.js */
 const fs = require('fs');
 const path = require('path');
@@ -130,40 +133,49 @@ console.log('① 白名单/配置校验 ✓  (' + core.ALLOWED_FNS.length + ' �
   assert(rBad && rBad.ok === false && /联赛码非法/.test(rBad.error), '非法入参应返回 ok:false + 原因');
   console.log('⑨ 云函数入口分发 ✓  (espn_scoreboard 免 Supabase 配置, 非法入参回 ok:false)');
 
-  /* 10) ★真机通道(2026-09-15 实测改口径): 真机上 ESPN 两条路都堵 —— wx.request 受白名单限制,
-     云函数出网被 ESPN 自家 CDN 403(Akamai Access Denied)。故真机上必须**一个请求都不发**,
-     直接失败让结算回退当日 finalScore。这条断言就是"别再往真机加 ESPN 请求"的看门人。 */
+  /* 10) ★通道选择(2026-09-15 二次改口径): 用 require.cache 注入 config 桩, **不动真实 config.js**,
+     一次跑遍三种状态 —— 桩对象是活的, 改 ESPN_CLOUD 即换行为(espn.js 调用时才读 config)。
+     背景: 真机 wx.request 直连 ESPN 配不进域名白名单(无法 ICP 备案); 云函数出网到
+     site.api.espn.com 也曾被 Akamai 403 —— 但 2026-09-15 查明那是**主机名级**封锁,
+     换成 site.web.api.espn.com 后腾讯云实测 200, 故现在真机比分改回走云通道。 */
+  const cfgPath = require.resolve(path.join(ROOT, 'miniprogram', 'utils', 'config.js'));
+  const cfgStub = { id: cfgPath, filename: cfgPath, loaded: true, exports: { USE_CLOUD: true, ESPN_CLOUD: false } };
+  require.cache[cfgPath] = cfgStub;
+
   const espnCalls = [];
   let espnHttpHits = 0;
+  let wxHits = 0;
   const realFetch2 = global.fetch;
-  global.fetch = function () { espnHttpHits++; return Promise.reject(new Error('真机上不应发任何 ESPN 请求')); };
+  global.fetch = function () { espnHttpHits++; return Promise.reject(new Error('不应发 node fetch')); };
   global.wx = {
     cloud: {
       callFunction(o) {
         espnCalls.push(o);
-        return Promise.resolve({ result: { ok: true, data: [{ home: 'Middlesbrough', away: 'Millwall', hs: '2', as: '1', st: 'STATUS_FULL_TIME' }] } });
+        return Promise.resolve({ result: { ok: true, data: [{ home: 'Elche', away: 'Real Madrid', hs: '1', as: '2', st: 'STATUS_FULL_TIME' }] } });
       },
       init() {},
     },
     getSystemInfoSync: () => ({ platform: 'android' }), // 真机形态
+    request: (o) => { wxHits++; o.fail({ errMsg: 'request:fail url not in domain list' }); },
   };
+
+  /* 10a) 开关关 + 真机 → 零请求(没接中转时别白烧云调用, 直接失败让结算回退当日 finalScore) */
+  assert.strictEqual(espn.espnCloudEnabled(), false, 'config 桩 ESPN_CLOUD=false 时开关应为 false');
   assert.strictEqual(espn.cloudReady(), true, '有 wx.cloud 时 espn.cloudReady 应为 true(Supabase 侧仍走云)');
   assert.strictEqual(espn.espnDirect(), false, '真机(platform=android)应判定不可直连 ESPN');
   let devMsg = '';
   await espn.fetchBoard('eng.2', '20260915').catch((e) => { devMsg = String(e.message); });
-  assert(/ESPN 真机不可达/.test(devMsg), '真机应立刻失败并说明原因, 实际: ' + devMsg);
-  assert.strictEqual(espnHttpHits, 0, '真机不得发 HTTP 请求');
-  assert.strictEqual(espnCalls.length, 0, '★真机不得调云函数取比分(云出网已被 ESPN 403, 调了只是白烧配额)');
+  assert(/ESPN 真机不可达/.test(devMsg), '真机+开关关 应立刻失败并说明原因, 实际: ' + devMsg);
+  assert.strictEqual(espnHttpHits + wxHits, 0, '真机不得发 HTTP 请求');
+  assert.strictEqual(espnCalls.length, 0, '开关关时不得调云函数取比分');
   const dedup = espn.makeBoardFetcher({});
-  const u = 'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260915';
+  const u = espn.boardUrl('esp.1', '20260915');
   await dedup(u).catch(() => {}); await dedup(u).catch(() => {});
-  assert.strictEqual(espnHttpHits + espnCalls.length, 0, '取板器在真机上同样零请求');
-  console.log('⑩ 真机零请求(直接回退 finalScore) ✓  (判定/不直连/不调云/取板器同口径)');
+  assert.strictEqual(espnHttpHits + wxHits + espnCalls.length, 0, '取板器在"开关关+真机"下同样零请求');
+  console.log('⑩ 开关关 + 真机: 零请求(回退 finalScore) ✓  (判定/不直连/不调云/取板器同口径)');
 
-  /* 11) 开发者工具: platform=devtools → 走 wx.request 直连(工具里须勾「不校验合法域名」), 供比分联调 */
+  /* 10b) 开关关 + 开发者工具 → wx.request 直连(工具里须勾「不校验合法域名」), 供本地联调 */
   global.wx.getSystemInfoSync = () => ({ platform: 'devtools' });
-  assert.strictEqual(espn.espnDirect(), true, '开发者工具应允许直连 ESPN');
-  let wxHits = 0;
   global.wx.request = (o) => {
     wxHits++;
     o.success({
@@ -171,26 +183,145 @@ console.log('① 白名单/配置校验 ✓  (' + core.ALLOWED_FNS.length + ' �
       data: { events: [{ competitions: [{ competitors: [{ homeAway: 'home', team: { displayName: 'Elche' }, score: '1' }, { homeAway: 'away', team: { displayName: 'Real Madrid' }, score: '2' }] }], status: { type: { name: 'STATUS_FULL_TIME' } } }] },
     });
   };
-  const rows = await espn.fetchBoard('esp.1', '20260915');
+  assert.strictEqual(espn.espnDirect(), true, '开发者工具应允许直连 ESPN');
+  const rowsDev = await espn.fetchBoard('esp.1', '20260915');
   assert.strictEqual(wxHits, 1, '开发者工具应经 wx.request 直连 ESPN');
   assert.strictEqual(espnHttpHits, 0, '不应绕过 wx.request 走 node fetch');
-  assert.strictEqual(rows[0].home, 'Elche', '直连通道应返回归一化行');
+  assert.strictEqual(rowsDev[0].home, 'Elche', '直连通道应返回归一化行');
   assert.strictEqual(espnCalls.length, 0, '开发者工具直连时不应调云函数');
-  console.log('⑪ 开发者工具直连 ✓  (wx.request 取板/归一化/不入云)');
+  console.log('⑪ 开关关 + 开发者工具: wx.request 直连 ✓  (取板/归一化/不入云)');
 
-  /* 12) 云代理通道仍可显式启用(给将来接境外中转留的开关): 传 cloudFetcher 或 config.ESPN_CLOUD=true */
+  /* 10c) ★开关开 + 真机 = **当前生产口径**: 比分走云函数(云出网取 site.web.api 实测 200),
+     真机因此恢复进行中/完场比分。前提两条: 云函数已 redeploy + config.js 置 ESPN_CLOUD。 */
+  cfgStub.exports.ESPN_CLOUD = true;
   global.wx.getSystemInfoSync = () => ({ platform: 'android' });
-  const rowsCloud = await espn.fetchBoard('eng.2', '20260915', espn.cloudFetcher);
-  assert.strictEqual(rowsCloud[0].home, 'Middlesbrough', '显式走云时应解包归一化行');
-  assert.strictEqual(espnCalls.length, 1, '应调用一次云函数');
-  assert.deepStrictEqual(espnCalls[0].data, { fn: 'espn_scoreboard', args: { league: 'eng.2', date: '20260915' } }, '入参形态: {fn, args:{league,date}}');
-  global.wx.cloud.callFunction = () => Promise.resolve({ result: { ok: false, error: 'ESPN esp.1@20260915 HTTP 403: Access Denied' } });
+  assert.strictEqual(espn.espnCloudEnabled(), true, 'config 桩 ESPN_CLOUD=true 时开关应为 true');
+  const wxBefore = wxHits;
+  const rowsCloud = await espn.fetchBoard('esp.1', '20260915');
+  assert.strictEqual(espnCalls.length, 1, '★真机+开关开 应走云函数取比分(生产口径)');
+  assert.deepStrictEqual(espnCalls[0].data, { fn: 'espn_scoreboard', args: { league: 'esp.1', date: '20260915' } }, '入参形态: {fn, args:{league,date}}');
+  assert.strictEqual(rowsCloud[0].home, 'Elche', '云通道应解包归一化行');
+  assert.strictEqual(wxHits, wxBefore, '走云通道时不得再发 wx.request(域名白名单必拒)');
+  const dedup2 = espn.makeBoardFetcher({});
+  await dedup2(u); await dedup2(u);
+  assert.strictEqual(espnCalls.length, 2, '取板器应 URL 级去重: 同联赛两腿只拉一次');
+  /* 10c-2) ★超时重试(2026-09-15): 云函数 3 秒超时是硬墙(只有控制台能改), 而腾讯云↔东京那段
+     偶发抖动实测能到 1.8s, 会把它顶爆 → 真机上表现为"比分时有时无"。只读取数失败重试一次。
+     两个用例把行为钉死: ① 抖动一次后成功 → 必须真的拿到比分; ② 一直失败 → 透传原因并标明重试过。 */
+  let flaky = 0;
+  global.wx.cloud.callFunction = (o) => {
+    espnCalls.push(o);
+    flaky++;
+    if (flaky === 1) return Promise.reject(new Error('cloud.callFunction:fail errCode: -504003 Invoking task timed out after 3 seconds'));
+    return Promise.resolve({ result: { ok: true, data: [{ home: 'Elche', away: 'Real Madrid', hs: '3', as: '1', st: 'STATUS_FULL_TIME' }] } });
+  };
+  const rowsRetry = await espn.fetchBoard('esp.1', '20260915');
+  assert.strictEqual(flaky, 2, '首次超时应恰好重试一次(实际调用 ' + flaky + ' 次)');
+  assert.strictEqual(rowsRetry[0].hs, '3', '重试成功后应返回比分');
+  global.wx.cloud.callFunction = (o) => {
+    espnCalls.push(o);
+    return Promise.resolve({ result: { ok: false, error: 'ESPN esp.1@20260915 HTTP 403: Access Denied' } });
+  };
   let espnMsg = '';
-  await espn.fetchBoard('esp.1', '20260915', espn.cloudFetcher).catch((e) => { espnMsg = String(e.message); });
+  await espn.fetchBoard('esp.1', '20260915').catch((e) => { espnMsg = String(e.message); });
   assert(/云函数 espn_scoreboard 失败/.test(espnMsg) && /403/.test(espnMsg), '失败原因应透传, 实际: ' + espnMsg);
-  console.log('⑫ 云代理开关(中转预留) ✓  (' + espnMsg.slice(0, 46) + '…)');
+  assert(/已重试 1 次/.test(espnMsg), '最终失败应标明重试过, 实际: ' + espnMsg);
+  console.log('⑫ 开关开 + 真机: 走云函数(生产口径) ✓  (云取板/去重/透传/超时重试 ' + espnMsg.slice(0, 30) + '…)');
 
+  /* 10d) 主机名闸门: site.api.espn.com 被 ESPN 的 Akamai **按主机名** 403(东京 Vultr 节点、腾讯云
+     都吃 447 字节 Access Denied 页, 本机国内 IP 反而正常), 只有 site.web.api 通 —— 谁改回去,
+     真机比分就又是"永远空"。这条断言 = 防回退(改主机名必须两处同步: 云函数 + 小程序)。 */
+  assert.strictEqual(core.ESPN_SCOREBOARD_HOST, 'https://site.web.api.espn.com', '云函数须用 site.web.api 主机(site.api 被 403)');
+  assert(espn.boardUrl('esp.1', '20260915').indexOf('https://site.web.api.espn.com/') === 0, '小程序侧 boardUrl 主机须与云函数一致');
+  let diskCfg = '';
+  try { diskCfg = fs.readFileSync(path.join(ROOT, 'miniprogram', 'utils', 'config.js'), 'utf8'); } catch (e) {}
+  console.log('⑬ 主机名闸门 ✓  (全链路统一 site.web.api; 本机 config.js '
+    + (/ESPN_CLOUD\s*:\s*true/.test(diskCfg) ? '已开 ESPN_CLOUD' : '★未开 ESPN_CLOUD —— 真机将回退 finalScore') + ')');
+
+  delete require.cache[cfgPath];
   global.fetch = realFetch2;
   delete global.wx;
+
+  /* 14) ★ESPN 中转模式(2026-09-15 上线): 直连时腾讯云→ESPN 单程 3~5s, 顶着云函数默认 3s 超时
+     (实测三次挂一两次) → 生产改走用户东京节点上的 espn-relay(只转发 scoreboard 一条路径)。
+     这里用**注入 fetch**断言行形态(不发真请求); 真出网由 tools/_diag_espn.js 打部署后的云函数验。 */
+  const tDirect = core.espnTarget({});
+  assert.strictEqual(tDirect.base, 'https://site.web.api.espn.com', '未配中转应直连 web.api 主机');
+  assert.strictEqual(tDirect.via, 'direct', '未配中转时 via 应为 direct');
+  assert(!('x-bear-token' in tDirect.headers), '直连不得带中转令牌头');
+  const tRelay = core.espnTarget({ ESPN_RELAY: 'http://relay.test:8899/', ESPN_RELAY_TOKEN: 'tok123' });
+  assert.strictEqual(tRelay.base, 'http://relay.test:8899', '中转 base 应去掉尾部斜杠');
+  assert.strictEqual(tRelay.headers['x-bear-token'], 'tok123', '中转须带 x-bear-token 头');
+  assert(/Chrome/.test(tRelay.headers['User-Agent']), '中转仍要浏览器形态 UA(上游是 Akamai)');
+  let saw = null;
+  const rowsRelay = await core.callEspnScoreboard('esp.1', '20260915', {
+    cfg: { ESPN_RELAY: 'http://relay.test:8899', ESPN_RELAY_TOKEN: 'tok123' },
+    fetch: (url, options) => {
+      saw = { url: url, headers: options.headers };
+      return Promise.resolve({
+        ok: true, status: 200,
+        // rawRequest 期待的是 fetch 的 Response 形态: body 走 text() 而不是 text 字段
+        text: async () => JSON.stringify({ events: [{ competitions: [{ competitors: [{ homeAway: 'home', team: { displayName: 'Elche' }, score: '2' }, { homeAway: 'away', team: { displayName: 'Real Madrid' }, score: '1' }] }], status: { type: { name: 'STATUS_FULL_TIME' } } }] }),
+      });
+    },
+  });
+  assert(saw && saw.url === 'http://relay.test:8899/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260915',
+    '中转只换 base、路径与 ESPN 完全一致, 实际: ' + (saw && saw.url));
+  assert.strictEqual(saw.headers['x-bear-token'], 'tok123', '中转请求须带令牌头');
+  assert.strictEqual(rowsRelay[0].home, 'Elche', '中转返回体解析口径应与直连一致');
+  assert.strictEqual(rowsRelay[0].hs, '2', '中转归一化须带比分');
+  let diskFn = {};
+  try { diskFn = require(path.join(ROOT, 'miniprogram', 'cloudfunctions', 'bear_api', 'config.js')) || {}; } catch (e) { diskFn = {}; }
+  console.log('⑭ ESPN 中转模式 ✓  (未配=直连 / 配了=换 base + 带令牌; 本机云函数 config.js '
+    + (diskFn.ESPN_RELAY ? '配了 ' + diskFn.ESPN_RELAY + ' 令牌' + (diskFn.ESPN_RELAY_TOKEN ? '在' : '★缺!') : '未配 → 走直连') + ')');
+
+  /* 14b) ★中转是**明文 http**, 而云上无 fetch → 只能走 httpsRequest 兜底。这里起一个本地 HTTP 服务
+     冒充中转, 临时摘掉全局 fetch 逼核心出网走原生模块 —— 即云上的真实路径。
+     (踩过的坑: httpsRequest 一律用 https.request, 打 http 端口报 "self signed certificate";
+      本地有 fetch 时永远看不出, 只有上云才炸。)
+     两种返回形态都要认: 中转回 {rows}(已归一, 约 0.4KB), 直连回 {events}(40KB 原始结构)。 */
+  const ESPN_FIXTURE = JSON.stringify({ events: [{ competitions: [{ competitors: [{ homeAway: 'home', team: { displayName: 'Elche' }, score: '3' }, { homeAway: 'away', team: { displayName: 'Real Madrid' }, score: '1' }] }], status: { type: { name: 'STATUS_FULL_TIME' } } }] });
+  let serveRows = false;
+  const httpSrv = require('http').createServer(function (req, res) {
+    if (req.headers['x-bear-token'] !== 'tok123') {
+      res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end('{"error":"bad token"}');
+    }
+    if (req.url !== '/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260915') {
+      res.writeHead(404, { 'Content-Type': 'application/json' }); return res.end('{"error":"bad path"}');
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    // serveRows=true 模仿**真实中转**(relay.py 归一后回 {rows}); false 模仿直连 ESPN 的原始 events
+    res.end(serveRows
+      ? JSON.stringify({ rows: [{ home: 'Elche', away: 'Real Madrid', hs: '3', as: '1', st: 'STATUS_FULL_TIME' }] })
+      : ESPN_FIXTURE);
+  });
+  await new Promise(function (r) { httpSrv.listen(0, '127.0.0.1', r); });
+  const relayPort = httpSrv.address().port;
+  const savedFetch3 = globalThis.fetch;
+  delete globalThis.fetch;
+  try {
+    assert(typeof fetch === 'undefined', '全局 fetch 应已摘除(否则本用例无效)');
+    const rowsHttp = await core.callEspnScoreboard('esp.1', '20260915',
+      { cfg: { ESPN_RELAY: 'http://127.0.0.1:' + relayPort, ESPN_RELAY_TOKEN: 'tok123' } });
+    assert.strictEqual(rowsHttp[0].home, 'Elche', '无 fetch 时中转(明文 http)应能取到数据');
+    assert.strictEqual(rowsHttp[0].hs, '3', '无 fetch 时中转应解析比分');
+    serveRows = true; // 换成真实中转的返回形态: {rows:[...]} 已归一化
+    const rowsViaRelay = await core.callEspnScoreboard('esp.1', '20260915',
+      { cfg: { ESPN_RELAY: 'http://127.0.0.1:' + relayPort, ESPN_RELAY_TOKEN: 'tok123' } });
+    assert.deepStrictEqual(rowsViaRelay, rowsHttp,
+      '★口径漂移闸门: 中转 {rows}(relay.py 归一) 必须与本地归一化结果逐字段一致');
+    serveRows = false;
+    let badMsg = '';
+    await core.callEspnScoreboard('esp.1', '20260915',
+      { cfg: { ESPN_RELAY: 'http://127.0.0.1:' + relayPort, ESPN_RELAY_TOKEN: 'wrong' } })
+      .catch(function (e) { badMsg = String(e.message); });
+    assert(/HTTP 403/.test(badMsg) && /\[relay\]/.test(badMsg), '中转 403 应带 [relay] 标记, 实际: ' + badMsg);
+    console.log('⑮ 中转真实链路(无 fetch / 明文 http) ✓  (令牌校验/URL 形态/归一化/失败标记)');
+  } finally {
+    globalThis.fetch = savedFetch3;
+    if (httpSrv.closeAllConnections) httpSrv.closeAllConnections();
+    httpSrv.close();
+  }
+
   console.log('云函数通道冒烟全绿 ✓');
 })().catch((e) => { console.error('云函数通道冒烟失败: ' + ((e && e.stack) || e)); process.exit(1); });
