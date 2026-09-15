@@ -1428,7 +1428,9 @@ function renderApp(days) {
         (showTime ? '<td>' + esc(m.time || '—') + '</td>' : '') +
         '<td>' + esc(m.id) + '</td>' +
         '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
-        '<td>' + esc(m.direction) + ' / ' + esc(m.overUnder) + '</td>' +
+        // 方向词同走官方口径(2026-09-15): 主表已写 胜/平/负, 这四张专栏表(日韩/北单/英超/深夜)
+        //   原来照抄数据字段, 同一场比赛在两处会写成两个词。北单行的 '3[让-1]' 不在映射表里, 原样保留。
+        '<td>' + esc(offDir(m.direction)) + ' / ' + esc(m.overUnder) + '</td>' +
         '<td>' + (m.finalScore ? '<span class="final">' + esc(m.finalScore) + '</span>' : '<span class="wait">待赛</span>') + '</td>' +
         '<td>' + mark(m.d) + (m.dTxt ? '<br><span class="final" style="font-size:11px">' + esc(m.dTxt) + '</span>' : '') + ' ' + mark(m.o) + ' ' + scoreMark(m.score, m.finalScore, m.scoreSp) + '</td></tr>';
     }

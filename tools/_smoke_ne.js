@@ -20,7 +20,7 @@ function grabFn(name) {
 }
 
 const harness = ['var EPL_INSIGHT_HTML = "";', 'var calState = { sel: "" };'];
-['esc', 'pct', 'frac', 'mark', 'scoreMark', 'splitByRecentDates',
+['esc', 'pct', 'frac', 'mark', 'scoreMark', 'splitByRecentDates', 'offDir',
  'renderColumnPanel', 'renderJK', 'renderBeidan', 'renderEPL', 'renderNightExpress'
 ].forEach(n => harness.push(grabFn(n)));
 
@@ -80,6 +80,17 @@ sandbox.calState.sel = '2026-09-15';
 vm.runInContext('renderBeidan(days)', sandbox);
 assert(boxes.beidanBody.innerHTML.includes('大田市民'), '切回 9-15 应恢复当期明细');
 sandbox.calState.sel = '';
+
+// 专栏明细的方向词同走官方口径(2026-09-15): 主表(场次卡)写 胜/平/负, 这四张表原来照抄数据字段的
+//   主胜/客胜 —— 同一场比赛在页面上会看到两个词。北单行的 '3[让-1]' 是北单原生记法(玩法卡有对照),
+//   不在映射表里, 必须原样保留(断言卡住: 别顺手把它也"翻译"了)。
+const offHtml = boxes.neBody.innerHTML + boxes.jkBody.innerHTML + boxes.eplBody.innerHTML;
+assert(!offHtml.includes('主胜') && !offHtml.includes('客胜'),
+  '日韩/英超/深夜三张表的方向列不该再出现「主胜/客胜」(官方口径是 胜/平/负)');
+assert(/<td>(胜|平|负) \/ /.test(offHtml) || /<td>(胜|平|负)<\/td>/.test(offHtml),
+  '方向列应写成官方的 胜/平/负, 实际(深夜快车首行): ' +
+  ((boxes.neBody.innerHTML.match(/<td>[^<]*<\/td><td>[^<]*<\/td><td>[^<]*<\/td>/) || [''])[0]));
+assert(bdHtml.includes('3/1[让-1]'), '北单明细的 310 记法不得被方向词映射改掉(仍应是 3/1[让-1])');
 console.log('渲染冒烟全绿 ✓  jk/beidan/epl/ne 四专栏 + 深夜快车断言全过');
 console.log('--- 深夜快车摘要行 ---');
 console.log(neHtml.match(/<div class="bd-sum">[\s\S]*?<\/div>/)[0]);
