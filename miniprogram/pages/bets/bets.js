@@ -6,7 +6,8 @@
  *   一腿 miss → 串关一腿失即全失, 立即判"未中"(奖金 0)写库, 不等其余腿完场;
  *   无 miss 部分完场 → 仅腿级回写(result/finalScore), 票保持"待结算";
  *   已判死的票 → 剩余腿继续补更新展示, 但永不改 status/payout/profit/settled_at。
- *   取分: ESPN(死链联赛回退 prediction_days 当日 finalScore); 每轮按 bet_date|legKey 去重取分。
+ *   取分: ESPN(死链联赛回退 prediction_days 当日 finalScore); 每轮按 bet_date|legKey 去重取分,
+ *   ESPN 请求再按 URL 去重(boardCache) → 同联赛多腿只拉一次。
  *   乐观更新: 内存先改再 await 写库; 写库失败静默(界面已正确), 下轮 load 从库重读 → 指纹不等 → 自动重试。
  *
  * 轮询: 每 POLL_MS 静默跑一轮(pollTick), 仅当还有"未完场腿"注单才真发请求, 否则零请求;
@@ -220,7 +221,13 @@ Page({
     if (!silent) this.setData({ settling: true });
     const payloadByDate = {}; // bet_date → payload | null(已查过)
     const scoreCache = {};    // bet_date|legKey → Promise<score|null>(同轮跨票去重)
+    const boardCache = {};    // url → Promise<rows>(ESPN URL 级去重: 同联赛多腿只拉一次)
     let changed = false;
+
+    /* URL 级去重取板器(espn.makeBoardFetcher): 同轮同联赛多腿只拉一次, 失败同样缓存
+       ( fetchScoreForLeg 内部 try/catch 已吞)。★通道由 espn 内部决定(真机走云函数),
+       这里**不能**自己包 defaultFetcher —— 那会绕过云通道回到真机必失败的直连。 */
+    const boardFetcher = espn.makeBoardFetcher(boardCache);
 
     function payloadScore(betDate, key) {
       if (!(betDate in payloadByDate)) {
@@ -239,7 +246,7 @@ Page({
       const key = settle.legKey(leg);
       const dk = (bet.bet_date || '') + '|' + key;
       if (!(dk in scoreCache)) {
-        scoreCache[dk] = settle.fetchScoreForLeg(leg, bet.bet_date).then(function (fs) {
+        scoreCache[dk] = settle.fetchScoreForLeg(leg, bet.bet_date, boardFetcher).then(function (fs) {
           if (fs) return fs;
           return payloadScore(bet.bet_date, key); // 死链联赛/未命中回退当日推荐 finalScore
         });

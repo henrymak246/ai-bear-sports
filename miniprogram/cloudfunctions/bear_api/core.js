@@ -15,6 +15,8 @@ const ALLOWED_FNS = [
   'mini_save_bet',
   'mini_list_bets',
   'mini_update_bet',
+  'mini_edit_bet',
+  'mini_delete_bet',
 ];
 
 function assertFn(fn) {
@@ -91,4 +93,50 @@ async function callSupabaseRpc(fn, args, cfg, opts) {
   return res.text ? JSON.parse(res.text) : null;
 }
 
-module.exports = { ALLOWED_FNS, assertFn, assertCfg, httpsRequest, rawRequest, callSupabaseRpc };
+/* ===== ESPN 比分代理(2026-09-15) =====
+   真机上小程序 wx.request 只能直连「request 合法域名」白名单内的域名, 而 site.api.espn.com
+   是境外域名、拿不到 ICP 备案 → 配不进白名单, 真机必然 request:fail url not in domain list。
+   云函数出网属服务器出网, 不受该白名单约束 → 比分统一由云函数代取, 再把归一化后的
+   [{home,away,hs,as,st}] 返回小程序(小程序侧不再重复解析 ESPN 结构)。
+   ★联赛码用**形状校验**而非显式白名单: 每日场次会引入新码(9-15 就新增了 eng.league_cup/
+     afc.champions/conmebol.libertadores), 写死清单意味着每加一个联赛都要重新部署云函数,
+     漏部署的表现正是"真机比分永远空"。形状校验把可访问面收敛到「ESPN 足球 scoreboard」
+     这一个只读公开接口(路径不可任意拼装, 域名固定), 已被当代理的风险可接受。 */
+const ESPN_LEAGUE_RE = /^[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)*$/;
+
+function assertEspnArgs(league, date) {
+  const lg = String(league == null ? '' : league);
+  const dt = String(date == null ? '' : date);
+  if (!ESPN_LEAGUE_RE.test(lg) || lg.length > 32) throw new Error('ESPN 联赛码非法: ' + lg);
+  if (!/^\d{8}$/.test(dt)) throw new Error('ESPN 日期非法(须 YYYYMMDD): ' + dt);
+  return { league: lg, date: dt };
+}
+
+/* ESPN scoreboard → [{home, away, hs, as, st}](与小程序 espn.js 的字段一一对应) */
+async function callEspnScoreboard(league, date, opts) {
+  const a = assertEspnArgs(league, date);
+  const res = await rawRequest(
+    'https://site.api.espn.com/apis/site/v2/sports/soccer/' + a.league + '/scoreboard?dates=' + a.date,
+    { method: 'GET', headers: { 'User-Agent': 'Mozilla/5.0' } },
+    opts
+  );
+  if (!res.ok) throw new Error('ESPN ' + a.league + '@' + a.date + ' HTTP ' + res.status);
+  let j = {};
+  try { j = JSON.parse(res.text || '{}'); } catch (e) { return []; }
+  return (j.events || []).map(function (e) {
+    const comp = (e.competitions || [])[0] || {};
+    const cs = comp.competitors || [];
+    const h = cs.filter(function (x) { return x.homeAway === 'home'; })[0] || {};
+    const w = cs.filter(function (x) { return x.homeAway === 'away'; })[0] || {};
+    return {
+      home: ((h.team || {}).displayName || ''),
+      away: ((w.team || {}).displayName || ''),
+      hs: h.score,
+      as: w.score,
+      st: (e.status && e.status.type && e.status.type.name) || '',
+    };
+  });
+}
+
+module.exports = { ALLOWED_FNS, assertFn, assertCfg, httpsRequest, rawRequest, callSupabaseRpc,
+  ESPN_LEAGUE_RE, assertEspnArgs, callEspnScoreboard };
