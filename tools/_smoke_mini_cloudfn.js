@@ -16,6 +16,7 @@ const core = require(path.join(ROOT, 'miniprogram', 'cloudfunctions', 'bear_api'
 const FnCfgPath = path.join(ROOT, 'miniprogram', 'cloudfunctions', 'bear_api', 'config.js');
 const api = require(path.join(ROOT, 'miniprogram', 'utils', 'api.js'));
 const espn = require(path.join(ROOT, 'miniprogram', 'utils', 'espn.js'));
+const jc = require(path.join(ROOT, 'miniprogram', 'utils', 'jc.js'));
 
 /* 1) 白名单 + 配置校验(不联网)
    ★逐名断言而非只数个数: 真正的失败模式是"SQL 上了、页面上了、忘了重新部署云函数"——
@@ -321,6 +322,84 @@ console.log('① 白名单/配置校验 ✓  (' + core.ALLOWED_FNS.length + ' �
     globalThis.fetch = savedFetch3;
     if (httpSrv.closeAllConnections) httpSrv.closeAllConnections();
     httpSrv.close();
+  }
+
+  /* ⑯ 竞彩实时赔率(jc_live): 页面上的 sp/hhad 是构建时快照, 会跟官方脱节 —— 见 core.js 的 JC 段。
+     ★要害是**官方接口一次只回一个彩池**(poolCode=had 时返回体里 hhad 是空的), 所以 had/hhad 必须
+       各打一次再按场次号合并; 想省一次请求会静默丢掉整个让球盘, 这里就用"只出现在 hhad 里的场次"
+       把这条钉死(真实现: 周二009/013 只开让球不开胜平负)。
+     照 ⑮ 的办法: 本地起 fixture 服务冒充 webapi.sporttery.cn, 并摘掉全局 fetch 逼走原生模块
+       —— 云上 Node16 就是这么跑的, 本地有 fetch 时永远走不到那一支。 */
+  const jcFixture = function (pool) {
+    const m = (num, home, away, extra) => Object.assign({
+      matchNumStr: num, businessDate: '2026-09-15', leagueAbbName: '亚冠精英', homeTeamAbbName: home,
+      awayTeamAbbName: away, matchTime: '20:15:00', matchStatus: 'Selling', had: {}, hhad: {},
+    }, extra);
+    // 与官方同形: had 响应里只有开胜平负的场(004/010), hhad 响应里多一个只开让球的 009
+    const subs = pool === 'had'
+      ? [m('周二004', '柔佛', '布里兰', { had: { h: '1.35', d: '4.45', a: '6.10', updateTime: '19:01:17' } }),
+         m('周二010', '米堡', '米尔沃尔', { had: { h: '1.33', d: '4.60', a: '6.25', updateTime: '19:12:00' } })]
+      : [m('周二004', '柔佛', '布里兰', { hhad: { h: '2.22', d: '3.25', a: '2.70', goalLine: '-1', updateTime: '19:01:23' } }),
+         m('周二009', '阿贾克斯', '威廉二世', { hhad: { h: '1.68', d: '4.50', a: '3.22', goalLine: '-2', updateTime: '17:10:40' } }),
+         m('周二010', '米堡', '米尔沃尔', { hhad: { h: '2.12', d: '3.60', a: '2.63', goalLine: '-1', updateTime: '19:12:00' } })];
+    return JSON.stringify({ value: { matchInfoList: [{ businessDate: '2026-09-15', weekday: '周二', subMatchList: subs }] } });
+  };
+  const jcHits = [];
+  const jcSrv = require('http').createServer(function (req, res) {
+    const pool = (/[?&]poolCode=([a-z]+)/.exec(req.url) || [])[1];
+    jcHits.push(req.url);
+    if (req.url.indexOf('/gateway/jc/football/getMatchCalculatorV1.qry?poolCode=' + pool + '&channel=c') !== 0) {
+      res.writeHead(404, { 'Content-Type': 'application/json' }); return res.end('{"error":"bad path"}');
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json;charset=utf-8' });
+    res.end(jcFixture(pool));
+  });
+  await new Promise(function (r) { jcSrv.listen(0, '127.0.0.1', r); });
+  const jcBase = 'http://127.0.0.1:' + jcSrv.address().port;
+  const savedFetch4 = globalThis.fetch;
+  delete globalThis.fetch;
+  try {
+    assert(typeof fetch === 'undefined', '全局 fetch 应已摘除(否则测不到云上的 Node16 路径)');
+    const live = await core.callJcLive(['had', 'hhad'], { base: jcBase });
+    assert.strictEqual(jcHits.length, 2, '须打两次上游(一彩池一次), 实际 ' + jcHits.length + ' 次');
+    const r4 = live.rows['周二004'], r9 = live.rows['周二009'];
+    assert.deepStrictEqual(r4.sp, [1.35, 4.45, 6.1], '004 的胜平负应来自 had 那一次请求');
+    assert.deepStrictEqual(r4.hhad, [2.22, 3.25, 2.7], '★004 的让球应来自 hhad 那一次请求(跨两次请求合并)');
+    assert.strictEqual(r4.goalLine, -1, '让球盘口应从 hhad.goalLine 取, 而不是丢弃');
+    assert.strictEqual(r4.st, 'Selling', '在售状态应透出');
+    assert.strictEqual(r4.upd, '19:01:23', '官方更新时间应透出(页面显示"官方更新于 HH:MM:SS")');
+    assert.strictEqual(r9.sp, null, '★009 只开让球: sp 必须是 null 而不是空数组([] 会让 fmtSp 显示成空白行)');
+    assert.deepStrictEqual(r9.hhad, [1.68, 4.5, 3.22], '009 的让球应取到');
+    assert(!live.rows['周二001'], '已过销售截止被官方下架的场次不该出现在实时池里(页面据此标"已停售")');
+    assert(JSON.stringify(live).length < 1200, '回传必须已归一(官方原包 30KB+, 这里应 <1.2KB)');
+    let poolMsg = '';
+    await core.callJcLive(['ttg'], { base: jcBase }).catch(function (e) { poolMsg = String(e.message); });
+    assert(/彩池非法/.test(poolMsg), '白名单外的彩池必须拒绝(否则云函数就成了万能代理), 实际: ' + poolMsg);
+
+    /* 16b) overlay: 纯函数、不改入参、只覆盖不下毒 */
+    const frozen = [
+      { id: '周二004', home: '柔佛', away: '布里兰', sp: [1.41, 4.25, 5.4], hhad: [2.42, 3.25, 2.45], spHandicap: -1 },
+      { id: '周二001', home: '叻武里', away: '上海海港', sp: [2.6, 3.35, 2.24], hhad: [1.48, 4.15, 4.7], spHandicap: 1 },
+    ];
+    const merged = jc.overlay(frozen, live, '2026-09-15');
+    assert.deepStrictEqual(merged[0].sp, [1.35, 4.45, 6.1], 'overlay 应用实时值顶替构建时快照');
+    assert.deepStrictEqual(merged[0].hhad, [2.22, 3.25, 2.7], 'overlay 应同时顶替让球');
+    assert.strictEqual(merged[0].spHandicap, -1, 'overlay 应带上实时盘口');
+    assert.strictEqual(merged[0].oddsLive, true, '叠加过的场次应标记 oddsLive');
+    assert.strictEqual(merged[0].oddsClosed, false, '在售场次不该被标停售');
+    assert.strictEqual(merged[1].oddsClosed, true, '★不在实时池里的场次应标 oddsClosed(页面据此禁投)');
+    assert.deepStrictEqual(merged[1].sp, [2.6, 3.35, 2.24], '停售场次保留构建值供回看, 只是不可投注');
+    assert.strictEqual(frozen[0].oddsLive, undefined, '★overlay 绝不能改入参(页面缓存/结算都读原对象)');
+    assert.strictEqual(jc.overlay(frozen, live, '2026-09-14')[0].oddsLive, undefined,
+      '★日期闸: 回看历史某天时官方池里当然没有那些场次, 无条件叠加会把整页历史误标成"已停售"');
+    assert.strictEqual(jc.overlay(frozen, null, '2026-09-15')[0].oddsLive, undefined,
+      '取数失败(live=null)时须原样返回 —— 网络问题绝不能让页面变白');
+    console.log('⑯ 竞彩实时赔率 ✓  (两彩池合并/仅让球场次/下架缺场/白名单/归一化 ' +
+      JSON.stringify(live).length + 'B/overlay 纯函数+日期闸+失败兜底)');
+  } finally {
+    globalThis.fetch = savedFetch4;
+    if (jcSrv.closeAllConnections) jcSrv.closeAllConnections();
+    jcSrv.close();
   }
 
   console.log('云函数通道冒烟全绿 ✓');

@@ -5,6 +5,7 @@
       <text class="topbar-date">📅 {{payload.date || '--'}}</text>
       <text class="muted topbar-updated" wx:if="{{lastUpdated}}">更新 {{lastUpdated}}</text>
       <text class="muted topbar-updated" wx:if="{{scoreStatus}}"> · {{scoreStatus}}</text>
+      <text class="odds-badge {{oddsStatus === '官方实时' ? 'odds-live' : 'odds-snap'}}" wx:if="{{oddsStatus}}">赔率{{oddsStatus}}</text>
     </view>
     <view class="daily-title" wx:if="{{dailyTitle}}">{{dailyTitle}}</view>
     <view class="tabs">
@@ -19,15 +20,23 @@
 
   <!-- ============ 🎫 竞彩 Tab ============ -->
   <block wx:if="{{tab === 'jc' && payload}}">
+    <!-- 竞彩赔率已实时化(utils/jc.js)时的口径说明: 大号倍数已按实时值同步,
+         但正文括号里的赔率(如 "010让-1主胜(2.20")写于构建时, 是模型当时的推理记录 ——
+         逐条改写会把推理文句改花, 所以在这里统一说明, 并指向下方场次卡的实时价 -->
+    <view class="card plan-note-card" wx:if="{{oddsStatus === '官方实时'}}">
+      <view class="plan-text">🔴 竞彩赔率已接官方实时: 方案大号倍数为实时连乘值; 正文括号内的赔率是构建时推理记录, 实时价以场次卡为准。</view>
+    </view>
     <view class="card plan-card" wx:for="{{planJc}}" wx:key="name">
       <view class="plan-head">
         <text class="plan-name">{{item.name}}</text>
         <text class="plan-pct" wx:if="{{item.pct}}">{{item.pct}}</text>
       </view>
       <view class="plan-text">{{item.text}}</view>
+      <!-- 正文里把让球-only 的场当胜平负写了 → 挂一句口径说明(见 utils/jc.js noHadNote); 正文一个字不动 -->
+      <view class="plan-nohad" wx:if="{{item.noHadNote}}">{{item.noHadNote}}</view>
     </view>
 
-    <view class="card match-card" wx:for="{{groups.jc}}" wx:key="id">
+    <view class="card match-card {{item.oddsClosed ? 'm-closed' : ''}}" wx:for="{{groups.jc}}" wx:key="id">
       <view class="m-head">
         <view class="m-teams">
           <text class="m-league muted">{{item.league}} · {{item.id}}</text>
@@ -45,9 +54,17 @@
         <text class="m-dir">{{item.direction}}</text>
         <text class="star" wx:if="{{item.stars}}">{{item.stars}}</text>
       </view>
+      <!-- 官方只开让球、没开胜平负(让球-only, 见 utils/jc.js noHadOf): 方向不可投, 整串文案在 index.js 拼好 -->
+      <view class="m-line nohad-tip" wx:if="{{item.noHadTip}}">
+        <text>{{item.noHadTip}}</text>
+      </view>
       <view class="m-line muted" wx:if="{{item.spText || item.hhadText}}">
         <text wx:if="{{item.spText}}">SP {{item.spText}}</text>
         <text wx:if="{{item.hhadText}}">让球SP {{item.hhadText}}</text>
+      </view>
+      <!-- 独立成行: SP 两个都空的场也必须看得见"已停售" -->
+      <view class="m-line" wx:if="{{item.oddsTip}}">
+        <text class="{{item.oddsClosed ? 'closed-tag' : 'live-tag'}}">{{item.oddsTip}}</text>
       </view>
       <view class="m-line muted">
         <text wx:if="{{item.overUnder}}">总进球 {{item.overUnder}}<text wx:if="{{item.ttgSp}}"> @{{item.ttgSp}}</text></text>
@@ -60,7 +77,9 @@
       <!-- 组串勾选(勾选态显示; ⇄ 切换胜平负/让球两种腿) -->
       <view class="m-cart" wx:if="{{cartMode}}">
         <checkbox class="m-check" checked="{{!!cartSel['jc:' + item.id]}}" data-key="jc:{{item.id}}" data-type="jc" data-id="{{item.id}}" bindtap="toggleCart" />
-        <text class="m-swap" data-id="{{item.id}}" catchtap="switchJcKind">⇄ {{jcKindMap[item.id] === 'hhad' ? '让球' : '胜平负'}}</text>
+        <!-- 让球-only 场没有胜平负腿可换: 不给 ⇄ 开关, 直接写明腿型(index.js 的 makeLeg 也拦着) -->
+        <text class="m-swap m-swap-fix" wx:if="{{item.noHad}}">仅让球盘</text>
+        <text class="m-swap" wx:else data-id="{{item.id}}" catchtap="switchJcKind">⇄ {{jcKindMap[item.id] === 'hhad' ? '让球' : '胜平负'}}</text>
       </view>
     </view>
     <view class="empty" wx:if="{{!groups.jc.length}}">等小熊补充🐾</view>

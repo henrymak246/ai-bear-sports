@@ -9,8 +9,9 @@ const fmt = require('../../utils/fmt.js');
 const scorePoller = require('../../utils/scorePoller.js');
 const cart = require('../../utils/cart.js');
 const slipCanvas = require('../../utils/slipCanvas.js');
+const jc = require('../../utils/jc.js');
 
-const BADGE_CLASS = { '胆': 'badge-gold', '单选': 'badge-red', '双选': 'badge-blue', '弃选': 'badge-gray' };
+const BADGE_CLASS = { '胆': 'badge-gold', '单选': 'badge-red', '双选': 'badge-blue', '弃选': 'badge-gray', '让球': 'badge-rang' };
 const JUDGE_LABEL = { hit: '✓', miss: '✗', push: '走' };
 const JUDGE_CLASS = { hit: 'judge-hit', miss: 'judge-miss', push: 'judge-pending' };
 
@@ -37,23 +38,45 @@ function buildGroups(payload, judgeLib) {
   groups.jc = matches.map((m) => {
     const hhadText = fmt.fmtSp(m.hhad);
     const hcap = m.spHandicap;
+    const hcapText = '让' + (hcap > 0 ? '+' + hcap : hcap);
+    /* 官方只开了让球、没开胜平负(见 utils/jc.js noHadOf): 卡片上原本顶着一个**投不了的**
+       胜平负方向(2026-09-15 用户拿 013 埃尔切vs皇马 指出)。改成让球口径: 徽章换「让球」,
+       方向前缀让球线 —— '让+2 客胜' 就是 utils/cart.js 建让球腿时用的同一串写法(同一列赔率)。 */
+    const noHad = jc.noHadOf(m);
+    const dir = m.direction || '';
+    const playable = hhadText; // 有让球SP 才谈得上"可投的是让球"
+    // 弃选场不抢 弃选 徽章(那是更强的判断); 其余让球-only 场把徽章换成「让球」
+    const badge = noHad && playable && m.dirTag !== '弃选' ? '让球' : (m.dirTag || '');
     return {
       id: m.id || '',
       league: m.league || '',
       time: m.time || '',
       home: m.home || '',
       away: m.away || '',
-      direction: m.direction || '',
-      dirTag: m.dirTag || '',
-      badgeClass: BADGE_CLASS[m.dirTag] || 'badge-gray',
+      noHad,
+      direction: noHad && playable && dir ? hcapText + ' ' + dir : dir,
+      dirTag: badge,
+      badgeClass: BADGE_CLASS[badge] || 'badge-gray',
+      // 让球-only 才有的一句提醒; WXML 只做插值(本文件既有约定), 整串文案在这里拼好
+      noHadTip: noHad && playable
+        ? '※ 官方未开胜平负(仅' + hcapText + '): ' + (dir ? '「' + dir + '」' : '上方方向') + '不可投; 可投的是下行让球SP'
+        : '',
       stars: fmt.fmtStars(m.confidence),
       spText: fmt.fmtSp(m.sp),
-      hhadText: hhadText ? '让' + (hcap > 0 ? '+' + hcap : hcap) + ' ' + hhadText : '',
+      hhadText: hhadText ? hcapText + ' ' + hhadText : '',
       overUnder: m.overUnder || '',
       ttgSp: m.ttgSp || '',
       scoreText: (m.score || []).join(' / '),
       note: m.note || '',
       liveScore: '', // Wave2 槽位, 恒空, 模板显示 {{liveScore || time}}
+      // 竞彩赔率时效(见 utils/jc.js): sp/hhad 是构建时快照, 官方之后还会浮动;
+      // 拉不到实时值(离线/未部署)时 oddsLive 为假, 页面照旧显示快照, 只是不打"官方实时"角标。
+      oddsLive: !!m.oddsLive,
+      oddsClosed: !!m.oddsClosed, // 不在官方实时池里 = 已过销售截止被下架 → 禁投
+      oddsUpd: m.oddsUpd || '',
+      // WXML 只做插值(本文件既有约定): 时效行的整串文案在这里拼好
+      oddsTip: m.oddsClosed ? '已停售 · 官方已下架'
+        : (m.oddsLive ? '赔率官方实时' + (m.oddsUpd ? ' ' + m.oddsUpd : '') : ''),
     };
   });
 
@@ -136,6 +159,7 @@ Page({
     cartAmount: 0, // stakes × cartUnit(本期倍数=1)
     sourceBadge: '', // bd / ah / jc
     jcKindMap: {}, // match.id → 'had' | 'hhad'(⇄ 切换, 默认 had)
+    oddsStatus: '', // 赔率口径角标: '官方实时' / '实时取数失败' / ''(非今日, 不显示)
   },
 
   onShow() {
@@ -208,6 +232,48 @@ Page({
     });
     this.stopPullDown();
     this.startScores();
+    this.refreshLiveOdds(payload);
+  },
+
+  /* 竞彩赔率实时化(见 utils/jc.js): **先把构建时快照渲染出去**(首屏不等网络),
+     再后台拉官方实时值叠加; 拉到就原地换成实时数, 拉不到就保持快照 + 顶部标注,
+     绝不让一次网络失败把页面变白或把赔率清空。
+     _liveSeq 防串: 快速下拉两次会同时有两个请求在飞, 先发的后到会把新数据盖成旧数据。 */
+  refreshLiveOdds(payload) {
+    if (!jc.isToday(payload && payload.date)) return; // 补看历史某天: 官方池里当然没有那些场次, 不叠加
+    if (typeof wx === 'undefined' || !wx.cloud) return; // node 冒烟环境不发网络
+    const seq = (this._liveSeq || 0) + 1;
+    this._liveSeq = seq;
+    const self = this;
+    jc.fetchAndOverlay(payload)
+      .then((r) => {
+        if (self._liveSeq !== seq) return; // 已有更新的加载在飞, 丢弃这次结果
+        if (r.error || !r.live) {
+          self.setData({ oddsStatus: '实时取数失败, 显示构建时快照' });
+          return;
+        }
+        const next = Object.assign({}, payload, { matches: r.matches });
+        // 方案块与方案卡大号倍数跟着走(见 jc.planPatch): 只刷场次卡而不动 '≈858倍',
+        // 卡片上就是"一列新赔率配一个旧倍数", 用户一乘就说不对
+        const pp = jc.planPatch(payload, r.matches);
+        if (pp) Object.assign(next, { plan: pp.plan, hc7: pp.hc7, max7: pp.max7 });
+        const groups = buildGroups(next, judge);
+        // buildGroups 会把 liveScore 清空, 而比分轮询是按下标增量写 groups.jc 的 ——
+        // 这里把已滚出来的比分按 id 搬回来, 免得每次叠加赔率都把场上比分闪没一下
+        const old = self.data.groups.jc || [];
+        groups.jc.forEach((g) => {
+          const p = old.find((x) => x.id === g.id);
+          if (p && p.liveScore) { g.liveScore = p.liveScore; g.liveSt = p.liveSt; }
+        });
+        const patch = { payload: next, groups, oddsStatus: '官方实时' };
+        // planJc/planBd 是从 payload.plan 过滤出来的副本, 大号倍数换了这里必须同步重取
+        if (pp) {
+          patch.planJc = (pp.plan || []).filter((p) => p.market === 'jc');
+          patch.planBd = (pp.plan || []).filter((p) => p.market === 'bd');
+        }
+        self.setData(patch);
+      })
+      .catch(() => { if (self._liveSeq === seq) self.setData({ oddsStatus: '实时取数失败, 显示构建时快照' }); });
   },
 
   /* ---- 比分轮询 ---- */
@@ -298,9 +364,19 @@ Page({
     }
     const m = (payload.matches || []).find((x) => x.id === d.id);
     if (!m) return null;
+    // 实时池里没有该场 = 官方已过销售截止并下架(2026-09-15 的 001/002/003 就是这样)。
+    // 快照里 sp 还在, 但**投不了** —— 放进去等于让用户登记一张买不到的单。
+    if (m.oddsClosed) {
+      if (typeof wx !== 'undefined' && wx.showToast) {
+        wx.showToast({ title: '该场已过销售截止, 官方已下架', icon: 'none' });
+      }
+      return null;
+    }
     if (d.type === 'ah') return cart.buildLeg(m, 'ah');
-    const kind = this.data.jcKindMap[d.id] === 'hhad' ? 'jcHhad' : 'jcHad';
-    return cart.buildLeg(m, kind);
+    // ★让球-only 场(官方没开胜平负, 见 utils/jc.js noHadOf): 只有让球腿可投 ——
+    //   默认腿型是 jcHad, 不拦就会往票里塞一条 odds 为空、奖金算成 0 的"买不到的单"
+    const useHad = this.data.jcKindMap[d.id] !== 'hhad' && !jc.noHadOf(m);
+    return cart.buildLeg(m, useHad ? 'jcHad' : 'jcHhad');
   },
 
   /* ⇄ 切换竞彩腿 had/hhad; 已勾选则按新腿型重建 */
@@ -312,6 +388,16 @@ Page({
     const key = 'jc:' + id;
     if (this.data.cartSel[key]) {
       const m = ((this.data.payload || {}).matches || []).find((x) => x.id === id);
+      if (m && m.oddsClosed) {
+        // 勾选之后官方才下架(实时刷新拿到的): 腿必须从票里撤掉, 不能留着一张买不到的单
+        const sel = Object.assign({}, this.data.cartSel);
+        delete sel[key];
+        if (typeof wx !== 'undefined' && wx.showToast) {
+          wx.showToast({ title: '该场已下架, 已从票中移除', icon: 'none' });
+        }
+        this.commitCart(sel);
+        return;
+      }
       if (m) {
         const sel = Object.assign({}, this.data.cartSel);
         sel[key] = cart.buildLeg(m, map[id] === 'hhad' ? 'jcHhad' : 'jcHad');

@@ -77,6 +77,8 @@
   .plan-block .pb-pct { font-size:24px; font-weight:800; margin:2px 0 6px; }
   .plan-block .pb-text { font-size:12px; color:var(--brown-soft); line-height:1.65; }
   .plan-block .pb-more { font-size:11px; color:var(--honey-dark); margin-top:8px; font-weight:700; }
+  /* 口径说明(让球-only 提醒, 见 assets/live-odds.js noHadNote): 与正文区分开, 但不喧宾夺主 */
+  .plan-block .pb-note { font-size:11px; color:#B45309; background:#FFFBEB; border:1px solid #FDE68A; border-radius:6px; padding:4px 7px; margin-top:6px; line-height:1.5; }
   .plan-note { font-size:12px; color:var(--honey-dark); background:var(--amber-bg); border-radius:10px; padding:8px 12px; margin-top:12px; line-height:1.65; }
   .dream7-panel { border-top:4px solid #8B5CF6; }
   .hc7-panel { border-top:4px solid #0284C7; }
@@ -274,6 +276,10 @@
   .sp-toggle { border:1px solid var(--line); background:var(--card); border-radius:8px; padding:3px 8px; font-size:12px; font-weight:700; color:var(--honey-dark); cursor:pointer; font-family:inherit; white-space:nowrap; }
   .sp-toggle:hover { background:var(--amber-bg); }
   .sp-win { color:var(--green); font-weight:800; }
+  .od-closed { display:inline-block; margin-left:4px; color:#B91C1C; font-weight:800; background:#FEF2F2; border:1px solid #FECACA; border-radius:6px; padding:0 5px; font-size:11px; }
+  /* 官方只开了让球、没开胜平负(让球-only): 这场的 SP 那格不是"还没开售", 是压根没有这个盘 */
+  .od-nohad { display:inline-block; color:#B45309; font-weight:800; }
+  .nohad-tip { color:#B45309; background:#FFFBEB; border:1px solid #FDE68A; border-radius:6px; padding:0 6px; font-size:11px; }
   .final { font-weight:800; color:var(--brown); white-space:nowrap; }
   .table-legend { font-size:11px; color:var(--muted); margin-top:6px; }
   .table-legend b { font-weight:800; }
@@ -321,6 +327,8 @@
   .dtag-shuang { background:#4A90D9; color:#fff; }
   .dtag-tuo { background:var(--muted); color:#fff; }
   .dtag-qi { background:#E3E3E3; color:#999; }
+  /* 让球-only 场(官方没开胜平负): 徽章换「让球」 */
+  .dtag-rang { background:#B45309; color:#fff; }
   .mini-tiers { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px; margin-top:12px; }
   .mini-tier-link { text-decoration:none; color:inherit; }
   .mini-tier { background:#FFF8EC; border-left:3px solid var(--honey); border-radius:8px; padding:7px 10px; font-size:12px; color:var(--brown-soft); line-height:1.6; height:100%; }
@@ -515,6 +523,7 @@
 <footer>🐻 小熊提醒：仅供娱乐参考，不构成投资建议<br>五式足球预测法 V2.6 驱动 · 数据由 AI 小熊每日维护</footer>
 
 <script src="assets/supabase.min.js"></script>
+<script src="assets/live-odds.js"></script>
 <script src="stats.js"></script>
 <script>
 // ---- Supabase 配置（Task 4 部署时填入真实值；占位时全站显示"整理中"） ----
@@ -718,7 +727,7 @@ function fillYgMatches(days) {
     var s = document.createElement('script');
     s.src = 'data/predictions.js';
     s.onload = function () {
-      if (typeof PREDICTION_DAYS !== 'undefined') renderApp(PREDICTION_DAYS);
+      if (typeof PREDICTION_DAYS !== 'undefined') bootApp(PREDICTION_DAYS);
       else showGateError('dev 模式：数据文件格式有误');
     };
     s.onerror = function () { showGateError('dev 模式：本地 data/predictions.js 加载失败'); };
@@ -901,12 +910,23 @@ function fillYgMatches(days) {
         sb.from('prediction_days').select('payload').order('date', { ascending: false })
           .then(function (r3) {
             if (r3.error || !r3.data || r3.data.length === 0) { showGateError('数据拉取失败，请稍后刷新'); return; }
-            renderApp(r3.data.map(function (row) { return row.payload; }));
+            bootApp(r3.data.map(function (row) { return row.payload; }));
           });
       })
       .catch(function () { renderPending(session.user.email || ''); });
   }).catch(function () { showGateError('登录状态检查失败，请刷新重试'); });
 })();
+
+/* 渲染 + 竞彩赔率实时化(assets/live-odds.js): 先把构建时快照渲染出去(不阻塞首屏),
+   官方实时值回来后原地重渲一次。renderApp 全部走 innerHTML 赋值, 可安全重复调用;
+   取不到实时值时 refreshDays 原样返回入参 → 只渲一次快照, 与改动前完全一致。 */
+function bootApp(days) {
+  renderApp(days);
+  if (!window.LiveOdds) return;
+  window.LiveOdds.refreshDays(days).then(function (d2) {
+    if (d2 && d2 !== days) renderApp(d2);
+  }).catch(function () { /* refreshDays 内部已兜底, 这里只防它自身抛 */ });
+}
 
 function renderApp(days) {
   var banner = document.getElementById('errorBanner');
@@ -917,7 +937,8 @@ function renderApp(days) {
     return;
   }
   document.getElementById('dataInfo').textContent =
-    '小熊已记录 ' + days.length + ' 天 · 最新：' + (days[0] ? days[0].date : '—') + ' 🐾';
+    '小熊已记录 ' + days.length + ' 天 · 最新：' + (days[0] ? days[0].date : '—') + ' 🐾' +
+    (window.LiveOdds ? window.LiveOdds.note(days[0]) : '');
   fillYgMatches(days);
 
   function pct(r) { return r === null ? '—' : Math.round(r * 100) + '%'; }
@@ -1185,6 +1206,13 @@ function renderApp(days) {
       { key: 'bd', title: '🀄 北单方案', tag: '北京单场310·浮动SP·7串1' },
     ];
     var html = '<h2 class="sec-title" style="margin-top:4px">💰 ' + esc(day.date) + ' 投资方案<span class="sec-sub">点方块看详解</span></h2>';
+    // 竞彩赔率已实时化(assets/live-odds.js)时的口径说明: 大号倍数已按实时值同步,
+    // 但方块正文里括号中的赔率(如 "010让-1主胜(2.20")写于构建时, 是模型当时的推理记录,
+    // 逐条改写会把推理文句改花 —— 所以在组标题上方统一说明, 并指向上方场次卡的实时值。
+    if (day.oddsLive) {
+      html += '<div class="plan-note">🔴 竞彩赔率已接官方实时：方块大号倍数为实时连乘值；'
+        + '正文括号内的赔率是构建时推理记录，实时价以上方场次卡为准。</div>';
+    }
     groups.forEach(function (g) {
       var tiers = day.plan.map(function (t, i) { return { t: t, i: i }; })
         .filter(function (x) { return (x.t.market || 'jc') === g.key; });
@@ -1196,6 +1224,9 @@ function renderApp(days) {
             '<div class="pb-head">' + esc(x.t.name) + planBadge(x.t) + '</div>' +
             '<div class="pb-pct" style="color:' + c + '">' + esc(x.t.pct) + '</div>' +
             '<div class="pb-text">' + esc(x.t.text) + '</div>' +
+            // 卡片正文里把让球-only 的场当胜平负写了 → 挂一句口径说明(见 assets/live-odds.js noHadNote);
+            // 正文一个字都不动, 只在下面加这一行算出来的提醒
+            (x.t.noHadNote ? '<div class="pb-note">' + esc(x.t.noHadNote) + '</div>' : '') +
             '<div class="pb-more">详解 ↗</div></a>';
         }).join('') + '</div>';
     });
@@ -1236,7 +1267,12 @@ function renderApp(days) {
   function closeModal() { document.getElementById('modalRoot').innerHTML = ''; }
 
   // ---- 弹窗 / 折叠 / 展开 统一事件委托 ----
-  document.addEventListener('click', function (e) {
+  // ★renderApp 会被调用两次(见 bootApp: 先渲快照, 竞彩实时赔率回来后再渲一次)。
+  //   document 级委托必须"先摘旧的再挂新的": 重复 addEventListener 会让折叠/展开在同一次点击里
+  //   被触发两遍而互相抵消(开了又关), 表现为"点了没反应"; 同时新函数才闭包住**本次**的 byDate,
+  //   否则实时刷新后的方案卡点开会读到旧日期对象、倍数是构建值。
+  if (renderApp._click) document.removeEventListener('click', renderApp._click);
+  renderApp._click = function (e) {
     var el = e.target.closest ? e.target : null;
     if (!el) return;
     var closer = el.closest('[data-close-modal]');
@@ -1299,7 +1335,8 @@ function renderApp(days) {
       }
       return;
     }
-  });
+  };
+  document.addEventListener('click', renderApp._click);
 
   // ---- 方案层命中面板（6类固定顺序；样本<3 显示「样本不足」） ----
   renderPlanStats(days);
@@ -1606,7 +1643,7 @@ function renderApp(days) {
   }
 
   function dtagHtml(tag) {
-    var map = { '单选': 'dtag-dan', '双选': 'dtag-shuang', '入拖': 'dtag-tuo', '弃选': 'dtag-qi' };
+    var map = { '单选': 'dtag-dan', '双选': 'dtag-shuang', '入拖': 'dtag-tuo', '弃选': 'dtag-qi', '让球': 'dtag-rang' };
     return tag && map[tag] ? ' <span class="dtag ' + map[tag] + '">' + esc(tag) + '</span>' : '';
   }
 
@@ -1634,8 +1671,14 @@ function renderApp(days) {
         var odd = Array.isArray(m.scoreSp) && m.scoreSp[i] ? '(' + esc(m.scoreSp[i]) + ')' : '';
         return esc(sc) + odd;
       }).join(' ');
-      // 竞彩指数(内联竞彩行): 胜平负SP(橙=预测方向/绿=实际打出) + 竞彩让球SP(赛后带结算)
+      // 胜平负SP(橙=预测方向/绿=实际打出) + 竞彩让球SP(赛后带结算)
       var hotIdx = m.direction === '主胜' ? 0 : m.direction === '平' ? 1 : m.direction === '客胜' ? 2 : -1;
+      // ★官方只开了让球、没开胜平负(让球-only, 见 assets/live-odds.js noHadOf)。
+      //   卡片上原本顶着一个**投不了的**胜平负方向(2026-09-15 用户拿 013 埃尔切vs皇马 指出),
+      //   现在改成让球口径: 徽章换「让球」、方向前缀让球线 —— '让+2 客胜' 就是方案腿那串写法。
+      var noHad = typeof LiveOdds !== 'undefined' && LiveOdds.noHadOf(m);
+      var hcapTxt = '让' + (Number(m.spHandicap) > 0 ? '+' + m.spHandicap : m.spHandicap);
+      var hasHhad = Array.isArray(m.hhad) && m.hhad.length === 3;
       var jcOdds;
       if (Array.isArray(m.sp) && m.sp.length === 3) {
         var spTxt = m.sp.map(function (v, i) {
@@ -1645,6 +1688,8 @@ function renderApp(days) {
           return cls.length ? '<b class="' + cls.join(' ') + '">' + esc(v) + '</b>' : esc(v);
         }).join('/');
         jcOdds = ' <span class="odds">SP ' + spTxt + '</span>';
+      } else if (noHad && hasHhad) {
+        jcOdds = ' <span class="od-nohad">无胜平负 · 仅让球</span>'; // 不是"还没开售", 是压根没有这个盘
       } else {
         jcOdds = ' <span class="wait">SP未开售</span>';
       }
@@ -1655,8 +1700,12 @@ function renderApp(days) {
           var adj = Number(fs[1]) + hcp - Number(fs[2]);
           hcpRes = adj > 0 ? '让胜' : adj === 0 ? '让平' : '让负';
         }
-        jcOdds += ' <span class="odds">让' + esc(m.spHandicap) + ' ' + esc(m.hhad[0]) + '/' + esc(m.hhad[1]) + '/' + esc(m.hhad[2]) + (hcpRes ? '(结算:<b class="sp-win">' + hcpRes + '</b>)' : '') + '</span>';
+        // 盘口一律带符号写(`让+2`/`让-1`), 与小程序场次卡、构建脚本正文同口径;
+        // 原来正号省略成 `让2`, 与紧邻的方向行(`让+2 客胜`)并排会看着像两个盘
+        jcOdds += ' <span class="odds">' + esc(hcapTxt) + ' ' + esc(m.hhad[0]) + '/' + esc(m.hhad[1]) + '/' + esc(m.hhad[2]) + (hcpRes ? '(结算:<b class="sp-win">' + hcpRes + '</b>)' : '') + '</span>';
       }
+      // 官方已过销售截止并下架(实时池里没有该场) → 快照 SP 还在, 但这一场买不到, 必须显式标出来
+      if (m.oddsClosed) jcOdds += ' <span class="od-closed">已停售</span>';
       // 亚盘指数(内联亚盘行): 让球盘口水位 + 大小球盘口水位
       var ahOdds = '';
       if (m.ah && m.ah.name) ahOdds += ' <span class="odds">' + esc(m.ah.name) + ' ' + esc(m.ah.home) + '/' + esc(m.ah.away) + '</span>';
@@ -1675,8 +1724,16 @@ function renderApp(days) {
         }
       }
       // 竞彩列行序: 方向+徽章★ → 总进球 → 比分 → 竞彩指数(SP+让球); 💡合成观点在对阵列
-      var jcLines = ['<div>' + esc(m.direction) + dtagHtml(m.dirTag) + ' <span class="stars">' + '★'.repeat(m.confidence || 0) + '</span></div>',
+      // 让球-only 场: 徽章换「让球」、方向前缀让球线(弃选场不抢徽章 —— 那是更强的判断)
+      var noHadBadge = noHad && hasHhad && m.dirTag !== '弃选';
+      var dirTxt = noHadBadge && m.direction ? hcapTxt + ' ' + m.direction : m.direction;
+      var jcLines = ['<div>' + esc(dirTxt) + dtagHtml(noHadBadge ? '让球' : m.dirTag) + ' <span class="stars">' + '★'.repeat(m.confidence || 0) + '</span></div>',
         '<div>' + esc(m.overUnder) + '</div>'];
+      // 让球-only 的提醒: 这场的胜平负方向投不了, 可投的只有下面那行让球SP
+      if (noHadBadge) {
+        jcLines.push('<div><span class="nohad-tip">※ 官方未开胜平负(仅' + esc(hcapTxt) + '): '
+          + (m.direction ? '「' + esc(m.direction) + '」' : '上方方向') + '不可投; 可投的是下行让球SP</span></div>');
+      }
       if (scoreTxt) jcLines.push('<div>' + scoreTxt + '</div>');
       jcLines.push('<div>' + jcOdds + '</div>');
       var jcCell = jcLines.join('');

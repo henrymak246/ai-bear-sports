@@ -211,5 +211,96 @@ async function callEspnScoreboard(league, date, opts) {
   });
 }
 
+/* ===== 竞彩官方实时赔率代理(2026-09-15) =====
+   为什么需要: 站点每场竞彩的 sp/hhad 是**每天构建那一刻**从体彩官方抓的快照(见 tools/_fetch_jc.js
+   → tools/_build<MMDD>.js), 之后官方继续浮动, 页面却永远停在构建值 —— 实测当日 11 场在售里有 9 场
+   已经跟官方对不上(如 005 北京国安主胜 1.64→1.42), 且已过销售截止的场次(001/002/003)仍挂在页面上
+   可投注。用户拿它跟官方 App 一比就是"数据不对"。这里提供**读时实时**口径。
+   ★与 ESPN 那条通道的关键差别: webapi.sporttery.cn 是**国内域名**, 云函数在腾讯云国内机房,
+     直连是"国内→国内", 不存在跨境建连/抖动, 那条 3 秒超时的坑这边没有(实测 53~354ms)。
+     所以**刻意不加结果缓存** —— 缓存会把刚修掉的"陈旧赔率"问题以另一种形式带回来。
+   ★只读公开接口 + 固定路径 + 彩池白名单, 不是通用代理; 返回前先归一化, 不把官方 30KB 原包回传。 */
+const JC_HOST = 'https://webapi.sporttery.cn';
+const JC_POOLS = ['had', 'hhad'];
+const JC_HEADERS = {
+  'User-Agent': ESPN_HEADERS['User-Agent'],
+  'Accept': 'application/json, text/plain, */*',
+  'Accept-Language': 'zh-CN,zh;q=0.9',
+  'Referer': 'https://www.sporttery.cn/',
+};
+
+function assertJcPools(pools) {
+  const list = (Array.isArray(pools) && pools.length) ? pools : JC_POOLS;
+  list.forEach(function (p) {
+    if (JC_POOLS.indexOf(p) < 0) throw new Error('竞彩彩池非法: ' + p);
+  });
+  return list;
+}
+
+const jcNum = function (o, k) {
+  const v = o && o[k];
+  return (v === undefined || v === null || v === '') ? null : Number(v);
+};
+
+/* 竞彩实时赔率 → { pools, fetchedAt, rows: { 场次号: {...} } }
+   ★官方接口一次只回**一个彩池**: poolCode=had 时返回体的 hhad 字段是空的(反之亦然),
+     故 had/hhad 必须各打一次再按 matchNumStr 合并 —— 想省一次请求会静默丢掉整个让球盘。
+   行结构(与 data/predictions.js 的场次字段同口径, 便于小程序侧直接顶替):
+     { num, date, weekday, league, home, away, time, st, goalLine, sp, hhad, upd }
+   sp/hhad 为 [主,平,客] 或 null(该场未开此彩池 —— 如 009/013 只开让球不开胜平负);
+   st 为官方 matchStatus("Selling"=在售); upd 为该彩池的官方更新时间(HH:MM:SS)。 */
+async function callJcLive(pools, opts) {
+  const list = assertJcPools(pools);
+  /* opts.base 是**测试缝**(与 opts.fetch 同性质): 冒烟用它把上游指到本地 fixture 服务,
+     好把「无 fetch 的 Node16 路径」也真跑一遍。生产调用(jc_live 分支)永不传它。 */
+  const host = (opts && opts.base) || JC_HOST;
+  const rows = {};
+  for (const pool of JC_POOLS) {
+    if (list.indexOf(pool) < 0) continue;
+    const res = await rawRequest(
+      host + '/gateway/jc/football/getMatchCalculatorV1.qry?poolCode=' + pool + '&channel=c',
+      { method: 'GET', headers: JC_HEADERS, perf: (opts && opts.perf) || null },
+      opts
+    );
+    if (!res.ok) {
+      throw new Error('竞彩 ' + pool + ' HTTP ' + res.status + ': '
+        + String(res.text || '').replace(/\s+/g, ' ').slice(0, 160));
+    }
+    let j = {};
+    try { j = JSON.parse(res.text || '{}'); } catch (e) { throw new Error('竞彩 ' + pool + ' 返回非 JSON'); }
+    ((j.value || {}).matchInfoList || []).forEach(function (g) {
+      (g.subMatchList || []).forEach(function (m) {
+        const num = m.matchNumStr;
+        if (!num) return;
+        const r = rows[num] || (rows[num] = {
+          num: num,
+          date: m.businessDate || g.businessDate || '',
+          weekday: g.weekday || '',
+          league: m.leagueAbbName || '',
+          home: m.homeTeamAbbName || '',
+          away: m.awayTeamAbbName || '',
+          time: m.matchTime || '',
+          st: m.matchStatus || '',
+          goalLine: null,
+          sp: null,
+          hhad: null,
+          upd: '',
+        });
+        const o = m[pool] || {};
+        if (pool === 'had') {
+          if (jcNum(o, 'h') != null) r.sp = [jcNum(o, 'h'), jcNum(o, 'd'), jcNum(o, 'a')];
+        } else {
+          if (jcNum(o, 'h') != null) r.hhad = [jcNum(o, 'h'), jcNum(o, 'd'), jcNum(o, 'a')];
+          const gl = o.goalLine;
+          if (gl !== undefined && gl !== null && gl !== '') r.goalLine = Number(gl);
+        }
+        r.upd = o.updateTime || r.upd;
+      });
+    });
+  }
+  return { pools: list, fetchedAt: new Date().toISOString(), rows: rows };
+}
+
 module.exports = { ALLOWED_FNS, assertFn, assertCfg, httpsRequest, rawRequest, callSupabaseRpc,
-  ESPN_LEAGUE_RE, ESPN_SCOREBOARD_HOST, espnTarget, assertEspnArgs, callEspnScoreboard };
+  ESPN_LEAGUE_RE, ESPN_SCOREBOARD_HOST, espnTarget, assertEspnArgs, callEspnScoreboard,
+  JC_POOLS, assertJcPools, callJcLive };

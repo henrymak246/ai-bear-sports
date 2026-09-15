@@ -80,6 +80,30 @@
 }
 .m-dir { font-weight: 800; color: #8B5A2B; }
 
+/* 竞彩赔率时效(见 utils/jc.js): 角标说明这行 SP 是官方实时还是构建时快照;
+   已停售场整卡压暗且不再可勾选 —— 官方下架了就不该让人往里投。 */
+.odds-badge {
+  margin-left: auto;
+  flex: none;
+  font-size: 20rpx;
+  padding: 2rpx 12rpx;
+  border-radius: 999rpx;
+}
+.odds-live { color: #15803D; background: #ECFDF5; border: 1rpx solid #BBF7D0; }
+.odds-snap { color: #B45309; background: #FFFBEB; border: 1rpx solid #FDE68A; }
+.live-tag { color: #15803D; font-size: 22rpx; }
+.closed-tag { color: #9A3412; font-weight: 800; font-size: 22rpx; }
+/* 让球-only 场(官方没开胜平负, 见 utils/jc.js noHadOf): 提醒这场的胜平负方向投不了。
+   整行独占(m-line 是 flex-wrap 的, 不 flex:none 会被塞到上一行尾巴上) */
+.nohad-tip { display: block; color: #B45309; background: #FFFBEB; border: 1rpx solid #FDE68A;
+  border-radius: 8rpx; padding: 6rpx 12rpx; font-size: 22rpx; line-height: 1.5; }
+.m-swap-fix { color: #B45309; font-weight: 800; }
+/* 方案卡上的口径说明(见 utils/jc.js noHadNote): 与正文区分开, 但不喧宾夺主 */
+.plan-nohad { margin-top: 10rpx; font-size: 22rpx; color: #B45309; background: #FFFBEB;
+  border: 1rpx solid #FDE68A; border-radius: 8rpx; padding: 6rpx 12rpx; line-height: 1.5; }
+.m-closed { opacity: 0.55; }
+.m-closed .m-vs { text-decoration: line-through; }
+
 /* 备注折叠 */
 .m-note-toggle {
   margin-top: 12rpx;

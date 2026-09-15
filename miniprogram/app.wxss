@@ -39,6 +39,8 @@ page {
 .badge-red { background: #F25C5C; }
 .badge-blue { background: #5B8DEF; }
 .badge-gray { background: #A8A29E; }
+/* 让球-only 场(官方没开胜平负): 徽章换「让球」, 用琥珀色跟 胆/单选/双选 区分开 */
+.badge-rang { background: #B45309; }
 
 /* 判定徽记: 命中绿 / 失手红 / 走水·待赛灰 */
 .judge {

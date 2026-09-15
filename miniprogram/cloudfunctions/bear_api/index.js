@@ -2,10 +2,11 @@
    小程序: wx.cloud.callFunction({ name: 'bear_api', data: { fn: 'mini_get_today_payload', args: {} } })
    → 腾讯云内直连 Supabase RPC → { ok: true, data } / { ok: false, error }。
    另有 fn='espn_scoreboard'({ league, date }) → ESPN 比分代理(真机 request 白名单配不进境外域名)。
+   以及 fn='jc_live'({ pools? }) → 竞彩官方实时赔率代理(页面上的 sp/hhad 是构建时快照, 会与官方脱节)。
    配置来源(优先级): 云函数环境变量 SUPABASE_URL/SUPABASE_ANON_KEY/MINI_TOKEN > 同目录 config.js
    (config.js 已 gitignore, 但随函数包上传到微信云, 不入公开仓库)。 */
 'use strict';
-const { callSupabaseRpc, callEspnScoreboard } = require('./core.js');
+const { callSupabaseRpc, callEspnScoreboard, callJcLive } = require('./core.js');
 
 /* wx-server-sdk 只用于 cloud.init(本函数不读写云数据库); 缺包/版本差异都不影响主流程 */
 let cloud = null;
@@ -35,6 +36,15 @@ exports.main = async function (event) {
   try {
     // ESPN 比分代理: 与 Supabase 无关(不需要 SUPABASE_*/MINI_TOKEN), 故先于配置校验分发
     // (cfg 只用于读可选的中转地址/令牌; 没配也不影响 —— callEspnScoreboard 会直连)
+    // 竞彩实时赔率: 同样与 Supabase 无关, 先于配置校验分发(读的是体彩官方公开接口)
+    if (e.fn === 'jc_live') {
+      const a = e.args || {};
+      if (a.perf) {
+        const perf = {};
+        return { ok: true, data: await callJcLive(a.pools, { perf: perf }), perf: perf };
+      }
+      return { ok: true, data: await callJcLive(a.pools) };
+    }
     if (e.fn === 'espn_scoreboard') {
       const a = e.args || {};
       // args.perf = true 时额外回一段阶段耗时(建连/TTFB/总耗时), 排查"比分时有时无"用; 平时不带
