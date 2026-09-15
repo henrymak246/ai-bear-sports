@@ -19,7 +19,7 @@ function grabFn(name) {
   throw new Error('函数截取失败: ' + name);
 }
 
-const harness = ['var EPL_INSIGHT_HTML = "";'];
+const harness = ['var EPL_INSIGHT_HTML = "";', 'var calState = { sel: "" };'];
 ['esc', 'pct', 'frac', 'mark', 'scoreMark', 'splitByRecentDates',
  'renderColumnPanel', 'renderJK', 'renderBeidan', 'renderEPL', 'renderNightExpress'
 ].forEach(n => harness.push(grabFn(n)));
@@ -66,6 +66,20 @@ assert(bdHtml.includes('3/1[让-1]'), '明细应显示北单让球数(9-15=米�
 assert(!bdHtml.includes('北单380') && !bdHtml.includes('北单386') && !bdHtml.includes('皇家社会') && !bdHtml.includes('莱红牛'), '历史期次腿不应在明细(只显示当日, 2026-09-12起)');
 assert(!bdHtml.includes('(SP2.07)'), '明细不显示SP(2026-09-09起),只显示310选择+让球');
 assert(bdHtml.includes('理论全中彩金'), '应展示历史登记的理论全中彩金累计');
+
+// 北单明细跟随月历选中日期(2026-09-15 修): 此前 renderBeidan 只在加载时渲染一次且固定钉在最新期次,
+// 用户在总览点月历切到昨天, 北单专栏仍显示当天(全部待赛) → 「昨天的北单记录没有更新」
+sandbox.calState.sel = '2026-09-14';
+vm.runInContext('renderBeidan(days)', Object.assign(sandbox, { days }));
+const bdYest = boxes.beidanBody.innerHTML;
+assert(bdYest.includes('北单386'), '选中 9-14 应显示 9-14 期次的北单腿(北单386)');
+assert(bdYest.includes('比利亚雷'), '选中 9-14 的明细应对上当日竞彩场队名');
+assert(bdYest.includes('1-2'), '选中 9-14 的明细应带当日真实比分(011 比利亚雷 1-2)');
+assert(!bdYest.includes('大田市民'), '选中 9-14 不应混入 9-15 的腿');
+sandbox.calState.sel = '2026-09-15';
+vm.runInContext('renderBeidan(days)', sandbox);
+assert(boxes.beidanBody.innerHTML.includes('大田市民'), '切回 9-15 应恢复当期明细');
+sandbox.calState.sel = '';
 console.log('渲染冒烟全绿 ✓  jk/beidan/epl/ne 四专栏 + 深夜快车断言全过');
 console.log('--- 深夜快车摘要行 ---');
 console.log(neHtml.match(/<div class="bd-sum">[\s\S]*?<\/div>/)[0]);

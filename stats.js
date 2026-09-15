@@ -194,7 +194,9 @@
   // direction/overUnder/score 只累计北单场；jcDirection 累计竞彩组（非北单非日韩）场次方向作对照；
   // matches 为北单明细（日期倒序，含待回填场，d/o/b 为三项判定 null=不计入）；
   // plan 只数名称含「北单」的方案块 result
-  function computeBeidan(days) {
+  // selDate（2026-09-15 新增, 可选）＝站点月历选中的日期：明细跟随选中日期（选中哪天就显示哪天的期次，
+  // 用户在总览点月历切到昨天时应看到昨天的北单记录）；不传时维持旧行为=最新期次，兼容测试/冒烟等无日历调用方
+  function computeBeidan(days, selDate) {
     const dir = { score: 0, total: 0 }, ou = { score: 0, total: 0 }, sc = { score: 0, total: 0 };
     const jcDir = { score: 0, total: 0 };
     const plan = { hit: 0, half: 0, miss: 0, push: 0 };
@@ -207,8 +209,9 @@
     });
     let payoutTotal = 0, payoutCount = 0; // 理论全中彩金(历史登记 beidan310.fullPayout, 2026-09-12 起)
     (days || []).forEach(day => {
-      // 无 beidan310 顶层块的历史数据保持旧行为(全显示); 有顶层块后明细只留最新期次
-      const showDay = latestBdDate === null || day.date === latestBdDate;
+      // 选中日期优先（2026-09-15: 此前固定钉在最新期次 → 用户切到昨天看不到昨天的北单记录）；
+      // 无 beidan310 顶层块的历史数据且未传 selDate 时保持旧行为(全显示)
+      const showDay = selDate ? day.date === selDate : (latestBdDate === null || day.date === latestBdDate);
       (day.matches || []).forEach(m => {
         const d = judgeDirection(m.direction, m.finalScore);
         if (!isBeidan(m)) { if (!isJK(m) && d !== null) { jcDir.score += d; jcDir.total += 1; } return; }

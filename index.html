@@ -1429,7 +1429,8 @@ function renderApp(days) {
   renderBeidan(days);
   function renderBeidan(days) {
     if (typeof StatsLib.computeBeidan !== 'function') return;
-    var bd = StatsLib.computeBeidan(days);
+    // 明细跟随月历选中日期（2026-09-15 修: 此前固定钉在最新期次, 用户切到昨天看不到昨天的北单记录）
+    var bd = StatsLib.computeBeidan(days, (calState && calState.sel) || '');
     var p = bd.plan, pTot = p.hit + p.half + p.miss;
     var pRate = pTot === 0 ? '—' : Math.round((p.hit + 0.5 * p.half) / pTot * 100) + '%';
     function item(lbl, fracTxt, rateTxt) {
@@ -1440,7 +1441,7 @@ function renderApp(days) {
     var BD310_INSIGHT = '<div class="bd-sum" style="display:block;line-height:1.7">'
       + '<b>🀄 北单310玩法</b>：北京单场让球胜平负——<b>3=主胜 / 1=平 / 0=客胜</b>，官方对阵表每场带让球数（强队让 1~5 球），<b>让球后比分定 3/1/0</b>（让 -1 场单选 3=须净胜 2 球；让 -1 场 3/1=主胜或主胜 1 球「让球平」双覆盖）；浮动 SP 按投注分布定价（临场才定，以出票为准），单注奖金=2元×各关SP连乘（北单 SP 为彩池净赔率，已含 65% 返奖，不再另乘）。'
       + '与竞彩区别：竞彩固定赔率出票即锁定（返奖约70%），北单 SP 浮动（返奖65%）但冷热偏差大时冷门 SP 常有超额价值；单关~15 关均可，6 关以上单注封顶 100 万。'
-      + '本专栏每日 <b>10 关复式</b>（稳健多选：胆场单选锚定，其余场次双选防平，命中其一即该关红）小注娱乐，选场与竞彩/亚盘/外部预测网站交叉验证，让球数以 500.com 北单官方对阵表为准；明细按北单 pick 判定（多选命中其一即红），SP 为北单临场参考值。明细只显示当日（北单期次强相关），历史期次的理论全中彩金登记于数据备查。</div>';
+      + '本专栏每日 <b>10 关复式</b>（稳健多选：胆场单选锚定，其余场次双选防平，命中其一即该关红）小注娱乐，选场与竞彩/亚盘/外部预测网站交叉验证，让球数以 500.com 北单官方对阵表为准；明细按北单 pick 判定（多选命中其一即红），SP 为北单临场参考值。明细跟随左侧月历选中的日期（北单期次强相关，只显示该期），历史期次的理论全中彩金登记于数据备查。</div>';
     var sum = BD310_INSIGHT + '<div class="bd-sum">' +
       item('🎯 北单方向', frac(bd.direction), pct(bd.direction.rate)) +
       item('⚽ 大小', frac(bd.overUnder), pct(bd.overUnder.rate)) +
@@ -1449,7 +1450,11 @@ function renderApp(days) {
       item('📊 对照·竞彩方向', frac(bd.jcDirection), pct(bd.jcDirection.rate)) +
       (bd.payout && bd.payout.count > 0 ? item('💰 理论全中彩金', bd.payout.count + '期登记', '≈' + Math.round(bd.payout.total) + '元') : '') +
       '</div>';
-    renderColumnPanel('beidanBody', bd, '还没有北单场次记录，小熊等补充场 🐾', sum);
+    // 选中日期无北单期次时给明确提示（北单按日开售、不是每天都有），而不是笼统的空态文案
+    var hasAnyBd = (days || []).some(function (d) { return d && d.beidan310 && Array.isArray(d.beidan310.legs) && d.beidan310.legs.length > 0; });
+    renderColumnPanel('beidanBody', bd, hasAnyBd
+      ? '本日无北单期次（北单按日开售），点左侧月历切到有北单的日期看当期明细 🀄'
+      : '还没有北单场次记录，小熊等补充场 🐾', sum);
   }
 
   // ---- 英超专栏（league 含「英超」的场次单独累计 + 专家视角） ----
@@ -1542,8 +1547,8 @@ function renderApp(days) {
     document.getElementById('dailyList').innerHTML = day
       ? dayDetail(day)
       : '<div class="panel wait">还没有记录，等小熊的第一场预测 🐻</div>';
-    // 过关方案/每日发布/方案方块也跟随选中日期
-    renderDream7(days); renderHc7(days); renderAsian7(days); renderScore3(days); renderZucai310(days); renderMax7(days); renderDailyPost(days); renderPlanBlocks(days);
+    // 过关方案/每日发布/方案方块也跟随选中日期（北单专栏明细同样跟随，2026-09-15 起）
+    renderDream7(days); renderHc7(days); renderAsian7(days); renderScore3(days); renderZucai310(days); renderMax7(days); renderDailyPost(days); renderPlanBlocks(days); renderBeidan(days);
   }
 
   function dayDetail(day) {

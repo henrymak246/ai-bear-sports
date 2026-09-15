@@ -233,6 +233,31 @@ assert.strictEqual(bdExt.matches[1].d, 1);               // 让+1场0/1=客赢�
 assert.strictEqual(bdExt.matches[2].dTxt, null);         // 待赛无赛果文本
 assert.strictEqual(bdExt.matches[2].d, null);
 
+// ---- computeBeidan 明细跟随选中日期（2026-09-15 新增 selDate 参数；不传=最新期次，兼容旧调用方） ----
+const bdSelDays = [
+  { date: '2026-09-14', matches: [
+    { id: '周一011', league: '西甲', home: '比利亚雷', away: '贝蒂斯', direction: '主胜', finalScore: '1-2' },
+  ], plan: [], beidan310: { legs: [
+    { play: '北单310', bdNum: '386', match: '011 比利亚雷 vs 贝蒂斯', pick: '3', handicap: '0', sp3: ['1.97', '3.82', '3.50'], result: 'miss' },
+  ], result: 'miss' } },
+  { date: '2026-09-15', matches: [
+    { id: '周二004', league: '韩职', home: '大田市民', away: '京都', direction: '主胜', finalScore: null },
+  ], plan: [], beidan310: { legs: [
+    { play: '北单310', bdNum: '004', match: '004 大田市民 vs 京都', pick: '3', handicap: '0', result: null },
+  ], result: null } },
+];
+assert.strictEqual(S.computeBeidan(bdSelDays).matches.length, 1);              // 不传 selDate = 最新期次(9-15)
+assert.strictEqual(S.computeBeidan(bdSelDays).matches[0].date, '2026-09-15');
+const bdSel14 = S.computeBeidan(bdSelDays, '2026-09-14');                      // 选中 9-14 → 显示 9-14 期次
+assert.strictEqual(bdSel14.matches.length, 1);
+assert.strictEqual(bdSel14.matches[0].date, '2026-09-14');
+assert.strictEqual(bdSel14.matches[0].id, '北单386');
+assert.strictEqual(bdSel14.matches[0].d, 0);                                   // 1-2 让0 → 客胜, 单选 3 黑
+assert.strictEqual(bdSel14.matches[0].dTxt, '赛果0 @3.50');
+assert.strictEqual(bdSel14.direction.total, 1);                                // 统计仍全历史累计(不受 selDate 影响)
+assert.strictEqual(S.computeBeidan(bdSelDays, '2026-09-13').matches.length, 0); // 无北单期次的日期 → 空明细(页面给提示)
+assert.strictEqual(S.computeBeidan(bdSelDays, '2026-09-13').direction.total, 1); // 统计不因空明细丢历史
+
 // ---- computeJK：日韩（id 以「日职」/「韩K」开头）单独累计 + 竞彩对照 + 日韩方案块 ----
 const jkDays = [
   { date: '2026-08-08', matches: [
