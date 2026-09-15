@@ -15,6 +15,18 @@ const BADGE_CLASS = { '胆': 'badge-gold', '单选': 'badge-red', '双选': 'bad
 const JUDGE_LABEL = { hit: '✓', miss: '✗', push: '走' };
 const JUDGE_CLASS = { hit: 'judge-hit', miss: 'judge-miss', push: 'judge-pending' };
 
+/* 方向词转官方口径(2026-09-15 用户拿体彩足球计算器截图拍板; 站点 index.html offDir 同款):
+   数据里的 '主胜'/'客胜' 只是内部字段, 卡片上写官方的 胜/平/负 —— 官方从不写"主客"
+   (胜/负 本身就是相对主队说的), 让球盘写 让球胜/让球平/让球负(图里 009=让球胜(1.68)/013=让球负(2.10))。 */
+const DIR_OFF = { '主胜': '胜', '客胜': '负', '平': '平' };
+function offDir(direction, hhadK) {
+  return String(direction || '').split('/').map((s) => {
+    const t = DIR_OFF[s.trim()];
+    if (!t) return s; // 认不出的词(弃选/文字方向)原样保留, 不硬改
+    return hhadK ? (t === '平' ? '让球平' : '让球' + t) : t;
+  }).join('/');
+}
+
 function nowText() {
   const d = new Date();
   const p = (n) => (n < 10 ? '0' : '') + n;
@@ -41,12 +53,14 @@ function buildGroups(payload, judgeLib) {
     const hcapText = '让' + (hcap > 0 ? '+' + hcap : hcap);
     /* 官方只开了让球、没开胜平负(见 utils/jc.js noHadOf): 卡片上原本顶着一个**投不了的**
        胜平负方向(2026-09-15 用户拿 013 埃尔切vs皇马 指出)。改成让球口径: 徽章换「让球」,
-       方向前缀让球线 —— '让+2 客胜' 就是 utils/cart.js 建让球腿时用的同一串写法(同一列赔率)。 */
+       方向前缀让球线 + 官方口径词 —— '让+2 让球负'。 */
     const noHad = jc.noHadOf(m);
     const dir = m.direction || '';
     const playable = hhadText; // 有让球SP 才谈得上"可投的是让球"
     // 弃选场不抢 弃选 徽章(那是更强的判断); 其余让球-only 场把徽章换成「让球」
     const badge = noHad && playable && m.dirTag !== '弃选' ? '让球' : (m.dirTag || '');
+    const hhadDir = noHad && playable; // 让球-only 场: 方向走让球口径(让球胜/让球负)
+    const spTxt = fmt.fmtSp(m.sp);
     return {
       id: m.id || '',
       league: m.league || '',
@@ -54,16 +68,21 @@ function buildGroups(payload, judgeLib) {
       home: m.home || '',
       away: m.away || '',
       noHad,
-      direction: noHad && playable && dir ? hcapText + ' ' + dir : dir,
+      direction: dir ? (hhadDir ? hcapText + ' ' + offDir(dir, true) : offDir(dir, false)) : dir,
       dirTag: badge,
       badgeClass: BADGE_CLASS[badge] || 'badge-gray',
       // 让球-only 才有的一句提醒; WXML 只做插值(本文件既有约定), 整串文案在这里拼好
+      //   (用户截图里 013 选的正是"让球负" —— 上面那个方向本身就是可投的那一注, 不是"投不了")
       noHadTip: noHad && playable
-        ? '※ 官方未开胜平负(仅' + hcapText + '): ' + (dir ? '「' + dir + '」' : '上方方向') + '不可投; 可投的是下行让球SP'
+        ? '※ 官方未开胜平负: 可投的就是「' + (offDir(dir, true) || '让球') + '」(下行让球胜负)'
         : '',
       stars: fmt.fmtStars(m.confidence),
-      spText: fmt.fmtSp(m.sp),
-      hhadText: hhadText ? hcapText + ' ' + hhadText : '',
+      // 两个盘各写一行(2026-09-15 用户拍板, 照体彩计算器的两行盘口): 胜负 / 让球胜负(盘口)
+      spText: spTxt,
+      spLine: '胜负 ' + (spTxt || (noHad && playable ? '无(官方未开)' : '未开售')),
+      spBlank: !spTxt, // WXML 用它把"无/未开售"挂成灰字(od-nohad), 有赔率时不挂
+      hhadText,
+      hhadLine: hhadText ? '让球胜负(' + hcapText + ') ' + hhadText : '',
       overUnder: m.overUnder || '',
       ttgSp: m.ttgSp || '',
       scoreText: (m.score || []).join(' / '),

@@ -121,8 +121,8 @@
       return false;
     }).map(function (x) { return x.id; });
     if (!hits.length) return '';
-    return '⚠ 其中 ' + hits.join(' / ') + ' 官方只开让球、没开胜平负, 方向仅供判断、不可投;'
-      + ' 可投的是场次卡上的「让球SP」';
+    return '⚠ 其中 ' + hits.join(' / ') + ' 官方只开让球、没开胜平负, 正文那串胜平负方向投不了;'
+      + ' 可投的是场次卡上的「让球胜负」';
   }
 
   /* 方案腿的选项 → 赔率下标。

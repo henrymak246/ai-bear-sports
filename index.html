@@ -279,6 +279,8 @@
   .od-closed { display:inline-block; margin-left:4px; color:#B91C1C; font-weight:800; background:#FEF2F2; border:1px solid #FECACA; border-radius:6px; padding:0 5px; font-size:11px; }
   /* 官方只开了让球、没开胜平负(让球-only): 这场的 SP 那格不是"还没开售", 是压根没有这个盘 */
   .od-nohad { display:inline-block; color:#B45309; font-weight:800; }
+  /* 两个盘各挂各的名(2026-09-15 起): 「胜负」/「让球胜负(让-1)」, 与官方足球计算器的两行盘口对应 */
+  .mkt { color:var(--muted); font-weight:800; font-size:11px; margin-right:2px; }
   .nohad-tip { color:#B45309; background:#FFFBEB; border:1px solid #FDE68A; border-radius:6px; padding:0 6px; font-size:11px; }
   .final { font-weight:800; color:var(--brown); white-space:nowrap; }
   .table-legend { font-size:11px; color:var(--muted); margin-top:6px; }
@@ -1647,6 +1649,21 @@ function renderApp(days) {
     return tag && map[tag] ? ' <span class="dtag ' + map[tag] + '">' + esc(tag) + '</span>' : '';
   }
 
+  // 方向词转官方口径(2026-09-15 用户拿体彩计算器截图拍板): 数据里存的 '主胜'/'客胜' 只作内部字段,
+  //   卡片上写官方的 胜/平/负 —— 官方从不写"主客"(胜/负 本身就是相对主队说的), 字段不动只换显示词。
+  //   让球盘同理写 让球胜/让球平/让球负(图里 009=让球胜(1.68) / 013=让球负(2.10) 就是这两串)。
+  function offDir(direction, hhadK) {
+    /* ★映射表必须写在函数里: 本文件整段脚本都在 renderApp 体内, 而 renderApp 在自己第 490 行
+       就调了渲染链(renderDetail→matchGroups→matchTable), 那时函数声明已提升、外层 var 却还没赋值
+       —— 抽成外层 var 会以 "Cannot read properties of undefined (reading '客胜')" 炸掉首页。 */
+    var map = { '主胜': '胜', '客胜': '负', '平': '平' };
+    return String(direction || '').split('/').map(function (s) {
+      var t = map[s.trim()];
+      if (!t) return s; // 认不出的词(弃选/文字方向)原样保留, 不硬改
+      return hhadK ? (t === '平' ? '让球平' : '让球' + t) : t;
+    }).join('/');
+  }
+
   function matchTable(day) {
     // 胆标记：综合过关(max7) key=true 的腿对应的对阵，在「对阵」列加胆徽章
     var keyLegs = (day.max7 && Array.isArray(day.max7.legs) ? day.max7.legs : []).filter(function (l) { return l && l.key; });
@@ -1675,11 +1692,13 @@ function renderApp(days) {
       var hotIdx = m.direction === '主胜' ? 0 : m.direction === '平' ? 1 : m.direction === '客胜' ? 2 : -1;
       // ★官方只开了让球、没开胜平负(让球-only, 见 assets/live-odds.js noHadOf)。
       //   卡片上原本顶着一个**投不了的**胜平负方向(2026-09-15 用户拿 013 埃尔切vs皇马 指出),
-      //   现在改成让球口径: 徽章换「让球」、方向前缀让球线 —— '让+2 客胜' 就是方案腿那串写法。
+      //   现在改成让球口径: 徽章换「让球」、方向前缀让球线 + 官方口径词 —— '让+2 让球负' 才是那一注(见 offDir)。
       var noHad = typeof LiveOdds !== 'undefined' && LiveOdds.noHadOf(m);
       var hcapTxt = '让' + (Number(m.spHandicap) > 0 ? '+' + m.spHandicap : m.spHandicap);
       var hasHhad = Array.isArray(m.hhad) && m.hhad.length === 3;
-      var jcOdds;
+      // 两个盘各写一行(2026-09-15 用户拍板, 照体彩计算器的两行盘口): 「胜负」=胜平负盘 / 「让球胜负」=让球盘。
+      //   原来挤成一行靠 `SP` / `让-1` 前缀区分, 看不出哪个数属于哪个盘, 也让"哪个盘没开"说不清。
+      var spRow, hhadRow;
       if (Array.isArray(m.sp) && m.sp.length === 3) {
         var spTxt = m.sp.map(function (v, i) {
           var cls = [];
@@ -1687,25 +1706,28 @@ function renderApp(days) {
           if (i === actIdx) cls.push('sp-win');
           return cls.length ? '<b class="' + cls.join(' ') + '">' + esc(v) + '</b>' : esc(v);
         }).join('/');
-        jcOdds = ' <span class="odds">SP ' + spTxt + '</span>';
+        spRow = '<span class="mkt">胜负</span> <span class="odds">' + spTxt + '</span>';
       } else if (noHad && hasHhad) {
-        jcOdds = ' <span class="od-nohad">无胜平负 · 仅让球</span>'; // 不是"还没开售", 是压根没有这个盘
+        // 不是"还没开售", 是压根没有这个盘
+        spRow = '<span class="mkt">胜负</span> <span class="od-nohad">无(官方未开)</span>';
       } else {
-        jcOdds = ' <span class="wait">SP未开售</span>';
+        spRow = '<span class="mkt">胜负</span> <span class="wait">未开售</span>';
       }
-      if (Array.isArray(m.hhad) && m.hhad.length === 3) {
+      if (hasHhad) {
         var hcpRes = '';
         var hcp = Number(m.spHandicap);
         if (fs && isFinite(hcp)) {
           var adj = Number(fs[1]) + hcp - Number(fs[2]);
           hcpRes = adj > 0 ? '让胜' : adj === 0 ? '让平' : '让负';
         }
-        // 盘口一律带符号写(`让+2`/`让-1`), 与小程序场次卡、构建脚本正文同口径;
-        // 原来正号省略成 `让2`, 与紧邻的方向行(`让+2 客胜`)并排会看着像两个盘
-        jcOdds += ' <span class="odds">' + esc(hcapTxt) + ' ' + esc(m.hhad[0]) + '/' + esc(m.hhad[1]) + '/' + esc(m.hhad[2]) + (hcpRes ? '(结算:<b class="sp-win">' + hcpRes + '</b>)' : '') + '</span>';
+        // 盘口一律带符号写(`让+2`/`让-1`)并挂在本行标签里, 与小程序场次卡、构建脚本正文同口径;
+        // 原来正号省略成 `让2`, 与紧邻的方向行(`让+2 让球负`)并排会看着像两个盘
+        hhadRow = '<span class="mkt">让球胜负(' + esc(hcapTxt) + ')</span> <span class="odds">'
+          + esc(m.hhad[0]) + '/' + esc(m.hhad[1]) + '/' + esc(m.hhad[2])
+          + (hcpRes ? '(结算:<b class="sp-win">' + hcpRes + '</b>)' : '') + '</span>';
       }
       // 官方已过销售截止并下架(实时池里没有该场) → 快照 SP 还在, 但这一场买不到, 必须显式标出来
-      if (m.oddsClosed) jcOdds += ' <span class="od-closed">已停售</span>';
+      if (m.oddsClosed) spRow += ' <span class="od-closed">已停售</span>';
       // 亚盘指数(内联亚盘行): 让球盘口水位 + 大小球盘口水位
       var ahOdds = '';
       if (m.ah && m.ah.name) ahOdds += ' <span class="odds">' + esc(m.ah.name) + ' ' + esc(m.ah.home) + '/' + esc(m.ah.away) + '</span>';
@@ -1726,16 +1748,19 @@ function renderApp(days) {
       // 竞彩列行序: 方向+徽章★ → 总进球 → 比分 → 竞彩指数(SP+让球); 💡合成观点在对阵列
       // 让球-only 场: 徽章换「让球」、方向前缀让球线(弃选场不抢徽章 —— 那是更强的判断)
       var noHadBadge = noHad && hasHhad && m.dirTag !== '弃选';
-      var dirTxt = noHadBadge && m.direction ? hcapTxt + ' ' + m.direction : m.direction;
+      // 方向词一律走官方口径(胜/平/负, 不写主客); 让球-only 场压根没有胜平负盘 → 那一场走让球口径
+      var dirTxt = m.direction ? (noHadBadge ? hcapTxt + ' ' + offDir(m.direction, true) : offDir(m.direction, false)) : '';
       var jcLines = ['<div>' + esc(dirTxt) + dtagHtml(noHadBadge ? '让球' : m.dirTag) + ' <span class="stars">' + '★'.repeat(m.confidence || 0) + '</span></div>',
         '<div>' + esc(m.overUnder) + '</div>'];
-      // 让球-only 的提醒: 这场的胜平负方向投不了, 可投的只有下面那行让球SP
+      // 让球-only 的提醒: 这场的胜平负盘官方没开, 上面那个方向本身就是让球口径那一注
+      //   (用户 9-15 的截图里 013 选的正是"让球负" —— 说的就是同一个东西, 不是"投不了")
       if (noHadBadge) {
-        jcLines.push('<div><span class="nohad-tip">※ 官方未开胜平负(仅' + esc(hcapTxt) + '): '
-          + (m.direction ? '「' + esc(m.direction) + '」' : '上方方向') + '不可投; 可投的是下行让球SP</span></div>');
+        jcLines.push('<div><span class="nohad-tip">※ 官方未开胜平负: 可投的就是「'
+          + esc(offDir(m.direction, true) || '让球') + '」(下行让球胜负)</span></div>');
       }
       if (scoreTxt) jcLines.push('<div>' + scoreTxt + '</div>');
-      jcLines.push('<div>' + jcOdds + '</div>');
+      jcLines.push('<div>' + spRow + '</div>');
+      if (hhadRow) jcLines.push('<div>' + hhadRow + '</div>');
       var jcCell = jcLines.join('');
       return '<tr><td>' + anBtn + '</td><td>' + esc(m.id) + '</td><td>' + esc(m.league) + ' ' + esc(m.time) + '</td>' +
         '<td>' + esc(m.home) + ' vs ' + esc(m.away) + (isKeyMatch(m) ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') +
@@ -1747,7 +1772,7 @@ function renderApp(days) {
         (m.note ? '<tr class="an-row" style="display:none"><td colspan="' + (day._showAhCol ? 8 : 7) + '">📋 ' + esc(m.note) + '</td></tr>' : '');
     }).join('');
     return '<table><tr><th></th><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th>' + (day._showAhCol ? '<th>🌏亚盘（让球/大小/盘口）</th>' : '') + '<th>🎫竞彩（方向/总进球/比分/SP）</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
-      '<div class="table-legend">「🌏亚盘」列在左、「🎫竞彩」列在右，两列独立并排、单元格内条目逐行对齐：亚盘列=亚洲盘口径（第1行让球观点+信心★ / 第2行大小球观点+信心★ / 第3行球探澳门盘临场盘口水位；<b>每场定位场必推</b>，信心★为1-5星：★1-2=低信心只展示、★3-4=可入 asian7/大小盘串关、★5=胆级）；竞彩列=竞彩口径（第1行胜平负方向+徽章+信心★(1-5星，★5=当日胆) / 第2行总进球 / 第3行比分 / 第4行 SP 胜平负+让球胜平负赔率，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>，赛后让球标「结算:让胜/让平/让负」）。两体系独立判断，允许表达不同（如诱盘场竞彩不反向、亚盘推下盘）。方向旁徽章=信心标签(单选>双选>入拖>弃选)；💡 合成观点在对阵列(仅 8-28 起新日期有)；9-5 及更早日期亚盘列只显盘口数据无观点，无盘口数据日期整列隐藏。判定列=竞彩口径方向/大小/比分；点 🔍 展开本场分析；对阵旁 <span style="background:#F5A623;color:#fff;border-radius:4px;padding:0 4px;font-weight:800">胆</span> = 当日综合过关胆拖的最有信心单选</div>';
+      '<div class="table-legend">「🌏亚盘」列在左、「🎫竞彩」列在右，两列独立并排、单元格内条目逐行对齐：亚盘列=亚洲盘口径（第1行让球观点+信心★ / 第2行大小球观点+信心★ / 第3行球探澳门盘临场盘口水位；<b>每场定位场必推</b>，信心★为1-5星：★1-2=低信心只展示、★3-4=可入 asian7/大小盘串关、★5=胆级）；竞彩列=竞彩口径（<b>方向一律官方口径词：胜/平/负，官方既不写"主胜/客胜"、让球盘写"让球胜/让球平/让球负"</b>；第1行方向+徽章+信心★(1-5星，★5=当日胆) / 第2行总进球 / 第3行比分 / 第4行「胜负」盘赔率 / 第5行「让球胜负(盘口)」盘赔率，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>，赛后让球标「结算:让胜/让平/让负」；官方只开让球没开胜平负的场，「胜负」行写「无(官方未开)」，方向改走让球口径并挂「让球」徽章）。两体系独立判断，允许表达不同（如诱盘场竞彩不反向、亚盘推下盘）。方向旁徽章=信心标签(单选>双选>入拖>弃选)；💡 合成观点在对阵列(仅 8-28 起新日期有)；9-5 及更早日期亚盘列只显盘口数据无观点，无盘口数据日期整列隐藏。判定列=竞彩口径方向/大小/比分；点 🔍 展开本场分析；对阵旁 <span style="background:#F5A623;color:#fff;border-radius:4px;padding:0 4px;font-weight:800">胆</span> = 当日综合过关胆拖的最有信心单选</div>';
   }
 }
 </script>

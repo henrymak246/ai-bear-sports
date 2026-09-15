@@ -93,11 +93,16 @@
 .odds-snap { color: #B45309; background: #FFFBEB; border: 1rpx solid #FDE68A; }
 .live-tag { color: #15803D; font-size: 22rpx; }
 .closed-tag { color: #9A3412; font-weight: 800; font-size: 22rpx; }
-/* 让球-only 场(官方没开胜平负, 见 utils/jc.js noHadOf): 提醒这场的胜平负方向投不了。
+/* 让球-only 场(官方没开胜平负, 见 utils/jc.js noHadOf): 点明可投的就是让球口径那一注(让球胜/让球负)。
    整行独占(m-line 是 flex-wrap 的, 不 flex:none 会被塞到上一行尾巴上) */
 .nohad-tip { display: block; color: #B45309; background: #FFFBEB; border: 1rpx solid #FDE68A;
   border-radius: 8rpx; padding: 6rpx 12rpx; font-size: 22rpx; line-height: 1.5; }
 .m-swap-fix { color: #B45309; font-weight: 800; }
+/* 两个盘各占一行(2026-09-15 起): 「胜负」/「让球胜负(盘口)」—— m-line 是 flex-wrap,
+   不 flex:none 这两个盘的数字会挤在同一行尾巴上分不清哪个属于哪个盘 */
+.mkt-row { display: block; flex: none; width: 100%; }
+/* 官方只开让球没开胜平负时「胜负」那行写"无(官方未开)" */
+.od-nohad { color: #B45309; font-weight: 800; }
 /* 方案卡上的口径说明(见 utils/jc.js noHadNote): 与正文区分开, 但不喧宾夺主 */
 .plan-nohad { margin-top: 10rpx; font-size: 22rpx; color: #B45309; background: #FFFBEB;
   border: 1rpx solid #FDE68A; border-radius: 8rpx; padding: 6rpx 12rpx; line-height: 1.5; }

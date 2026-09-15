@@ -203,11 +203,17 @@ const tickRetry = () => new Promise((r) => setTimeout(r, 700));
   assert.strictEqual(g13.oddsClosed, false, '让球-only ≠ 已停售: 行在池里, 这场买得到');
   assert.strictEqual(g13.dirTag, '让球', '让球-only 场徽章换「让球」, 实际 ' + g13.dirTag);
   assert.strictEqual(g13.badgeClass, 'badge-rang');
-  assert.strictEqual(g13.direction, '让+2 客胜', '方向要带让球线(与 cart.js 建腿同一串写法), 实际 ' + g13.direction);
+  assert.strictEqual(g13.direction, '让+2 让球负',
+    '方向要带让球线 + 官方口径词(客胜→让球负), 实际 ' + g13.direction);
   assert.strictEqual(g13.spText, '', '让球-only 场压根没有胜平负 SP, 不得留空串以外的残值');
-  assert.strictEqual(g13.hhadText, '让+2 2.36/4.25/2.13', '让球SP 取官方实时值, 实际 ' + g13.hhadText);
-  assert(g13.noHadTip.indexOf('让+2') !== -1 && g13.noHadTip.indexOf('不可投') !== -1,
-    '应有一句"这场的胜平负方向投不了", 实际 ' + g13.noHadTip);
+  assert.strictEqual(g13.spLine, '胜负 无(官方未开)',
+    '「胜负」行该说"压根没有这个盘"(不是"未开售"), 实际 ' + g13.spLine);
+  assert.strictEqual(g13.spBlank, true, '胜负那行没价 → 走灰字样式');
+  assert.strictEqual(g13.hhadText, '2.36/4.25/2.13', '让球赔率取官方实时值, 实际 ' + g13.hhadText);
+  assert.strictEqual(g13.hhadLine, '让球胜负(让+2) 2.36/4.25/2.13',
+    '让球那行该带盘口标签, 实际 ' + g13.hhadLine);
+  assert(g13.noHadTip.indexOf('让球负') !== -1 && g13.noHadTip.indexOf('让+2') === -1,
+    '提醒该点在"可投的就是让球负"上(不再说"不可投"), 实际 ' + g13.noHadTip);
   assert.strictEqual(g13.oddsTip, '赔率官方实时 19:01:23', '在售场不该被按"下架"处理');
   // 建腿: 默认腿型是 jcHad, 不拦就会往票里塞一条 odds 为空、奖金算成 0 的"买不到的单"
   const leg13 = p5.makeLeg({ type: 'jc', id: '周二013' });
@@ -223,8 +229,16 @@ const tickRetry = () => new Promise((r) => setTimeout(r, 700));
   assert.strictEqual(p5.data.planJc[0].noHadNote, undefined,
     '让球口径的卡(正文写 013让+2负 那种)不该被误挂');
   assert.strictEqual(todayPayload.plan[2].noHadNote, undefined, 'planPatch 不得改写入参');
+  // 方向词官方口径(2026-09-15 用户拿体彩计算器截图拍板): 数据字段 主胜/客胜 → 卡片写 胜/负, 官方不写"主客"
+  assert.strictEqual(g5[0].direction, '胜', '有 310 的场方向写「胜」(不是「主胜」), 实际 ' + g5[0].direction);
+  assert.strictEqual(g5[1].direction, '负', '客胜写「负」, 实际 ' + g5[1].direction);
+  assert.strictEqual(g5[0].hhadLine, '让球胜负(让-1) ' + g5[0].hhadText,
+    '两盘各一行: 有 310 的场也让球那行带盘口标签, 实际 ' + g5[0].hhadLine);
+  assert.strictEqual(g5[1].spLine, '胜负 14.5/6/1.12',
+    '★已停售场(官方下架)照旧保留快照价供回顾, 与让球-only 的「无(官方未开)」不是一回事, 实际 ' + g5[1].spLine);
+  assert.strictEqual(g5[1].spBlank, false, '有快照价 → 不挂灰字样式');
   console.log('OK 5/5 竞彩实时叠加: 快照首屏→实时替换 / 下架场禁投 / 方案倍数同步 / 纯函数 / 日期闸 / 失败兜底');
-  console.log('  + 让球-only: 013 徽章「让球」/ 方向 让+2 客胜 / 建腿 jcHhad(2.13) 而非空赔率 jcHad / 口径说明只挂双选方向卡');
+  console.log('  + 让球-only: 013 徽章「让球」/ 方向 让+2 让球负 / 建腿 jcHhad(2.13) 而非空赔率 jcHad / 口径说明只挂双选方向卡');
 
   console.log('\nSMOKE OK — 推荐页全部断言通过');
 })().catch((e) => {

@@ -19,7 +19,7 @@ function grabFn(name) {
 }
 
 const harness = ['var EPL_INSIGHT_HTML = "";'];
-['esc', 'pct', 'frac', 'mark', 'scoreMark', 'dtagHtml', 'matchTable'].forEach(n => harness.push(grabFn(n)));
+['esc', 'pct', 'frac', 'mark', 'scoreMark', 'dtagHtml', 'offDir', 'matchTable'].forEach(n => harness.push(grabFn(n)));
 const sandbox = { console, StatsLib: require('../stats.js') };
 vm.createContext(sandbox);
 vm.runInContext(harness.join('\n'), sandbox);

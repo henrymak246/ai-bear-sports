@@ -113,12 +113,35 @@ function loadSite() {
 const htmlIn = (sb, id) => sb.document.getElementById(id).innerHTML || '';
 const clicks = (sb) => sb.document._handlers.click.length;
 const settle = () => new Promise((r) => setTimeout(r, 300));
+/* ★联网那段不能拿固定 sleep 等实时叠加: 官方接口傍晚会明显变慢, 300ms 常常不够,
+   计划区还是构建时快照 —— 断言就假红(2026-09-15 21:30 实测: 改等 4s 才出「已接官方实时」)。
+   除非本地桩(②③, fetch 是同步返回的桩)才用固定 settle; 真打官方一律轮询到标记落地为止。 */
+const settleUntil = async (cond, ms = 10000) => {
+  const t0 = Date.now();
+  while (Date.now() - t0 < ms) {
+    if (cond()) return true;
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  return cond();
+};
 /* 从对阵表 HTML 里抠出某一场那一行(<tr>…</tr>)。
-   ★必须落到"这一行"上: '无胜平负' / 'SP未开售' / '让+2' 这类串在整张表里会互相串味,
+   ★必须落到"这一行"上: '无(官方未开)' / '未开售' / '让+2' 这类串在整张表里会互相串味,
      全局 indexOf 分不清命中的是哪一场 —— 那断言就等于没跑。 */
 const rowOf = (html, id) => String(html).split('<tr>').find((s) => s.indexOf('>' + id + '<') !== -1) || '';
+/* 同一行的纯文本(去标签后压空白): 盘口行被拆成「标签 span + 赔率 span」两段,
+   拿纯文本比对才不会被中间的标签打断(标签本身另有断言管) */
+const rowTxt = (h) => String(h).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 /* 该场的让球盘口文本(项目统一带符号: 让+2 / 让-1) */
 const hcapTxt = (m) => '让' + (Number(m.spHandicap) > 0 ? '+' + m.spHandicap : m.spHandicap);
+/* 页面上的方向词(官方口径, 与 index.html offDir 同款): 数据字段是 主胜/客胜, 卡片上写 胜/负;
+   让球盘写 让球胜/让球平/让球负 —— 官方从不写"主客"。这里独立实现一遍, 免得拿被测代码算期望值。 */
+const offDir = (direction, hhadK) => String(direction || '').split('/').map((s) => {
+  const t = { '主胜': '胜', '客胜': '负', '平': '平' }[s.trim()];
+  if (!t) return s;
+  return hhadK ? (t === '平' ? '让球平' : '让球' + t) : t;
+}).join('/');
+/* 盘口行整串: 让球胜负(让-1) 2.20/3.60/2.60 —— 标签带盘口, 与官方计算器的 [-1] 盘口框对应 */
+const hhadRowTxt = (m) => '让球胜负(' + hcapTxt(m) + ') ' + m.hhad.join('/');
 
 /* 官方返回形态的本地 fixture。
    ★全部场次用**同一组固定价**, 不跟快照走: 这样每关的实时值都落在这几个常数上,
@@ -171,23 +194,26 @@ const realFetch = global.fetch; // ⑥ 要真打官方, 先留一份
   assert(nhIds.length > 0,
     '今天这份数据里应至少有一场让球-only, 否则本段断言等于空跑(换日期时请核对)');
   const tbl1 = htmlIn(sb, 'dailyList');
-  assert(tbl1.indexOf('无胜平负 · 仅让球') !== -1,
-    '让球-only 场的 SP 格该写「无胜平负 · 仅让球」, 而不是「SP未开售」');
+  assert(tbl1.indexOf('od-nohad') !== -1 && tbl1.indexOf('无(官方未开)') !== -1,
+    '让球-only 场的「胜负」行该写「无(官方未开)」, 而不是「未开售」(那是"还没开", 这是"压根没有")');
   assert(tbl1.indexOf('dtag-rang') !== -1, '让球-only 场的方向行该挂「让球」徽章');
-  assert(tbl1.indexOf('nohad-tip') !== -1, '让球-only 场该有一句"这场方向投不了"的提醒');
+  assert(tbl1.indexOf('nohad-tip') !== -1, '让球-only 场该有一句"可投的就是让球那一注"的提醒');
   const mNh = nd[0].matches.filter(function (m) { return m.id === nhIds[0]; })[0];
   const rowNh = rowOf(tbl1, mNh.id);
   assert(rowNh, '对阵表里没找到 ' + mNh.id + ' 那一行');
-  assert(rowNh.indexOf('无胜平负 · 仅让球') !== -1 && rowNh.indexOf('SP未开售') === -1,
+  assert(rowNh.indexOf('无(官方未开)') !== -1 && rowNh.indexOf('未开售') === -1,
     '★' + mNh.id + ' 那一行: 该说"压根没有这个盘", 不该说"还没开售"');
   if (mNh.direction) {
-    assert(rowNh.indexOf(hcapTxt(mNh) + ' ' + mNh.direction) !== -1,
-      mNh.id + ' 方向行该带让球线「' + hcapTxt(mNh) + ' ' + mNh.direction + '」, 实际行: ' +
+    assert(rowNh.indexOf(hcapTxt(mNh) + ' ' + offDir(mNh.direction, true)) !== -1,
+      mNh.id + ' 方向行该带让球线与官方口径词「' + hcapTxt(mNh) + ' ' + offDir(mNh.direction, true) + '」, 实际行: ' +
       rowNh.slice(0, 300));
   }
-  // 盘口一律带符号(让+2 / 让-1), 与方案腿 cart.js 的 pick 同一串写法 —— 省掉正号会跟方向行看着像两个盘
-  assert(rowNh.indexOf(hcapTxt(mNh) + ' ' + mNh.hhad.join('/')) !== -1,
-    mNh.id + ' 的让球SP 该写「' + hcapTxt(mNh) + ' ' + mNh.hhad.join('/') + '」');
+  // 让球那一行整串带标签: 让球胜负(让+2) 2.36/4.25/2.13 —— 省掉正号会跟方向行看着像两个盘
+  assert(rowTxt(rowNh).indexOf(hhadRowTxt(mNh)) !== -1,
+    mNh.id + ' 的让球SP 该写「' + hhadRowTxt(mNh) + '」, 实际: ' + rowTxt(rowNh).slice(0, 200));
+  // 两个盘各一行: 让球-only 场的「胜负」行是"无", 让球行照旧有价
+  assert(rowNh.indexOf('>胜负<') !== -1 && rowNh.indexOf('>让球胜负(') !== -1,
+    mNh.id + ' 该把两个盘分开写成「胜负」/「让球胜负(盘口)」两行, 实际行: ' + rowNh.slice(0, 300));
   console.log('OK 1/5 内联脚本能在伪 DOM 里跑完一次 renderApp(planBlocks ' + htmlIn(sb, 'planBlocks').length + ' 字节)');
   const flat = (h) => String(h).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
   console.log('  + 让球-only ' + nhIds.join('/') + ' 快照即让球口径, 实际渲染:');
@@ -238,15 +264,16 @@ const realFetch = global.fetch; // ⑥ 要真打官方, 先留一份
 
   // ③b 让球-only 以**官方池**为准(不是快照)
   const rowNhLive = rowOf(tbl, nhIds[0]);
-  assert(rowNhLive.indexOf('无胜平负 · 仅让球') !== -1,
+  assert(rowNhLive.indexOf('无(官方未开)') !== -1,
     '③ ' + nhIds[0] + ' 官方 had 池里同样没有它 → 叠加后仍应是让球口径, 实际行: ' + rowNhLive.slice(0, 300));
-  assert(rowNhLive.indexOf('SP未开售') === -1, '③ 让球-only 不是"没开售", 别退回那个说法');
+  assert(rowNhLive.indexOf('未开售') === -1, '③ 让球-only 不是"没开售", 别退回那个说法');
   const hhadLive = HHAD_LIVE.h + '/' + HHAD_LIVE.d + '/' + HHAD_LIVE.a;
-  assert(rowNhLive.indexOf(hcapTxt(d[0].matches.filter(function (m) { return m.id === nhIds[0]; })[0]) + ' ' + hhadLive) !== -1,
-    '③ ' + nhIds[0] + ' 的让球SP 该换成官方实时值 ' + hhadLive);
+  assert(rowTxt(rowNhLive).indexOf('让球胜负(' + hcapTxt(d[0].matches.filter(function (m) { return m.id === nhIds[0]; })[0]) +
+    ') ' + hhadLive) !== -1,
+    '③ ' + nhIds[0] + ' 的让球SP 该换成官方实时值 ' + hhadLive + ', 实际: ' + rowTxt(rowNhLive).slice(0, 200));
   if (nhIds[1]) {
     const rowFlip = rowOf(tbl, nhIds[1]);
-    assert(rowFlip.indexOf('无胜平负') === -1 && rowFlip.indexOf('SP ') !== -1,
+    assert(rowFlip.indexOf('无(官方未开)') === -1 && rowFlip.indexOf('>胜负</span> <span class="odds">') !== -1,
       '★' + nhIds[1] + ' 官方 had 池里**有**它 → 快照的"没开 310"要让位给官方池(改回胜平负口径), 实际行: ' +
       rowFlip.slice(0, 300));
   }
@@ -304,7 +331,8 @@ const realFetch = global.fetch; // ⑥ 要真打官方, 先留一份
     };
     const sb5 = loadSite();
     await sb5.bootApp(todayDays());
-    await settle();
+    // 实时叠加是异步的(四个彩池各自一个请求), 等它真的落到页面上, 别用固定 sleep(见 settleUntil)
+    await settleUntil(() => htmlIn(sb5, 'planBlocks').indexOf('已接官方实时') !== -1);
     const pb5 = htmlIn(sb5, 'planBlocks');
     assert(pb5.indexOf('已接官方实时') !== -1, '⑥ 联网跑: 方案区应出现口径说明行');
     assert(pb5.indexOf('≈858倍</div>') === -1, '⑥ 联网跑: 方案卡不得再是无标注的 858');

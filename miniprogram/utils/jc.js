@@ -185,8 +185,8 @@ function noHadNote(text, list) {
     return false;
   }).map(function (x) { return x.id; });
   if (!hits.length) return '';
-  return '⚠ 其中 ' + hits.join(' / ') + ' 官方只开让球、没开胜平负, 方向仅供判断、不可投;'
-    + ' 可投的是场次卡上的「让球SP」';
+  return '⚠ 其中 ' + hits.join(' / ') + ' 官方只开让球、没开胜平负, 正文那串胜平负方向投不了;'
+    + ' 可投的是场次卡上的「让球胜负」';
 }
 
 /* 单腿实时赔率; 拿不到/不适用返回 null(调用方保留原值)。

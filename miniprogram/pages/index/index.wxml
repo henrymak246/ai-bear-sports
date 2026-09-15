@@ -58,9 +58,11 @@
       <view class="m-line nohad-tip" wx:if="{{item.noHadTip}}">
         <text>{{item.noHadTip}}</text>
       </view>
-      <view class="m-line muted" wx:if="{{item.spText || item.hhadText}}">
-        <text wx:if="{{item.spText}}">SP {{item.spText}}</text>
-        <text wx:if="{{item.hhadText}}">让球SP {{item.hhadText}}</text>
+      <!-- 两个盘各一行(2026-09-15 用户拍板, 照体彩计算器): 「胜负」盘 / 「让球胜负(盘口)」盘 ——
+           原来挤成一行靠 SP / 让球SP 前缀分隔, 看不出哪个数属于哪个盘、也说不清哪个盘没开 -->
+      <view class="m-line muted" wx:if="{{item.spLine || item.hhadLine}}">
+        <text class="mkt-row {{item.spBlank ? 'od-nohad' : ''}}">{{item.spLine}}</text>
+        <text class="mkt-row" wx:if="{{item.hhadLine}}">{{item.hhadLine}}</text>
       </view>
       <!-- 独立成行: SP 两个都空的场也必须看得见"已停售" -->
       <view class="m-line" wx:if="{{item.oddsTip}}">
