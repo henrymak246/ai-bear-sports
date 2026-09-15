@@ -27,7 +27,15 @@ function calc(legs) {
   return { stakes, expectPayout: Math.round(payout * 2 * 100) / 100 };
 }
 
-const PICK_LABEL = { '3': '主胜', '1': '平', '0': '客胜' };
+/* 选项名一律官方口径(2026-09-15 用户拿体彩足球计算器实拍截图拍板): 官方从不写"主胜/客胜",
+   胜/负本身就相对主队说; 让球盘另写 让球胜/让球平/让球负。展示层专用, pick/odds 数据字段不动。 */
+const PICK_LABEL = { '3': '胜', '1': '平', '0': '负' };
+/* 让球腿(带盘口前缀)的选项名: 让球胜/让球平/让球负 —— 与 310 的 胜/平/负 区分开 */
+function hhadLabel(code) {
+  const t = PICK_LABEL[code];
+  if (!t) return String(code === undefined || code === null ? '' : code); // 认不出的码原样保留
+  return t === '平' ? '让球平' : '让球' + t;
+}
 
 /* direction('主胜'/'客胜'/'平') → 310 代码 */
 function dirToPick(direction) {
@@ -110,7 +118,7 @@ function buildLeg(match, kind, subPick) {
       league: m.league || '', // 供投注结算走 ESPN 实时取分(settle.fetchScoreForLeg)
       pick: hcapText + ' ' + pick,
       odds,
-      desc: head + ' 让球' + (hcap > 0 ? '+' + hcap : hcap) + ' ' + (PICK_LABEL[pick] || pick) +
+      desc: head + ' 让球' + (hcap > 0 ? '+' + hcap : hcap) + ' ' + hhadLabel(pick) +
         (odds ? '@' + odds : ''),
     };
   }
@@ -198,7 +206,7 @@ function optionsOf(leg, match) {
       const v = remote ? remote[pickIndex(code)] : undefined;
       odds = fromOdds[code] || (v === undefined || v === null ? '' : String(v));
     }
-    return { code: code, label: PICK_LABEL[code], odds: odds, on: !!on[code], disabled: !odds };
+    return { code: code, label: hcap ? hhadLabel(code) : PICK_LABEL[code], odds: odds, on: !!on[code], disabled: !odds };
   });
 }
 
@@ -232,7 +240,7 @@ function applyPicks(leg, codes, oddsByCode) {
     l.pick = hcap ? hcap + ' ' + cs.join('/') : cs.join('/');
     l.odds = odds;
     l.desc = hcap
-      ? head + ' 让球' + hcap.replace(/^让/, '') + ' ' + labels + at
+      ? head + ' 让球' + hcap.replace(/^让/, '') + ' ' + cs.map(function (c) { return hhadLabel(c); }).join('/') + at
       : head + ' 胜平负 ' + labels + at;
   }
   if (l.result !== 'push') delete l.result; // 已判结果作废重来; push 例外

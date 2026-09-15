@@ -15,7 +15,7 @@ assert.strictEqual(rows.length, 4);
 assert.strictEqual(rows[0].title, '北单342 皇家社会 VS 马竞');
 assert.strictEqual(rows[0].options, '负(2.15)'); // sp3[2], 非 leg.odds=1.99
 assert.strictEqual(rows[1].title, '周日003 塞尔塔 VS 马拉加');
-assert.strictEqual(rows[1].options, '主胜(1.53)');
+assert.strictEqual(rows[1].options, '胜(1.53)'); // 官方口径: 写"胜"不写"主胜"(2026-09-15)
 assert.strictEqual(rows[2].title, '周日009 莱红牛 VS 汉堡 [-1]');
 assert.strictEqual(rows[2].options, '让球胜(1.66)');
 assert.strictEqual(rows[3].title, '周日011 汉坎 VS 莫尔德');

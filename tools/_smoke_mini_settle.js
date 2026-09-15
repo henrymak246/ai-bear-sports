@@ -296,7 +296,7 @@ const flush = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise((
   const cart = require('../miniprogram/utils/cart.js');
   const jcLeg = {
     kind: 'jcHad', id: '周一001', home: '甲队', away: '乙队', league: '德甲',
-    pick: '3', odds: '2.10', desc: '周一001 甲队vs乙队 胜平负 主胜@2.10',
+    pick: '3', odds: '2.10', desc: '周一001 甲队vs乙队 胜平负 胜@2.10',
   };
   const o1 = cart.optionsOf(jcLeg, null);
   assert.deepStrictEqual(o1.map((o) => o.code), ['3', '1', '0'], '选项固定按 3/1/0 排序(与 sp/sp3 下标对齐)');
@@ -305,6 +305,7 @@ const flush = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise((
   assert.strictEqual(o1[1].odds, '', '未选项且无 match → 赔率空');
   assert.strictEqual(o1[1].disabled, true, '无赔率选项必须置灰(写错赔率 = 结算奖金算错)');
   assert.strictEqual(o1[1].label, '平', '中文标签');
+  assert.strictEqual(o1[0].label, '胜', '★官方口径: 竞彩胜平负写 胜/平/负, 不写 主胜/客胜(2026-09-15)');
 
   const o2 = cart.optionsOf(jcLeg, { sp: ['2.10', '3.40', '4.20'] });
   assert.deepStrictEqual(o2.map((o) => o.odds), ['2.10', '3.40', '4.20'], '本地缺的码回退当日推荐 match.sp');
@@ -315,6 +316,11 @@ const flush = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise((
     cart.optionsOf(hLeg, { sp: ['9.99', '8.88', '7.77'], hhad: ['2.88', '3.60', '5.20'] }).map((o) => o.odds),
     ['2.88', '3.60', '5.20'],
     'jcHhad 认 match.hhad 而非 match.sp(盘口前缀从 pick 提取, 不依赖 match)'
+  );
+  assert.deepStrictEqual(
+    cart.optionsOf(hLeg, null).map((o) => o.label),
+    ['让球胜', '让球平', '让球负'],
+    '★jcHhad 腿的选项名走让球口径(官方计算器写 让球胜/让球平/让球负, 不写 主胜/客胜)'
   );
 
   const bdLeg = {
@@ -328,7 +334,7 @@ const flush = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise((
   const n1 = cart.applyPicks(jcLeg, ['1', '3'], { '3': '2.10', '1': '3.40' });
   assert.strictEqual(n1.pick, '3/1', 'codes 按 3/1/0 固定序输出(与赔率分段严格同序)');
   assert.strictEqual(n1.odds, '2.10/3.40', '复式赔率同序并排串');
-  assert.strictEqual(n1.desc, '周一001 甲队vs乙队 胜平负 主胜/平@2.10', 'desc 同步重建');
+  assert.strictEqual(n1.desc, '周一001 甲队vs乙队 胜平负 胜/平@2.10', 'desc 同步重建(官方口径词)');
   assert.strictEqual(n1.kind, 'jcHad', 'kind 保留');
   assert.strictEqual(n1.league, '德甲', '其余字段原样保留(结算取分靠 league)');
   assert.strictEqual(cart.calc([n1]).stakes, 2, '注数 1→2');
@@ -336,6 +342,7 @@ const flush = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise((
   const n2 = cart.applyPicks(hLeg, ['0', '3'], { '0': '5.20', '3': '2.88' });
   assert.strictEqual(n2.pick, '让-1 3/0', 'jcHhad 盘口前缀保留, 只换 310 码');
   assert.strictEqual(n2.odds, '2.88/5.20', 'jcHhad 复式赔率同序');
+  assert.strictEqual(n2.desc, '周一002 丙队vs丁队 让球-1 让球胜/让球负@2.88', 'jcHhad desc 用让球口径词');
 
   const n3 = cart.applyPicks(bdLeg, ['1', '0'], { '1': '6.83', '0': '10.65' });
   assert.strictEqual(n3.pick, '1/0', 'bd pick 是纯 310 码');
