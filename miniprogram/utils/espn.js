@@ -2,12 +2,20 @@
    LEAGUE_MAP 为静态联赛码注册表; TEAM_MAP/MATCH_LEAGUES 来自 espn_matches.js
    (由 tools/gen_mini_espn.js 从最新 tools/_live<MMDD>.js 每日生成)。
    死链联赛(如 kor.1)在 LEAGUE_MAP 中显式为 null, 调用方据此回退人工回填比分。
-   取数通道优先级(2026-09-15 起):
-     ① 注入 fetcher(node 冒烟 / opts) → 直连 HTTP, 行为与改造前一致;
-     ② 小程序内且 config.USE_CLOUD !== false → 云函数 bear_api 的 espn_scoreboard 代理;
-     ③ 其余 → wx.request 直连(仅开发者工具内可用)。
-   为什么要走云函数: 真机校验 request 合法域名, site.api.espn.com 属境外域名、无法 ICP 备案,
-   配不进白名单 → 真机必然 request:fail url not in domain list(与 Supabase 同一个病)。 */
+
+   ★真机取不到 ESPN 比分, 而且是**两条路都堵**(2026-09-15 实测):
+     ① wx.request 直连: 受「request 合法域名」限制, site.api.espn.com 属境外域名、无法 ICP 备案,
+        配不进白名单 → request:fail url not in domain list;
+     ② 云函数出网(bear_api 的 espn_scoreboard): 腾讯云到 site.api.espn.com 被 ESPN 自家 CDN 拒
+        —— 403 + Akamai「Access Denied」页(换浏览器请求头无效, 属 IP 段封锁)。
+   所以真机上**不做无谓请求**: 直接判"ESPN 不可达", 让调用方(结算)回退 prediction_days 的
+   finalScore —— 该值由本机流水线(tools/_live<MMDD>.js)用 ESPN 回填后 sync 进 Supabase,
+   这条才是真机唯一可用的比分来源(见 docs/云函数通道.md「比分从哪来」)。
+   取数通道优先级:
+     ① 注入 fetcher(node 冒烟 / 页面透传) → 直连, 行为与改造前一致;
+     ② config.ESPN_CLOUD === true 且云可用 → 云函数代理(★仅在将来接了境外中转时才开);
+     ③ 开发者工具(platform === 'devtools', 勾了「不校验合法域名」) → wx.request 直连, 供联调;
+     ④ 其余(真机) → 立即失败, 不产生任何请求。 */
 const generated = require("./espn_matches.js");
 
 const LEAGUE_MAP = {
@@ -46,6 +54,33 @@ function cloudFnName() {
     const c = require("./config.js");
     return (c && c.CLOUD_FN) || "bear_api";
   } catch (e) { return "bear_api"; }
+}
+
+/* ESPN 云代理开关 —— 默认**关**: 腾讯云出网到 ESPN 已被实测证伪(403 Akamai),
+   接上境外中转(见 docs/云函数通道.md)后把它设 true 即可复用同一条链路。 */
+function espnCloudEnabled() {
+  try {
+    const c = require("./config.js");
+    return !!(c && c.ESPN_CLOUD);
+  } catch (e) { return false; }
+}
+
+/* 能否直连 ESPN: node(冒烟/生成器)/开发者工具 = 能; 真机 = 不能(白名单 + CDN 双重封锁) */
+function espnDirect() {
+  if (typeof wx === "undefined") return true;
+  if (typeof wx.getSystemInfoSync !== "function") return true;
+  try { return wx.getSystemInfoSync().platform === "devtools"; } catch (e) { return false; }
+}
+
+/* 真机通道: 不发请求, 直接失败 —— 让结算立刻回退当日 finalScore, 而不是干等超时/刷错误日志 */
+function unreachableFetcher() {
+  return Promise.reject(new Error("ESPN 真机不可达(改用当日 finalScore)"));
+}
+
+/* 通道选择收在一处: 页面只拿 makeBoardFetcher, 不允许自己包 fetcher(会绕过这里的判断) */
+function pickChannel() {
+  if (espnCloudEnabled() && cloudReady()) return cloudFetcher;
+  return espnDirect() ? defaultFetcher : unreachableFetcher;
 }
 
 /* 云函数 espn_scoreboard 代理 → [{home,away,hs,as,st}](服务端已归一化, 这里不再解析 ESPN 结构) */
@@ -103,7 +138,7 @@ function cloudFetcher(url) {
 function makeBoardFetcher(cache) {
   const c = cache || {};
   return function (url) {
-    if (!(url in c)) c[url] = (cloudReady() ? cloudFetcher : defaultFetcher)(url);
+    if (!(url in c)) c[url] = pickChannel()(url);
     return c[url];
   };
 }
@@ -127,9 +162,9 @@ function normalizeEvents(list) {
 
 /* GET ESPN scoreboard → [{home, away, hs, as, st}]
    home/away=team.displayName, hs/as=score, st=status.type.name; 非 200 → reject。
-   fetcher 缺省时自动选通道(云可用→云函数, 否则 wx.request/fetch 直连)。 */
+   fetcher 缺省时按 pickChannel() 自动选通道(真机上会立刻失败 → 调用方回退 finalScore)。 */
 async function fetchBoard(leagueCode, yyyymmdd, fetcher) {
-  const f = fetcher || (cloudReady() ? cloudFetcher : defaultFetcher);
+  const f = fetcher || pickChannel();
   const r = await f(boardUrl(leagueCode, yyyymmdd));
   if (!r.ok) throw new Error("ESPN " + leagueCode + "@" + yyyymmdd + " HTTP " + (r.status || "?"));
   const j = await r.json();
@@ -149,5 +184,6 @@ function findScore(boards, homeCn, awayCn) {
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = { LEAGUE_MAP, TEAM_MAP, MATCH_LEAGUES, DATES, fetchBoard, findScore, defaultFetcher,
-    cloudFetcher, makeBoardFetcher, cloudReady, cloudScoreboard, cloudFnName };
+    cloudFetcher, makeBoardFetcher, cloudReady, cloudScoreboard, cloudFnName,
+    espnCloudEnabled, espnDirect, unreachableFetcher, pickChannel };
 }

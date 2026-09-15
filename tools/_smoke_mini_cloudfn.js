@@ -130,12 +130,13 @@ console.log('① 白名单/配置校验 ✓  (' + core.ALLOWED_FNS.length + ' �
   assert(rBad && rBad.ok === false && /联赛码非法/.test(rBad.error), '非法入参应返回 ok:false + 原因');
   console.log('⑨ 云函数入口分发 ✓  (espn_scoreboard 免 Supabase 配置, 非法入参回 ok:false)');
 
-  /* 10) 小程序侧: 云可用时 fetchBoard 走云函数、不发 HTTP(真机唯一可用路径)
-     —— 这正是修「真机比分永远空」的核心断言: 若哪天有人把 defaultFetcher 塞回来, 这里必红。 */
+  /* 10) ★真机通道(2026-09-15 实测改口径): 真机上 ESPN 两条路都堵 —— wx.request 受白名单限制,
+     云函数出网被 ESPN 自家 CDN 403(Akamai Access Denied)。故真机上必须**一个请求都不发**,
+     直接失败让结算回退当日 finalScore。这条断言就是"别再往真机加 ESPN 请求"的看门人。 */
   const espnCalls = [];
   let espnHttpHits = 0;
   const realFetch2 = global.fetch;
-  global.fetch = function () { espnHttpHits++; return Promise.reject(new Error('云通道下不应直连 ESPN')); };
+  global.fetch = function () { espnHttpHits++; return Promise.reject(new Error('真机上不应发任何 ESPN 请求')); };
   global.wx = {
     cloud: {
       callFunction(o) {
@@ -144,26 +145,50 @@ console.log('① 白名单/配置校验 ✓  (' + core.ALLOWED_FNS.length + ' �
       },
       init() {},
     },
+    getSystemInfoSync: () => ({ platform: 'android' }), // 真机形态
   };
-  assert.strictEqual(espn.cloudReady(), true, '有 wx.cloud 时 espn.cloudReady 应为 true');
-  const rows = await espn.fetchBoard('eng.2', '20260915');
-  assert.strictEqual(rows[0].home, 'Middlesbrough', '应解包云函数归一化行');
-  assert.strictEqual(espnCalls.length, 1, '应调用一次云函数');
-  assert.deepStrictEqual(espnCalls[0].data, { fn: 'espn_scoreboard', args: { league: 'eng.2', date: '20260915' } }, '入参形态: {fn, args:{league,date}}');
-  assert.strictEqual(espnHttpHits, 0, '云通道生效时不得直连 ESPN');
+  assert.strictEqual(espn.cloudReady(), true, '有 wx.cloud 时 espn.cloudReady 应为 true(Supabase 侧仍走云)');
+  assert.strictEqual(espn.espnDirect(), false, '真机(platform=android)应判定不可直连 ESPN');
+  let devMsg = '';
+  await espn.fetchBoard('eng.2', '20260915').catch((e) => { devMsg = String(e.message); });
+  assert(/ESPN 真机不可达/.test(devMsg), '真机应立刻失败并说明原因, 实际: ' + devMsg);
+  assert.strictEqual(espnHttpHits, 0, '真机不得发 HTTP 请求');
+  assert.strictEqual(espnCalls.length, 0, '★真机不得调云函数取比分(云出网已被 ESPN 403, 调了只是白烧配额)');
   const dedup = espn.makeBoardFetcher({});
   const u = 'https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260915';
-  await dedup(u); await dedup(u);
-  await espn.fetchBoard('esp.1', '20260915', dedup);
-  assert.strictEqual(espnCalls.length, 2, '同 URL 去重后应只多一次云调用(共 2 次), 实际 ' + espnCalls.length);
-  console.log('⑩ 小程序侧走云函数 ✓  (解包/入参/不去直连/URL 去重)');
+  await dedup(u).catch(() => {}); await dedup(u).catch(() => {});
+  assert.strictEqual(espnHttpHits + espnCalls.length, 0, '取板器在真机上同样零请求');
+  console.log('⑩ 真机零请求(直接回退 finalScore) ✓  (判定/不直连/不调云/取板器同口径)');
 
-  /* 11) 云通道失败 → 抛出带原因的错误(结算侧 try/catch 吞掉后回退 finalScore, 不炸页面) */
-  global.wx.cloud.callFunction = () => Promise.resolve({ result: { ok: false, error: 'ESPN esp.1@20260915 HTTP 500' } });
+  /* 11) 开发者工具: platform=devtools → 走 wx.request 直连(工具里须勾「不校验合法域名」), 供比分联调 */
+  global.wx.getSystemInfoSync = () => ({ platform: 'devtools' });
+  assert.strictEqual(espn.espnDirect(), true, '开发者工具应允许直连 ESPN');
+  let wxHits = 0;
+  global.wx.request = (o) => {
+    wxHits++;
+    o.success({
+      statusCode: 200,
+      data: { events: [{ competitions: [{ competitors: [{ homeAway: 'home', team: { displayName: 'Elche' }, score: '1' }, { homeAway: 'away', team: { displayName: 'Real Madrid' }, score: '2' }] }], status: { type: { name: 'STATUS_FULL_TIME' } } }] },
+    });
+  };
+  const rows = await espn.fetchBoard('esp.1', '20260915');
+  assert.strictEqual(wxHits, 1, '开发者工具应经 wx.request 直连 ESPN');
+  assert.strictEqual(espnHttpHits, 0, '不应绕过 wx.request 走 node fetch');
+  assert.strictEqual(rows[0].home, 'Elche', '直连通道应返回归一化行');
+  assert.strictEqual(espnCalls.length, 0, '开发者工具直连时不应调云函数');
+  console.log('⑪ 开发者工具直连 ✓  (wx.request 取板/归一化/不入云)');
+
+  /* 12) 云代理通道仍可显式启用(给将来接境外中转留的开关): 传 cloudFetcher 或 config.ESPN_CLOUD=true */
+  global.wx.getSystemInfoSync = () => ({ platform: 'android' });
+  const rowsCloud = await espn.fetchBoard('eng.2', '20260915', espn.cloudFetcher);
+  assert.strictEqual(rowsCloud[0].home, 'Middlesbrough', '显式走云时应解包归一化行');
+  assert.strictEqual(espnCalls.length, 1, '应调用一次云函数');
+  assert.deepStrictEqual(espnCalls[0].data, { fn: 'espn_scoreboard', args: { league: 'eng.2', date: '20260915' } }, '入参形态: {fn, args:{league,date}}');
+  global.wx.cloud.callFunction = () => Promise.resolve({ result: { ok: false, error: 'ESPN esp.1@20260915 HTTP 403: Access Denied' } });
   let espnMsg = '';
-  await espn.fetchBoard('esp.1', '20260915').catch((e) => { espnMsg = String(e.message); });
-  assert(/云函数 espn_scoreboard 失败/.test(espnMsg) && /HTTP 500/.test(espnMsg), '失败原因应透传, 实际: ' + espnMsg);
-  console.log('⑪ 云通道失败透传 ✓  (' + espnMsg.slice(0, 46) + '…)');
+  await espn.fetchBoard('esp.1', '20260915', espn.cloudFetcher).catch((e) => { espnMsg = String(e.message); });
+  assert(/云函数 espn_scoreboard 失败/.test(espnMsg) && /403/.test(espnMsg), '失败原因应透传, 实际: ' + espnMsg);
+  console.log('⑫ 云代理开关(中转预留) ✓  (' + espnMsg.slice(0, 46) + '…)');
 
   global.fetch = realFetch2;
   delete global.wx;

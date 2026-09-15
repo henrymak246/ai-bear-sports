@@ -104,6 +104,15 @@ async function callSupabaseRpc(fn, args, cfg, opts) {
      这一个只读公开接口(路径不可任意拼装, 域名固定), 已被当代理的风险可接受。 */
 const ESPN_LEAGUE_RE = /^[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)*$/;
 
+/* 出网请求头: 用浏览器形态。ESPN 走 Akamai, 光秃秃的 UA(甚至只是 "Mozilla/5.0")很容易被判成
+   机器人直接 403 —— 而 403 在小程序侧的表现与"域名配不进白名单"一样(比分永远空), 极难分辨。 */
+const ESPN_HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
+  'Accept': 'application/json, text/plain, */*',
+  'Accept-Language': 'en-US,en;q=0.9',
+  'Referer': 'https://www.espn.com/',
+};
+
 function assertEspnArgs(league, date) {
   const lg = String(league == null ? '' : league);
   const dt = String(date == null ? '' : date);
@@ -117,10 +126,14 @@ async function callEspnScoreboard(league, date, opts) {
   const a = assertEspnArgs(league, date);
   const res = await rawRequest(
     'https://site.api.espn.com/apis/site/v2/sports/soccer/' + a.league + '/scoreboard?dates=' + a.date,
-    { method: 'GET', headers: { 'User-Agent': 'Mozilla/5.0' } },
+    { method: 'GET', headers: ESPN_HEADERS },
     opts
   );
-  if (!res.ok) throw new Error('ESPN ' + a.league + '@' + a.date + ' HTTP ' + res.status);
+  if (!res.ok) {
+    // 把响应体片段带进错误里: 403/451 时正文会写明是谁拦的(Akamai 参考号 / 区域限制), 否则只剩一个数字
+    throw new Error('ESPN ' + a.league + '@' + a.date + ' HTTP ' + res.status
+      + ': ' + String(res.text || '').replace(/\s+/g, ' ').slice(0, 160));
+  }
   let j = {};
   try { j = JSON.parse(res.text || '{}'); } catch (e) { return []; }
   return (j.events || []).map(function (e) {
