@@ -204,8 +204,9 @@ function optionsOf(leg, match) {
 
 /* 生成新腿: 只换 pick/odds/desc, 并清 result —— 其余字段(盘口/比分/sp3/联赛/队名)原样保留。
    oddsByCode = {'3':'2.10','1':'3.40'}(喂 optionsOf 的结果, 调用方保证每个选中码都有赔率)。
-   ★finalScore 一定要留: jc 腿的 legKey 是 ''(cart.buildLeg 不产 match 字段) → 结算取分只有
-     ESPN 一条通道, 清掉它旧票一旦 ESPN 未命中就永远判不了; 留着反而让"改完按已有比分立刻重判"零网络完成。
+   ★finalScore 一定要留: 留着才能"改完按已有比分立刻重判"零网络完成(不必等 ESPN/回拉 payload)。
+     (2026-09-15 前 jc 腿的 legKey 恒为 '' —— legKey 只认 match, 而 buildLeg 不产 match 字段,
+      导致结算取分只有 ESPN 一条通道且同轮腿间串味; 已修成 legKey 兜底 leg.id, 见 settle.legKey。)
    ★result==='push' 要留: 那是站点数据"该场未开售不计断"的语义(judgeBd310 的 manualResult),
      清掉会把一条合法的走水腿变成真实判定, 整票可能被误判 miss。
    选项未变也照常返回新腿(供调用方重置已结算票的状态)。 */

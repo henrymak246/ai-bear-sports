@@ -18,6 +18,7 @@
  * ⑩ 页面编辑/删除: canEdit 分派(亚盘腿不可编)、开层补赔率、复式重算注数投入、保存失败复位、
  *   删除先确认且 _bets/bets/stats 同步。
  * ⑪ 并发闸门: 在飞的旧结算不得用旧 legs 覆盖编辑结果(_seq 双道守卫 + _autoQueued 补跑)。
+ * ⑫ 竞彩腿取分键: legKey 兜底 leg.id(修前恒 '', 同轮腿间比分串味 + payload 回退失效)。
  * 全绿输出 SMOKE_OK。
  * ★updateBet / updateBetLegs / editBet / deleteBet 必须打桩: 否则 Node 有全局 fetch 会真连 Supabase
  *   改库 —— 漏桩 deleteBet 就是**真删用户库里的票**。 */
@@ -586,6 +587,26 @@ const flush = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise((
 
   global.setInterval = realSetInterval;
   global.clearInterval = realClearInterval;
+
+  // ---- ⑫ 竞彩腿的取分键(2026-09-15 修): legKey 只认 match, 而 cart.buildLeg 的 jcHad/jcHhad
+  //   腿**没有 match 字段**(只有 id) → 旧实现恒返回 '' →
+  //   ①投注页同轮 scoreCache 槽位 bet_date|legKey 被所有竞彩腿共用, 先取到分的那条腿的比分
+  //     被复制给其余竞彩腿(9-15 实判: 003 科莫 2-1 串给 004 都灵vs罗马, 真值 0-2, 客胜红写成黑,
+  //     两张中奖票 3.11/4.67 元被误记为失);
+  //   ②payloadScore 的 String(id).slice(-3)===key 对空 key 永不成立 → 竞彩腿 finalScore 回退失效。
+  //   本段守住: 键必须非空、腿间互不相同、北单 match 取号不变、两腿各取各的比分结算。 ----
+  const jcA = { kind: 'jcHad', id: '周一003', home: '科莫', away: '帕尔马', league: '意甲', pick: '3', odds: '1.12' };
+  const jcB = { kind: 'jcHad', id: '周一004', home: '都灵', away: '罗马', league: '意甲', pick: '0', odds: '1.39' };
+  assert.strictEqual(settle.legKey(jcA), '003', '竞彩腿(无 match)应兜底 leg.id 取三位场次号');
+  assert.strictEqual(settle.legKey(jcB), '004', '不同竞彩腿必须是不同的键, 否则比分串味');
+  assert.strictEqual(settle.legKey({ match: '011 比利亚雷 vs 贝蒂斯' }), '011', '北单腿 match 取号口径不变');
+  const rJc = settle.settleBet(
+    { stakes: 1, unit: 2, amount: 2, legs: [jcA, jcB] },
+    (k) => ({ '003': '2-1', '004': '0-2' })[k] || null
+  );
+  assert(rJc && rJc.status === 'hit', 'jc 票应按各自场次号取分判红(003 主胜✓/004 客胜✓)');
+  assert.strictEqual(rJc.actual_payout, 3.11, 'jc 票奖金=1.12×1.39×2=3.11');
+  assert.deepStrictEqual(rJc.legs.map((l) => l.finalScore), ['2-1', '0-2'], '两腿必须各取各的比分');
 
   console.log('SMOKE_OK');
 })().catch((e) => { console.error(e); process.exit(1); });

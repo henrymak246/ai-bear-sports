@@ -110,10 +110,19 @@ function settleLeg(leg, finalScore) {
   return judgeable ? 'miss' : null;
 }
 
-/* 腿的 match 键: 前三位数字(竞彩/北单场次号)否则全文 */
+/* 腿的「场次号」键(3 位数字): 北单腿取 match("011 比利亚雷 vs 贝蒂斯"→'011'), 竞彩腿取
+   id("周一003"→'003') —— ★竞彩腿**没有 match 字段**(cart.buildLeg 的 jcHad/jcHhad 只给 id),
+   旧实现直接返回 '' , 于是同轮里所有竞彩腿共用一个键, 两处同时坏:
+   ①投注页 scoreCache 的槽位是 bet_date|legKey → 竞彩腿全部挤在同一槽, 先取到分的那条腿的比分
+     被复制给其余竞彩腿(2026-09-15 实判: 003 科莫 2-1 串给 004 都灵vs罗马, 真值 0-2, 客胜红被
+     写成黑, 该票 3.11 元与另一票 4.67 元两注中奖被误记为失);
+   ②payloadScore 的 String(id).slice(-3)===key 对空 key 永不成立 → 竞彩腿的 finalScore 回退
+     彻底失效(ESPN 断链时永远等不到分)。
+   取不到 3 位数字时返回原文(缺 match/id 的极老腿保持旧行为, 由调用方各自兜底)。 */
 function legKey(leg) {
-  const m = String((leg && leg.match) || '');
-  return /^\d{3}/.test(m) ? m.slice(0, 3) : m;
+  const raw = String((leg && (leg.match || leg.id)) || '');
+  const m = raw.match(/\d{3}/);
+  return m ? m[0] : raw;
 }
 
 /* 命中项在 pick '/' 分段里的下标(不可判/找不到 → -1)。
