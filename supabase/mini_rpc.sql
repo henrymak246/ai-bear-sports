@@ -1,8 +1,10 @@
 -- 小熊微信小程序 · Supabase 直连通道(2026-09-13, RPC+令牌版)
 -- 背景: 新版 sb_secret_ key 被 Supabase 按浏览器 UA 拦截(小程序模拟器/真机微信 UA 均带 Mozilla 前缀,
 -- 必然 401 "Secret API keys can only be used in a protected environment"), 小程序端彻底不能用 secret key。
--- 方案: 小程序只用 publishable key 调下列 4 个 security-definer RPC, 函数体内校验私有令牌 p_token。
--- 权限面: 仅暴露"读最新推荐/按日读推荐/投注登记增查改"四个操作; prediction_days 与 bets 的 RLS/门控不动。
+-- 方案: 小程序只用 publishable key 调下列 7 个 security-definer RPC, 函数体内校验私有令牌 p_token。
+-- 权限面: 仅暴露"读最新推荐/按日读推荐/投注登记增查改删"六个操作; prediction_days 与 bets 的 RLS/门控不动。
+-- 改动此文件后: ①整段重跑本 SQL ②core.js 的 ALLOWED_FNS 同步 ③重新部署云函数 bear_api
+--   (真机必走云函数通道, 漏做②③的表现是"模拟器正常、真机点按钮静默无效")。
 -- 执行: Supabase SQL 编辑器整段跑一次(含建 bets 表, 幂等)。令牌值同步在 miniprogram/utils/config.js 的 MINI_TOKEN。
 
 -- 1) 投注登记表(与 supabase/bets.sql 同构, 幂等)
@@ -85,5 +87,37 @@ begin
   update bets set status = p_status, actual_payout = p_actual_payout,
     profit = p_profit, settled_at = p_settled_at, legs = coalesce(p_legs, legs)
   where id = p_id returning * into r;
+  return to_json(r);
+end $$;
+
+-- 8) 投注登记编辑(改腿的 310 选项, 支持复式增删)
+--    为什么另起一个函数而不给 mini_update_bet 加参数: 后者是结算回写专用的 7 参函数,
+--    加参数会造成 PostgREST 的 overload 解析歧义(api.js 两处按 7 参调), 独立函数零回归。
+--    改选项必然改注数与投入(如 '3'→'3/1' 注数 1→2), 故这里一并重算 stakes/amount/expect_payout,
+--    并把整票重置为"待结算"(改完重来), 清空结算四列。
+--    ★p_legs 刻意不 coalesce: 传 null 就撞 legs not null 报 400(响亮失败);
+--      静默保留旧 legs 会和新 stakes/amount 脱节。
+create or replace function mini_edit_bet(p_token text, p_id uuid,
+  p_legs jsonb, p_stakes int, p_amount numeric, p_expect_payout numeric)
+returns json language plpgsql security definer set search_path = public as $$
+declare r bets;
+begin
+  perform mini_check_token(p_token);
+  update bets set legs = p_legs, stakes = p_stakes, amount = p_amount,
+    expect_payout = p_expect_payout,
+    status = 'pending', actual_payout = 0, profit = 0, settled_at = null
+  where id = p_id returning * into r;
+  return to_json(r);
+end $$;
+
+-- 9) 投注登记删除(彻底删除, 不可恢复; 前端删前有确认弹窗)
+--    id 不存在时 r 为 NULL → to_json 返回 null(HTTP 200), 客户端按"没抛错即成功"处理:
+--    刻意不 raise 'not found' —— 双击删除的第二发会变成 400 红条, 比静默成功更糟。
+create or replace function mini_delete_bet(p_token text, p_id uuid)
+returns json language plpgsql security definer set search_path = public as $$
+declare r bets;
+begin
+  perform mini_check_token(p_token);
+  delete from bets where id = p_id returning * into r;
   return to_json(r);
 end $$;

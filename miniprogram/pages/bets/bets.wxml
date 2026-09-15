@@ -37,7 +37,8 @@
     <text class="badge {{item.srcCls}}">{{item.srcLabel}}</text>
     <text class="cap {{item.capCls}}">{{item.capText}}</text>
   </view>
-  <view class="leg-row" wx:for="{{item.legRows}}" wx:for-item="leg" wx:key="index">
+  <!-- wx:for-index 必须显式声明: 否则内层 index 会遮蔽外层(下面 data-id 用的是外层 item.id) -->
+  <view class="leg-row" wx:for="{{item.legRows}}" wx:for-item="leg" wx:for-index="legIndex" wx:key="index">
     <text class="judge {{leg.markCls}}">{{leg.mark}}</text>
     <view class="leg-main">
       <view class="leg-match">
@@ -45,12 +46,17 @@
       </view>
       <view class="leg-pick muted">{{leg.bdNumText}}{{leg.bdNumText ? ' · ' : ''}}{{leg.pickText}} @ {{leg.oddsText}}</view>
     </view>
+    <text class="leg-edit" wx:if="{{leg.canEdit}}" data-id="{{item.id}}" data-li="{{legIndex}}" catchtap="openEdit">✎</text>
   </view>
   <view class="bet-foot">
     <text class="muted">{{item.stakes}}注 · 投入 {{item.amountText}}</text>
     <text wx:if="{{item.status !== 'pending'}}" class="profit {{item.profitCls}}">回收 {{item.payoutText}} · {{item.profitText}}</text>
     <text wx:else class="muted">预期 {{item.expectText || '--'}}</text>
-    <text class="slip-btn" data-index="{{index}}" bindtap="previewSlip">🖼 投注图</text>
+    <!-- 两个按钮包成单个 child: 原来 3 个 child 的 space-between 直接塞第 4 个, 窄屏会挤 -->
+    <view class="bet-actions">
+      <text class="slip-btn" data-id="{{item.id}}" catchtap="previewSlip">🖼 投注图</text>
+      <text class="del-btn" data-id="{{item.id}}" catchtap="removeBet">🗑 删除</text>
+    </view>
   </view>
   <view class="bet-note muted" wx:if="{{item.note}}">{{item.note}}</view>
 </view>
@@ -59,3 +65,24 @@
 
 <!-- 投注参考图屏外画布(出图用, 不可见) -->
 <canvas type="2d" id="slipCanvas" class="slip-canvas" style="width:750px;height:{{slipCanvasH}}px" />
+
+<!-- 编辑腿的 310 选项: 底部抽屉(遮罩/抽屉是页面级样式, 这里自带一份) -->
+<view class="edit-mask" wx:if="{{editOpen}}" bindtap="closeEdit"></view>
+<view class="edit-sheet" wx:if="{{editOpen}}">
+  <view class="sheet-head">
+    <text class="sheet-title">{{editTitle}}</text>
+    <text class="sheet-close" bindtap="closeEdit">✕</text>
+  </view>
+  <view class="sheet-sub muted">改这一腿的 310 选项(可多选复式), 注数与投入自动重算</view>
+  <view class="opt-row" wx:for="{{editOpts}}" wx:key="code" data-code="{{item.code}}" bindtap="toggleOpt">
+    <text class="opt-box {{item.on ? 'opt-on' : ''}} {{item.disabled ? 'opt-off' : ''}}">{{item.on ? '✓' : '○'}}</text>
+    <text class="opt-label {{item.disabled ? 'opt-off' : ''}}">{{item.label}}</text>
+    <text class="opt-code muted">{{item.code}}</text>
+    <text class="opt-odds {{item.disabled ? 'opt-off' : ''}}">{{item.odds ? '@ ' + item.odds : '无赔率'}}</text>
+  </view>
+  <view class="sheet-preview">{{editPreview}}</view>
+  <view class="sheet-foot">
+    <button class="btn-cancel" bindtap="closeEdit" disabled="{{editSaving}}">取消</button>
+    <button class="btn-save" bindtap="saveEdit" disabled="{{editSaving}}">{{editSaving ? '保存中…' : '保存'}}</button>
+  </view>
+</view>

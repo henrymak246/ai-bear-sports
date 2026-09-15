@@ -53,8 +53,10 @@ console.log("DATES: " + ds.join(", ") + " ✓");
     throw new Error("fetchTodayPayload 异常: " + (payload && payload.__err));
   }
 
+  let rpcLive = false;
   try {
     const bets = await api.fetchBets();
+    rpcLive = true;
     console.log("fetchBets ✓ 行数=" + bets.length);
   } catch (e) {
     if (/PGRST202|404/.test(String(e.message))) {
@@ -62,6 +64,26 @@ console.log("DATES: " + ds.join(", ") + " ✓");
     } else {
       throw e;
     }
+  }
+
+  /* 4) 编辑/删除函数探活 —— 幂等零副作用: nil uuid 匹配 0 行, 库里什么都不动,
+        只证明"函数存在 + 参数名对 + 令牌通"。这是唯一能在 Node 侧压到 SQL 那一半的检查。
+     只在 rpcLive 时严格断言: 整套 RPC 都没部署时上面已打印提示, 这里跟随跳过(不制造第二处红);
+     而"RPC 在跑、新函数却没建"正是要抓的失败模式 —— 用户重跑 SQL 时漏了尾巴, 或粘贴截断。
+     ★0 行命中时返回的不是 SQL null, 而是**全 null 字段的对象** {"id":null,...}:
+       plpgsql 的 `returning * into r` 在 0 行时是逐字段置 null, composite datum 本身仍非空,
+       故 to_json 照常渲染。这是 2026-09-15 实测的, 别照"应该返回 null"去写断言。
+       判据因此是 r.id === null(主键永不为 null → 只有"没匹配到行"才会是 null);
+       这仍能抓住真错: 若函数写错 p_id 条件误删/误改了别的行, 返回的 id 就不是 null。 */
+  if (rpcLive) {
+    const NIL = "00000000-0000-0000-0000-000000000000";
+    const noRow = (r) => r === null || r === undefined || r.id === null;
+    const del = await api.deleteBet(NIL);
+    assert(noRow(del), "deleteBet(nil) 应返回 0 行(全 null 对象), 实际: " + JSON.stringify(del));
+    // p_legs 传合法空数组而非 null: 0 行命中时列约束本不求值, 但没必要去赌求值顺序
+    const ed = await api.editBet(NIL, { legs: [], stakes: 1, amount: 2, expect_payout: 3 });
+    assert(noRow(ed), "editBet(nil) 应返回 0 行(全 null 对象), 实际: " + JSON.stringify(ed));
+    console.log("mini_edit_bet / mini_delete_bet 探活 ✓  (nil uuid, 0 行受影响)");
   }
   console.log("SMOKE_OK");
 })().catch(e => { console.error("SMOKE_FAIL: " + (e && e.message)); process.exit(1); });

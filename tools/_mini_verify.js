@@ -122,6 +122,40 @@ async function step(name, fn) {
   }
   await step('shot 5_bets', () => mini.screenshot({ path: path.join(SHOTS, '5_bets.png') }));
 
+  /* ★编辑弹层: 打开→读 data→截图→取消。**全程不写库**(不碰 saveEdit/removeBet) ——
+     真删不可恢复, 真机第一发不该拿来当测试; 写路径另有 _probe_bet_roundtrip.js 用合成票验。
+     以 data() 为准判读: previewImage 的原生遮罩会跨轮残留污染截图(见 tools 里的老教训)。 */
+  if (bpage) {
+    const dd = await bpage.data();
+    let tgt = null;
+    /* ★读 legRows 不是 legs: decorateBet 把视图模型(含 canEdit)放 legRows,
+       而 Object.assign({}, bet, …) 让 bet.legs 仍是**原始**腿(没有 canEdit)。
+       legRows 是 bet.legs 的顺序 map → 下标与 openEdit 的 bet.legs[li] 一一对应。 */
+    (dd.bets || []).forEach((b) => {
+      (b.legRows || []).forEach((r, li) => {
+        if (!tgt && r && r.canEdit) tgt = { id: b.id, li: li, row: r };
+      });
+    });
+    if (!tgt) {
+      console.log('[edit] 没有可编辑的腿(全是亚盘腿?) — 跳过');
+    } else {
+      console.log('[edit] 目标腿: ' + tgt.row.pickText + ' @ ' + tgt.row.oddsText);
+      await step('openEdit', () => bpage.callMethod('openEdit', { currentTarget: { dataset: { id: tgt.id, li: tgt.li } } }));
+      await sleep(2500); // openEdit 可能回拉当日 payload 补本地缺的赔率
+      const de = await step('edit data', () => bpage.data());
+      if (de) {
+        console.log('[edit] open=' + de.editOpen
+          + ' 选项=' + JSON.stringify((de.editOpts || []).map((o) => o.code + (o.on ? '✓' : '·') + '@' + (o.odds || '无')))
+          + ' 预览=' + JSON.stringify(de.editPreview || ''));
+      }
+      await step('shot 7_edit', () => mini.screenshot({ path: path.join(SHOTS, '7_edit.png') }));
+      await step('closeEdit(取消, 不写库)', () => bpage.callMethod('closeEdit'));
+      await sleep(600);
+      const dc = await step('edit closed', () => bpage.data());
+      if (dc) console.log('[edit] 取消后 open=' + dc.editOpen + ' (应为 false)');
+    }
+  }
+
   if (typeof mini.disconnect === 'function') await mini.disconnect();
   console.log('[done] 截图目录 tools/_mini_shots/');
 })().catch((e) => { console.error('[FATAL]', e.message); process.exit(1); });

@@ -130,6 +130,42 @@ async function updateBet(id, patch, opts) {
   }, opts);
 }
 
+/* 腿级回写专用(结算逐腿更新时用): mini_update_bet 是**无条件赋值**(仅 legs 有 coalesce),
+   只传 legs 会把 status/actual_payout/profit/settled_at 一起写成 NULL → 撞 not null 约束。
+   这里把 snapshot 里的 4 个原值一并传回, 收口这个高危动作。
+   ★刻意不给 status 兜默认值: 宁可报错(缺参 → PostgREST 找不到函数), 也不能把"已结算票"静默重置成 pending。 */
+async function updateBetLegs(id, legs, snapshot, opts) {
+  const s = snapshot || {};
+  return await rpc("mini_update_bet", {
+    p_id: id,
+    p_status: s.status,
+    p_actual_payout: s.actual_payout === undefined ? 0 : s.actual_payout,
+    p_profit: s.profit === undefined ? 0 : s.profit,
+    p_settled_at: s.settled_at === undefined ? null : s.settled_at,
+    p_legs: legs === undefined ? null : legs,
+  }, opts);
+}
+
+/* 注单编辑(改腿的 310 选项): 改选项必然改注数与投入('3'→'3/1' 注数 1→2),
+   而 7 参的 mini_update_bet 只覆盖 status/actual_payout/profit/settled_at/legs、
+   改不了 stakes/amount/expect_payout → 走独立的 mini_edit_bet。
+   SQL 侧会把整票重置为待结算并清空结算四列, 故这里不传 status 系列参数。 */
+async function editBet(id, patch, opts) {
+  const p = patch || {};
+  return await rpc("mini_edit_bet", {
+    p_id: id,
+    p_legs: p.legs,
+    p_stakes: p.stakes,
+    p_amount: p.amount,
+    p_expect_payout: p.expect_payout,
+  }, opts);
+}
+
+/* 注单删除 → 被删的行(不存在则 null, 不报错) */
+async function deleteBet(id, opts) {
+  return await rpc("mini_delete_bet", { p_id: id }, opts);
+}
+
 if (typeof module !== "undefined" && module.exports) {
-  module.exports = { request, fetchTodayPayload, fetchPayloadByDate, saveBet, fetchBets, updateBet, setFetcher, cloudReady, callCloud };
+  module.exports = { request, fetchTodayPayload, fetchPayloadByDate, saveBet, fetchBets, updateBet, updateBetLegs, editBet, deleteBet, setFetcher, cloudReady, callCloud };
 }
