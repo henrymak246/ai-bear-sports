@@ -1,6 +1,6 @@
 /* live-odds.js — 竞彩官方实时赔率(网站侧, 2026-09-15 新增)。
  * ★要解决的问题与小程序 utils/jc.js 完全相同: data/predictions.js 里每场的 sp/hhad/spHandicap,
- *   以及 hc7/max7 两个方案块的 legs[].odds + totalOdds, 都是**每天构建那一刻**从体彩官方抓的快照
+ *   以及 hc7/max7/combo7 方案块的 legs[].odds + totalOdds, 都是**每天构建那一刻**从体彩官方抓的快照
  *   (tools/_fetch_jc.js → tools/_build<MMDD>.js), 之后官方一路浮动, 页面永远停在构建值。
  *   2026-09-15 实测: 用户实拍的官方足球计算器 8 关票里, 8 条腿的赔率与站点快照**只有 1 条一致**。
  * 取数通道: 浏览器直连 webapi.sporttery.cn(实测响应头带 Access-Control-Allow-Origin: *, 可跨域),
@@ -130,6 +130,11 @@
        于是客胜腿拿到主胜的赔率 —— 2026-09-15 自证时 012 伊普斯「客胜」就反算出 8.5(主胜) 而非 1.22。 */
   function pickIdx(pick) {
     var p = String(pick || '').trim();
+    // 盘口前缀式(「让-1 主胜」「让+1 让胜」): 前缀只是线位, 与选项无关 → 剥掉再判。
+    // ★不剥的话「让+1 让胜」整串既不含 主/客/负 也不含 平, 兜底返回 -1 → 该腿实时赔率永远取不到,
+    //   静默停在构建值(面板只说"含 N 条未刷新腿构建值", 看不出是解析挂了)。历史 hc7 已有 10 条
+    //   这种写法, 而 combo7 的让球腿按约定就是这么写(盘口前缀式) —— 所以必须在这里剥干净。
+    p = p.replace(/^让\s*[+-]?\d+(?:\.\d+)?\s*/, '');
     if (p === '主胜' || p === '让胜') return 0;
     if (p === '平' || p === '让平') return 1;
     if (p === '客胜' || p === '让负') return 2;
@@ -138,6 +143,17 @@
     if (p.indexOf('客') !== -1 || p.indexOf('负') !== -1) return 2;
     if (p.indexOf('平') !== -1) return 1;
     return -1;
+  }
+
+  /* 这条腿该取哪个彩池: 板块级绑定('sp'/'hhad'), 或 **逐腿判**(combo7 = 'auto')。
+     ★combo7 把「不让球胜平负」与「让球胜平负」混在同一个 7 关里 —— 一个板块只能有一个池的
+       旧写法在它身上必然取错一半(拿 sp 去让球腿上算 = 赔率对不上, 且页面显示与场次卡打架)。
+       腿自己带的 play 才是唯一权威。旧板块(max7/hc7)一律**保持原绑定**, 口径不许跟着变。
+     与小程序 utils/jc.js 同名同义(改一处必须改另一处, 由 tools/_smoke_parity.js 卡)。 */
+  var PLAY_POOL = { '胜平负': 'sp', '让球胜平负': 'hhad' };
+  function poolOfLeg(leg, pool) {
+    if (pool !== 'auto') return pool;
+    return PLAY_POOL[String((leg && leg.play) || '').trim()] || 'sp';
   }
 
   /* 单腿赔率刷新; 拿不到/不适用返回 null(调用方保留原值)。
@@ -213,7 +229,8 @@
     return pct;
   }
 
-  /* 一个方案块(hc7/max7): 刷 legs[].odds, 并把 totalOdds 重算成**页面实际显示**的那几条腿的连乘。
+  /* 一个方案块(hc7/max7/combo7): 刷 legs[].odds, 并把 totalOdds 重算成**页面实际显示**的那几条腿的连乘。
+     arrKey 是彩池: 'sp' / 'hhad' / 'auto'(逐腿按 play 判, 见 poolOfLeg)。
      ★为什么必须重算而不是沿用原文: 2026-09-15 实测 hc7 的腿已漂到连乘 705 倍, 页面却还印着
        构建时的 858 倍 —— 用户拿计算器一乘就会说"不对"。腿实时化了, 总数就不能停在旧字面量上。
      ★这里只承诺一件事: 总数 = 页面上那列腿赔率的连乘(与显示同源, 可复核), 括号里写清依据:
@@ -225,7 +242,7 @@
     var stale = 0, closed = 0, settled = 0;
     plan.legs.forEach(function (l) {
       if (l && l.result) settled++; // 已结算腿: 这关的成败已成事实, "全中约N倍"不再是可谈的价格
-      var v = legOdds(l, byId3, arrKey);
+      var v = legOdds(l, byId3, poolOfLeg(l, arrKey));
       if (v === null) {
         stale++;
         // 已停售腿单独计数: 它不只是"没刷到", 而是官方已经下架、这张关本身就买不成了
@@ -259,6 +276,11 @@
     var matches = (day.matches || []).map(function (m) {
       var r = rows[m.id];
       var next = Object.assign({}, m);
+      /* ★北单补足场(2026-09-21 加): 竞彩官方实时池里**天然没有**「北单NNN」这些行 —— 不短路就会
+         掉进下面那条「不在池里 = 已停售」分支, 页面给这些场挂「已停售」、小程序直接禁投, 而它们
+         在北单渠道是正常在售的。北单没有实时赔率通道(SP 临场才由投注分布定价), 故保持构建快照、
+         **两个标记都置假**: oddsLive=false 表示"这不是实时值", oddsClosed=false 表示"不是停售"。 */
+      if (m.bdSrc) { next.oddsLive = false; next.oddsClosed = false; return next; }
       if (!r) {
         // 不在官方实时池 = 已过销售截止被下架; 赔率保留构建值供回顾, 只打标记
         next.oddsLive = true;
@@ -288,11 +310,13 @@
 
     var hc7 = overlayPlan(day.hc7, byId3Live, 'hhad', closedIds);
     var max7 = overlayPlan(day.max7, byId3Live, 'sp', closedIds);
+    // combo7 = 竞彩混选过关(让球/不让球同串): 池**按腿判**, 见 poolOfLeg
+    var combo7 = overlayPlan(day.combo7, byId3Live, 'auto', closedIds);
     var nhList = noHadList(matches); // 让球-only 的场(见 noHadNote)
 
     // 方案卡的大号数字跟着同步(同值才换, 见 substPct)
     var pairs = [];
-    [[day.hc7, hc7], [day.max7, max7]].forEach(function (pr) {
+    [[day.hc7, hc7], [day.max7, max7], [day.combo7, combo7]].forEach(function (pr) {
       var o = pr[0], n = pr[1];
       if (!o || !n || !n.oddsBasis) return;
       var a = totalNum(o.totalOdds), b = totalNum(n.totalOdds);
@@ -306,6 +330,7 @@
       oddsAt: new Date().toISOString(),
       hc7: hc7,
       max7: max7,
+      combo7: combo7,
     };
     if (Array.isArray(day.plan)) {
       // 让球-only 场次在正文里被当胜平负写了的那几张卡, 挂一句口径说明(见 noHadNote)
@@ -358,7 +383,7 @@
     // 导出面与小程序 utils/jc.js 的 module.exports 一一对应(见 tools/_smoke_parity.js),
     // 内部用得上却没导出的函数就没法被跨端对齐 —— id3/legNum 这类"截几位"的口径尤其容易悄悄漂
     _internals: { pickIdx: pickIdx, legNum: legNum, id3: id3, noHadOf: noHadOf, noHadList: noHadList, noHadNote: noHadNote,
-      legOdds: legOdds, product: product,
+      poolOfLeg: poolOfLeg, legOdds: legOdds, product: product,
       substTotal: substTotal, totalNum: totalNum, substPct: substPct, overlayPlan: overlayPlan },
   };
 })(typeof window !== 'undefined' ? window : this);

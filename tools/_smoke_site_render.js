@@ -43,8 +43,126 @@ const INLINE_SRC = (function () {
   return blocks[0][1];
 })();
 
-/* 用**今天**那份数据的深拷贝: LiveOdds 有日期闸, 拿历史日根本不会去取数 */
-const todayDays = () => [JSON.parse(JSON.stringify(DAYS[0]))];
+/* ★把这份**昨天的快照**还原成"今天、赛前"的样子: 日期戳改写成北京时间今天 + 抹掉已结算标记。
+   两件都是必须的, 少一件 ②③④ 就会**空过**(页面停在快照上, 断言照样绿, 等于什么都没验):
+     · 日期不是今天 → LiveOdds 的日期闸直接原样返回(见 overlayDay 首行);
+     · 腿带 result → overlayPlan 认定"这关成败已成事实, 全中约N倍不再是可谈的价格",
+       主动不刷总数、也不让方案卡的大号数字跟着动(见其注释与 _smoke_live_odds ③)。
+   "已结算腿不参与实时刷新"是**另一条**规矩, 由 _smoke_live_odds.js ③ 专门卡着, 这里不重复验。
+   ②③④ 验的是叠加机制本身, 输入本就该是一份"今天、还没开赛"的日对象 ——
+   与真数据是谁无关(fixture 池就是拿同一个 day 对象现造的, 内部自洽)。 */
+const TODAY_BJ = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+
+/* ★让球-only(官方只开让球、没开胜平负)这一形态**不是每天都有**: 官方按天开售,
+   2026-09-17 周四池 10 场就全开了 310, 当天的让球-only 落在周五008(=明天的卡)。
+   而 ①b/③b 两段断言只有存在该形态才跑得起来 —— 写成"今天必须有"会让本冒烟
+   在没这形态的日子整条红掉, 但那天数据其实完全正常。所以: 真数据有 → 照旧用真数据;
+   没有 → 在本测试的**内存副本**里把一场改造成让球-only(删 sp、保留 hhad), ①b/③b 照常真跑一遍。
+   ★改的是 JSON 副本, data/predictions.js 一个字不动, 站点数据不失真。
+   ★替身场的两条硬约束(踩过才知道):
+     · 不能是 matches[0] —— fixture 把首场当"已过销售截止下架", had/hhad **两个池都没有**它,
+       ③b 就验不到"让球SP 换成官方实时值"那条;
+     · 不能在任何方案块的腿里(combo7/hc7/max7) —— 那些腿要取池子里的实时价,
+       被排除出池后页面不会刷新它, 方案卡倍数断言(③)会拿实时值去比一个还是构建值的数, 假红。 */
+/* 方案块清单: 合并后(2026-09-21 起)只有 combo7, 之前的日子是 hc7 + max7 ——
+   冒烟必须**两种日子都跑得起来**(合并当天两边都要绿), 所以按"当天实际有什么"取, 不写死板块名。
+   pool 是板块级彩池; 'auto' = combo7 的逐腿按 play 取池(见 assets/live-odds.js poolOfLeg)。 */
+const BLOCK_POOLS = [['combo7', 'auto'], ['hc7', 'hhad'], ['max7', 'sp']];
+const hasBlock = (d) => !!d && BLOCK_POOLS.some((b) => d[b[0]] && Array.isArray(d[b[0]].legs) && d[b[0]].legs.length);
+/* ★方案块的**内容**也可能整天缺席(2026-09-21 首个案例: 竞彩扁平日, 在售仅 1 场 → 1 关不成过关,
+   经拍板整天不出 combo7)。它照样是一次正常构建、页面照样要能跑起来, 只是没串关可叠 ——
+   所以板块内容退回到**最近一个真有方案块的日子**, 只把日期改写成今天(日期闸认日期不认内容),
+   并打一行明说借的是哪天: ②③ 验的是叠加机制, 与那天的具体腿是谁无关。
+   ★借用时 ⑥ 必须跳过: ⑥ 是**真打官方**拿今天这批场次号去对的, 借来的场次号在官方池里压根不存在。 */
+const SRC_DAY = hasBlock(DAYS[0]) ? DAYS[0] : DAYS.find(hasBlock);
+assert(SRC_DAY, '今日与全部历史日都没有方案块(combo7/hc7/max7), ②③ 无从验起');
+const BORROW = SRC_DAY !== DAYS[0];
+/* ★混选面板(combo7)是合并后的**主面板**, 它的渲染路径必须每天都真跑一遍 ——
+   可它偏偏是"新日子"才有的块, 而需要借用旧日子的雨天(竞彩扁平日)恰好没有它。
+   于是借到的是 hc7+max7 旧日子时, 在副本里**合成**一块 combo7:
+     · 腿 = 该日 hc7 前 4 条 + max7 前 3 条(补上 play; 让球腿的 pick 按合并约定改写成盘口前缀式);
+     · 方案卡换成「💥 综合过关」且 pct 与该块 totalOdds **同源**(与构建脚本同一口径 ——
+       不同源的话 ④ 的"快照即 pct"与 ③ 的"叠加后必须改写"两条会互相打架)。
+   验的是"混选面板能渲染 / 两盘腿各取对彩池 / 旧面板让位", 与这几条腿本来属于哪天无关。
+   有真 combo7 的日子(以及将来真建了 combo7 的当天)走的是原样, 不合成。 */
+const SRC = (function () {
+  if ((SRC_DAY.combo7 || {}).legs && SRC_DAY.combo7.legs.length) return SRC_DAY;
+  const hc = ((SRC_DAY.hc7 || {}).legs) || [], mx = ((SRC_DAY.max7 || {}).legs) || [];
+  if (!hc.length || !mx.length) return SRC_DAY;
+  const d = JSON.parse(JSON.stringify(SRC_DAY));   // 只动副本: DAYS[0] 是 require 出来的真数据
+  const spH = {};
+  (d.matches || []).forEach((m) => { spH[String(m.id).slice(-3)] = m.spHandicap; });
+  const PRE = /^让[+-]?\d+(?:\.\d+)?\s+/;          // 已经是盘口前缀式的原样留, 裸式(让胜/让平/让负)才补前缀
+  const single = (l) => l.pick && !/[/]/.test(String(l.pick)) && !/[/]/.test(String(l.odds));
+  const legs = [];
+  hc.slice(0, 4).forEach((l) => {
+    const g = spH[String(l.match).slice(0, 3)];
+    if (!single(l) || g === undefined || g === null || isNaN(g)) return;
+    legs.push({ play: '让球胜平负', league: l.league, match: l.match, odds: l.odds, reason: l.reason, result: null,
+      pick: PRE.test(String(l.pick).trim()) ? l.pick : ('让' + (Number(g) >= 0 ? '+' : '') + g + ' ' + l.pick) });
+  });
+  mx.slice(0, 3).forEach((l) => {
+    if (!single(l)) return;
+    legs.push({ play: '胜平负', league: l.league, match: l.match, pick: l.pick, odds: l.odds, reason: l.reason, result: null });
+  });
+  if (legs.length < 2) return SRC_DAY;
+  let p = 1; legs.forEach((l) => { p *= parseFloat(String(l.odds).split('/')[0]); });
+  const tot = p >= 100 ? String(Math.round(p)) : p.toFixed(1);
+  d.combo7 = { totalOdds: legs.length + '关全串约' + tot + '倍', legs: legs, result: null,
+    note: '(渲染冒烟合成块: 混选面板路径每天都要真跑一遍, 见 tools/_smoke_site_render.js 顶部注释)' };
+  delete d.hc7; delete d.max7;
+  const card = (d.plan || [])[2];
+  if (card) { card.name = '💥 综合过关（胆拖·让球混选）'; card.pct = '≈' + tot + '倍'; card.text = '(渲染冒烟合成卡)'; }
+  console.log('注: ' + SRC_DAY.date + ' 是 hc7+max7 旧日子 → 副本里合成一块 combo7(' + legs.length + ' 腿: '
+    + legs.filter((l) => l.play === '让球胜平负').length + ' 让球 / ' + legs.filter((l) => l.play === '胜平负').length
+    + ' 不让球), 让混选面板的渲染路径也真跑一遍');
+  return d;
+})();
+const BLOCKS = BLOCK_POOLS
+  .filter((b) => SRC[b[0]] && Array.isArray(SRC[b[0]].legs) && SRC[b[0]].legs.length);
+const BLK_PANEL = { combo7: 'combo7Blocks', hc7: 'hc7Blocks', max7: 'max7Blocks' };
+if (BORROW) {
+  console.log('注: 今天(' + DAYS[0].date + ')没有方案块(竞彩扁平日, 竞彩在售不足 2 场 → 不成过关) →'
+    + ' ②③④ 借用 ' + SRC.date + ' 的板块内容(日期改写成今天, 只改内存副本); ⑥(真连官方)随之跳过');
+}
+/* 纯函数(含 pickIdx / poolOfLeg)从 live-odds 源码里取 —— 与网站沙箱同一份源码, 同一个 window 套路 */
+const LO = (function () {
+  const sb = { console, Date, Math, JSON, Promise, Object, Array, String, Number, isFinite, isNaN };
+  sb.window = sb; sb.globalThis = sb;
+  vm.createContext(sb);
+  vm.runInContext(LIVE_ODDS_SRC, sb, { filename: 'assets/live-odds.js' });
+  assert(sb.LiveOdds && sb.LiveOdds._internals, '未从 assets/live-odds.js 取到 _internals');
+  return sb.LiveOdds;
+})();
+const NH_DONOR_SKIP = (d) => new Set([].concat(...BLOCKS.map((b) =>
+  ((((d[b[0]] || {}).legs) || []).map((l) => String(l.match || '').slice(0, 3))))));
+const todayDays = () => {
+  const d = JSON.parse(JSON.stringify(SRC));
+  d.date = TODAY_BJ;
+  Object.keys(d).forEach((k) => {
+    const b = d[k];
+    if (b && typeof b === 'object' && !Array.isArray(b) && Array.isArray(b.legs)) {
+      delete b.result;
+      b.legs.forEach((l) => { delete l.result; });
+    }
+  });
+  const isNoHad = (m) => !m.sp && Array.isArray(m.hhad) && m.hhad.length === 3;
+  if (!(d.matches || []).some(isNoHad)) {
+    const skip = NH_DONOR_SKIP(d);
+    const cands = (d.matches || []).filter((m, i) => i > 0 && m.sp && Array.isArray(m.hhad)
+      && m.hhad.length === 3 && !skip.has(String(m.id).slice(-3)));
+    // 优先挑"正文里点过场次号"的: ③b 的口径说明靠"正文引用了这场"才挂得出来
+    const texts = (d.plan || []).map((p) => String(p.text || '')).join(' ');
+    const donor = cands.filter((m) => texts.indexOf(String(m.id).slice(-3)) !== -1)[0] || cands[0];
+    assert(donor, '今日无让球-only 场, 且找不到可改造的替身场(需: 非首场 + 有 hhad + 不在任何方案块腿里)');
+    delete donor.sp;
+    console.log('  · 今日官方池无让球-only 场 → 内存副本里把 ' + donor.id + ' 改造为让球-only, ①b/③b 照常真跑');
+  }
+  return [d];
+};
+/* 构建时快照里"让球胜平负"卡的大号倍数。★不写死 858: 那是当天那份数据的数, 建了新一天就换数。
+   要断言的是"首屏显示的是构建时快照"/"叠加后不再是无口径标注的旧值", 不是"数字恰好是 858"。 */
+const SNAP_PCT = ((SRC.plan || [])[2] || {}).pct || '≈858倍';
 
 // ---- 伪 DOM: 一份 sandbox = 一个 document(与浏览器一致) ----
 function mkEl(id) {
@@ -180,7 +298,7 @@ const realFetch = global.fetch; // ⑥ 要真打官方, 先留一份
   sb.renderApp(todayDays()); // 只渲快照, 不等网络
   assert(htmlIn(sb, 'planBlocks').length > 0, '① planBlocks 应有内容');
   assert(htmlIn(sb, 'dailyList').length > 0, '① 应产出当日对阵表');
-  assert(htmlIn(sb, 'planBlocks').indexOf('≈858倍') !== -1, '① 首屏应是构建时快照(858)');
+  assert(htmlIn(sb, 'planBlocks').indexOf(SNAP_PCT) !== -1, '① 首屏应是构建时快照(' + SNAP_PCT + ')');
 
   /* ---- ①b 让球-only: 官方只开让球、没开胜平负的场 ----
      用户 2026-09-15 的原话: "013皇马是-2球的盘, 没有开不让球的胜平负" ——
@@ -249,18 +367,73 @@ const realFetch = global.fetch; // ⑥ 要真打官方, 先留一份
   assert(pb.length > 0, '③ 实时叠加后 planBlocks 不能被清空');
   assert(pb.indexOf('已接官方实时') !== -1, '③ 方案区应出现口径说明行');
   // 未加标注的裸倍数 = 还停在构建值上(标注落在「倍」后面, 所以裸的收尾是 '倍</div>')
-  assert(pb.indexOf('≈858倍</div>') === -1, '③ 方案卡不得再是**没有口径标注**的构建时倍数');
-  /* 期望值手算(与实现无关, 拿 fixture 的固定价直接乘):
-     让球七关的选项是 让胜×2(010/004) 让平×3(011/002/005) 让负×2(012/013),
-     fixture 让球池 = 让胜1.50 / 让平3.50 / 让负5.00 →
-       1.50×3.50×3.50×1.50×3.50×5.00×5.00 = 2411.72  → 过百取整 = 2412
-     (构建值是 2.20×3.58×3.55×2.42×3.40×1.75×2.13 = 857.5 → 858, 对上原文, 说明选项→下标没错位)
-     hc7 七关全在售(001 不在 hc7 里) → 依据是"实时连乘", 不带停售注记。 */
-  assert(pb.indexOf('≈2412倍(实时连乘)') !== -1,
-    '③ 让球方案卡应为 ≈2412倍(实时连乘), 实际 ' + (pb.match(/≈[^<]*/) || [''])[0]);
+  assert(pb.indexOf(SNAP_PCT + '</div>') === -1,
+    '③ 方案卡不得再是**没有口径标注**的构建时倍数(快照 ' + SNAP_PCT + '), 实际卡片倍数: ' +
+    JSON.stringify(pb.match(/≈[^<]*/g) || []));
+  /* 期望值由 fixture 规则现推(与实现无关: 让球池固定价 = hhad[0..2] 的 1.50/3.50/5.00,
+     胜平负池 = sp[0..2] 的 2.00/3.00/4.00, 被 skipFirst 下架的那场改用**构建值**顶上)。
+     仍然在验同一件事: 卡片倍数是按实时值重算的、停售腿用构建值顶上、且选项→下标没串位。
+     ★不写死数字(9-15 那份的 2412 是当时腿型乘出来的, 每天一变就必红)。
+     ★按**下标**算而不是按选项名查表: combo7 的让球腿写成「让-1 让平」这种盘口前缀式,
+       按名字查表查不到 —— 只有走 pickIdx 才对得上, 而 pickIdx 的前缀剥离正是合并后最该盯的地方。 */
+  const FIX_IDX = { hhad: [1.50, 3.50, 5.00], sp: [2.00, 3.00, 4.00] };
+  const closed3 = String(d[0].matches[0].id).slice(-3); // fixture skipFirst → 首场不在官方池里
+  const isClosed = (l) => String(l.match).startsWith(closed3);
+  const expectOdds = (legs, poolOf) => {
+    const v = legs.reduce((a, l) => a * (isClosed(l) ? parseFloat(l.odds)
+      : FIX_IDX[poolOf(l)][LO._internals.pickIdx(l.pick)]), 1);
+    return v >= 100 ? Math.round(v) : v.toFixed(1);
+  };
+  /* 口径标注也跟着现推 —— 有腿没刷到时用词会变(见 assets/live-odds.js:256-260):
+       方案卡 pct: 全刷到 '实时连乘' / 有下架腿 '含N条停售腿'
+       方案块 totalOdds: 全刷到 '按当前实时赔率连乘' / 否则 '按页面显示赔率连乘, 含 N 条已停售腿构建值' */
+  const cardLbl = (n) => (n === 0 ? '实时连乘' : '含' + n + '条停售腿');
+  const blockLbl = (n) => (n === 0 ? '按当前实时赔率连乘' : '按页面显示赔率连乘, 含 ' + n + ' 条已停售腿构建值');
+  /* 期望的整串: 前缀/句式**取该块自己的 totalOdds 模板**(不写死「7关全串约」这类字样),
+     只把可替换的那段数字([\d.]+ 且后跟「倍」, 与 substTotal 同一口径)换成算出来的值 */
+  const expectTotal = (k, n, closedN) => {
+    const tmpl = String(d[0][k].totalOdds || '');
+    if (!/[\d.]+(?=\s*倍)/.test(tmpl)) return null; // 该块本就不含可替换段 → 由调用方明说跳过
+    return tmpl.replace(/[\d.]+(\s*倍)/, n + '$1') + '(' + blockLbl(closedN) + ')';
+  };
+  const exp = BLOCKS.map((b) => {
+    const k = b[0], legs = d[0][k].legs;
+    const n = legs.filter(isClosed).length;
+    return { k: k, pool: b[1], legs: legs, closed: n,
+      odds: expectOdds(legs, (l) => LO._internals.poolOfLeg(l, b[1])),
+      total: expectTotal(k, expectOdds(legs, (l) => LO._internals.poolOfLeg(l, b[1])), n) };
+  });
+  exp.forEach((e) => {
+    const html = htmlIn(sb2, BLK_PANEL[e.k]);
+    assert(html.length > 0, '③ ' + e.k + ' 面板没渲染出来');
+    assert(html.indexOf(e.total) !== -1,
+      '③ ' + e.k + ' 倍数未按口径重算: 期望含 «' + e.total + '», 实际 ' +
+      ((html.match(/约[^<]*/) || [''])[0] || '(没渲染出来)'));
+  });
+  /* 方案卡大号数字: 它跟着**哪一块**走由构建脚本决定(合并后是 combo7), 不在本冒烟假设之列;
+     这里只验"卡片上那个数已经带上口径标注" —— 即不再是无标注的构建时裸值(见 :300-302)。 */
+  const cardExp = exp.filter((e) => pb.indexOf('≈' + e.odds + '倍(' + cardLbl(e.closed) + ')') !== -1);
+  assert(cardExp.length > 0,
+    '③ 方案卡没跟上任何方案块的实时值(期望 ≈X倍(实时连乘) 或 ≈X倍(含N条停售腿)), 实际 ' +
+    JSON.stringify(pb.match(/≈[^<]*/g) || []));
   const tbl = htmlIn(sb2, 'dailyList');
   assert(tbl.indexOf(closedId) !== -1, '③ 对阵表里应有 ' + closedId + ' 那场');
   assert(/已停售/.test(tbl), '③ 对阵表里应出现"已停售"标记');
+  /* ★栏目合并的落点: combo7 当天**只出混选面板**, 两个旧面板必须让位(否则同一串挂三个面板)。
+     反过来说, 旧日子(hc7/max7)不得出现 combo7 面板 —— 两种日子各验各的。 */
+  if (BLOCKS.some((b) => b[0] === 'combo7')) {
+    assert(htmlIn(sb2, BLK_PANEL.hc7) === '' && htmlIn(sb2, BLK_PANEL.max7) === '',
+      '③ 合并后当天只该出混选面板, 旧 hc7/max7 面板应让位(实际 hc7=' +
+      htmlIn(sb2, BLK_PANEL.hc7).length + ' 字节, max7=' + htmlIn(sb2, BLK_PANEL.max7).length + ' 字节)');
+    const c7 = htmlIn(sb2, BLK_PANEL.combo7);
+    assert(c7.indexOf('让球') !== -1 && c7.indexOf('不让球') !== -1,
+      '③ 混选面板该同时标出两盘的腿(让球/不让球徽章), 实际没看全');
+    console.log('  + 混选面板 ' + c7.length + ' 字节: ' + exp[0].legs.length + ' 腿(' +
+      exp[0].legs.filter((l) => String(l.play).indexOf('让') !== -1).length + ' 让球 / ' +
+      exp[0].legs.filter((l) => String(l.play).indexOf('让') === -1).length + ' 不让球), 旧面板已让位');
+  } else {
+    assert(htmlIn(sb2, BLK_PANEL.combo7) === '', '③ 该日没有 combo7, 不该渲染混选面板');
+  }
 
   // ③b 让球-only 以**官方池**为准(不是快照)
   const rowNhLive = rowOf(tbl, nhIds[0]);
@@ -287,17 +460,12 @@ const realFetch = global.fetch; // ⑥ 要真打官方, 先留一份
     assert(noteSeg.indexOf(nhIds[1].slice(-3)) === -1,
       '③ ' + nhIds[1].slice(-3) + ' 官方已开 310 → 不该再被提醒, 实际: ' + noteSeg);
   }
-  /* max7 含 001(已下架) → 那条腿只能用构建值 2.24 顶上, 其余六关是胜平负池的固定价 2.00/4.00:
-       主胜×5(010/002/011/004/008) 客胜×1(012) → 2.00^5 × 4.00 = 128; 再 ×2.24 = 286.72 → 287
-     依据要写成"含 1 条已停售腿构建值" —— 这是本冒烟最该锁住的那句话:
-     只刷腿不刷总倍数, 页面上就会出现"一列新赔率配一个旧倍数"。 */
-  assert(htmlIn(sb2, 'max7Blocks').indexOf('7关全串约287倍(按页面显示赔率连乘, 含 1 条已停售腿构建值)') !== -1,
-    '③ max7 倍数未按含停售腿的口径重算, 实际 ' +
-    ((htmlIn(sb2, 'max7Blocks').match(/全中约[^<]*/) || [''])[0] || '(没渲染出来)'));
-  assert(htmlIn(sb2, 'hc7Blocks').indexOf('7关全中约2412倍(按当前实时赔率连乘)') !== -1,
-    '③ hc7 倍数未按实时值重算, 实际 ' +
-    ((htmlIn(sb2, 'hc7Blocks').match(/全中约[^<]*/) || [''])[0] || '(没渲染出来)'));
-  console.log('OK 3/5 方案卡倍数已随实时值刷新: ≈2412倍(实时连乘) | max7 → 287(含1条停售腿)');
+  /* (原来这里另有两段 max7/hc7 的硬写断言 —— 已并入上面 exp.forEach 的通用版:
+     被下架那场只能用构建值顶上, 依据要写成"含 N 条已停售腿构建值", 这是本冒烟最该锁住的那句话:
+     只刷腿不刷总倍数, 页面上就会出现"一列新赔率配一个旧倍数"。句式取自各块自己的模板,
+     所以 combo7 与 hc7/max7 走的是同一条断言, 换板块名不用再改这里。) */
+  console.log('OK 3/5 方案块倍数已随实时值刷新: ' + exp.map((e) => e.k + '→' + e.odds + '(' + cardLbl(e.closed) + ')').join(' | ')
+    + ' | 方案卡=' + ((pb.match(/≈[^<]*/) || [''])[0]));
 
   // ---- ④ 取数失败 → 保持快照 ----
   global.fetch = async () => { throw new Error('network down'); };
@@ -324,7 +492,17 @@ const realFetch = global.fetch; // ⑥ 要真打官方, 先留一份
 
   // ---- ⑥(仅联网) 真打官方: 官方今天在售的就是这些场, 页面上的倍数必须换掉 ----
   let n = 5;
-  if (!OFFLINE) {
+  if (!OFFLINE && (BORROW || DAYS[0].date !== TODAY_BJ)) {
+    /* ★⑥ 与前五段不同: 它是**真打官方**、拿今天这批场次对着官方实时池验的。
+       最新一天不是今天时官方池里压根没有那批场次号 —— 验不了(上面 ②③④ 之所以能把日期
+       改写掉, 是因为它们的池子是现造的 fixture, 而这里没有 fixture 可造)。
+       借用了历史板块的日子同理: 场次号是借来的, 官方今天不可能有它们。
+       同 tools/_smoke_parity.js: 明说跳过, 别把"没数据可验"报成失败。 */
+    console.log('-- -- 跳过 ⑥(真连官方): ' + (BORROW
+      ? '今日无方案块 → ②③④ 借的是 ' + SRC.date + ' 的场次号'
+      : 'data/predictions.js 最新一天是 ' + DAYS[0].date)
+      + ', 不是北京时间今天(' + TODAY_BJ + ') —— 建完当日数据后自动恢复');
+  } else if (!OFFLINE) {
     global.fetch = async (url) => {
       if (String(url).indexOf('sporttery.cn') === -1) throw new Error('意外请求 ' + url);
       return realFetch(url);

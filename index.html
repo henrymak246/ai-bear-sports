@@ -82,6 +82,11 @@
   .plan-note { font-size:12px; color:var(--honey-dark); background:var(--amber-bg); border-radius:10px; padding:8px 12px; margin-top:12px; line-height:1.65; }
   .dream7-panel { border-top:4px solid #8B5CF6; }
   .hc7-panel { border-top:4px solid #0284C7; }
+  .combo7-panel { border-top:4px solid #7C3AED; }
+  /* combo7 的玩法列: 让球/不让球一眼分得开(混选串里这是最关键的一列, 见 renderCombo7) */
+  .cb-badge { color:#fff; border-radius:4px; padding:1px 6px; font-size:11px; font-weight:800; white-space:nowrap; }
+  .cb-hc { background:#F5A623; }
+  .cb-hd { background:#4A90D9; }
   .asian7-panel { border-top:4px solid #059669; }
   .dpost-panel { border-top:4px solid #F25C5C; }
   .dpost-title { font-size:15px; font-weight:800; color:var(--brown); margin-bottom:10px; }
@@ -427,6 +432,7 @@
       <div id="dailyList"></div>
       <div id="planBlocks"></div>
       <div id="dream7Blocks"></div>
+      <div id="combo7Blocks"></div>
       <div id="hc7Blocks"></div>
       <div id="asian7Blocks"></div>
       <div id="score3Blocks"></div>
@@ -970,7 +976,7 @@ function renderApp(days) {
     var totR = 0, totB = 0;
     days.forEach(function (day) {
       (day.matches || []).forEach(function (m) {
-        var v = StatsLib.judgeDirection(m.direction, m.finalScore);
+        var v = StatsLib.judgeDirection(m.direction, m.finalScore, m.spHandicap);
         if (v === 1) totR++; else if (v === 0) totB++;
       });
     });
@@ -1016,6 +1022,16 @@ function renderApp(days) {
   }
   // 选中日期优先，否则回退到最新一天
   function pickDay(pred) { var sel = byDate[calState.sel]; return (sel && pred(sel)) ? sel : days.find(pred); }
+  /* 过关三兄弟(combo7/hc7/max7)专用: 与 pickDay 同源, 但额外告诉调用方这一天是**选中日**
+     还是"回退到的最新一天"。★只有这三个板块按"选中日才有就只显示选中日的"来 ——
+     合并后新日子只有 combo7、老日子只有 hc7+max7, 若还沿用回退, 今天页面上会在
+     综合过关面板下面再挂一个**昨天的**让球7关(日期对得上, 但用户只看得出"两个过关栏")。
+     其它板块(dream7/asian7/score3/北单/专栏)一律保持原来的回退语义, 不动。 */
+  function pickDaySel(pred) {
+    var sel = byDate[calState.sel];
+    return (sel && pred(sel)) ? { day: sel, picked: true } : { day: days.find(pred), picked: false };
+  }
+  function hasLegs(k) { return function (d) { return d[k] && Array.isArray(d[k].legs) && d[k].legs.length > 0; }; }
   renderCal(); renderDetail();
 
   // ---- 梦想7关板块：选中日期 dream7 字段的过关串（7 关，娱乐小注） ----
@@ -1042,12 +1058,15 @@ function renderApp(days) {
       '</div>';
   }
 
-  // ---- 竞彩让球7关板块：最新一天 hc7 字段（竞彩让球胜平负口径，7关） ----
+  // ---- 竞彩让球7关板块（仅历史日）：hc7 字段（竞彩让球胜平负口径，7关）。
+  //      ★2026-09-21 起竞彩两个过关板块合并为 combo7（见 renderCombo7），老日子照旧走这里 ----
   function renderHc7(days) {
     var box = document.getElementById('hc7Blocks');
     if (!box) return;
-    var day = pickDay(function (d) { return d.hc7 && Array.isArray(d.hc7.legs) && d.hc7.legs.length > 0; });
-    if (!day) { box.innerHTML = ''; return; }
+    var p = pickDaySel(hasLegs('hc7'));
+    var day = p.day;
+    // 只有**选中日自己**有这块才出面板: 新日子只有 combo7, 这里必须让位(否则今天页面上会多挂一个昨天的让球7关)
+    if (!day || !p.picked) { box.innerHTML = ''; return; }
     var hc = day.hc7;
     var rows = hc.legs.map(function (leg, i) {
       var mark = leg.result === 'hit' ? '<span class="hit">红 ✅</span>' : leg.result === 'miss' ? '<span class="miss">黑 ❌</span>' : '<span class="wait">待赛</span>';
@@ -1141,12 +1160,14 @@ function renderApp(days) {
       '</div>';
   }
 
-  // ---- 💥 综合过关7关：最新一天 max7 字段（大小球+让球+不让球混合，追最大SP） ----
+  // ---- 💥 综合过关7关（仅历史日）：max7 字段（全部不让球胜平负口径）。
+  //      ★2026-09-21 起并入 combo7，老日子照旧 ----
   function renderMax7(days) {
     var box = document.getElementById('max7Blocks');
     if (!box) return;
-    var day = pickDay(function (d) { return d.max7 && Array.isArray(d.max7.legs) && d.max7.legs.length > 0; });
-    if (!day) { box.innerHTML = ''; return; }
+    var p = pickDaySel(hasLegs('max7'));
+    var day = p.day;
+    if (!day || !p.picked) { box.innerHTML = ''; return; }
     var m7 = day.max7;
     var rows = m7.legs.map(function (leg, i) {
       var mark = leg.result === 'hit' ? '<span class="hit">红 ✅</span>' : leg.result === 'miss' ? '<span class="miss">黑 ❌</span>' : '<span class="wait">待赛</span>';
@@ -1162,6 +1183,40 @@ function renderApp(days) {
       '<div class="panel max7-panel"><h2>💥 综合过关（胆拖）<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 全中约 ' + esc(m7.totalOdds || '—') + ' · 🎯胆=最有信心单选</span></h2>' +
       '<table class="d7-table"><tr><th>关</th><th>玩法</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th><th>红黑</th></tr>' + rows + '</table>' +
       (m7.note ? '<div class="plan-note">⚠️ ' + esc(m7.note) + '</div>' : '') +
+      '</div>';
+  }
+
+  // ---- 💥 综合过关（胆拖·让球混选）：combo7 字段 ----
+  //   2026-09-21 起竞彩侧的两个过关板块（🎯竞彩让球7关 hc7 + 💥综合过关 max7）**合并成这一个**：
+  //   每一腿自带盘口（play=胜平负/让球胜平负），选腿口径 = 先保命中率再要赔率（见 docs/推荐逻辑.md）。
+  //   ★老日子没有 combo7 → 由 renderHc7/renderMax7 分别渲染（都在 pickDaySel 里只认选中日），历史展示不受影响。
+  function renderCombo7(days) {
+    var box = document.getElementById('combo7Blocks');
+    if (!box) return;
+    var p = pickDaySel(hasLegs('combo7'));
+    var day = p.day;
+    if (!day || !p.picked) { box.innerHTML = ''; return; }
+    var c7 = day.combo7;
+    var nHc = 0;
+    var rows = c7.legs.map(function (leg, i) {
+      var mark = leg.result === 'hit' ? '<span class="hit">红 ✅</span>' : leg.result === 'miss' ? '<span class="miss">黑 ❌</span>' : '<span class="wait">待赛</span>';
+      // ★玩法列必须显眼: 混选串里"这腿是让球还是不让球"是读这张表的第一件事
+      var isHc = String(leg.play || '').indexOf('让') !== -1;
+      if (isHc) nHc++;
+      return '<tr><td>' + (i + 1) + '</td>' +
+        '<td><span class="cb-badge ' + (isHc ? 'cb-hc' : 'cb-hd') + '">' + esc(isHc ? '让球' : '不让球') + '</span></td>' +
+        '<td><span class="d7-league">' + esc(leg.league || '—') + '</span></td>' +
+        '<td>' + esc(leg.match) + '</td>' +
+        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.sel ? ' <span style="background:#4A90D9;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">双选</span>' : '') + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
+        '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
+        '<td class="d7-reason">' + esc(leg.reason) + '</td>' +
+        '<td>' + mark + '</td></tr>';
+    }).join('');
+    box.innerHTML =
+      '<div class="panel combo7-panel"><h2>💥 综合过关（胆拖·让球混选）<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 全中约 ' + esc(c7.totalOdds || '—') +
+      ' · 让球 ' + nHc + ' 腿 / 不让球 ' + (c7.legs.length - nHc) + ' 腿 · 🎯胆=最有信心单选</span></h2>' +
+      '<table class="d7-table"><tr><th>关</th><th>玩法</th><th>联赛</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th><th>红黑</th></tr>' + rows + '</table>' +
+      (c7.note ? '<div class="plan-note">⚠️ ' + esc(c7.note) + '</div>' : '') +
       '</div>';
   }
 
@@ -1589,7 +1644,7 @@ function renderApp(days) {
       ? dayDetail(day)
       : '<div class="panel wait">还没有记录，等小熊的第一场预测 🐻</div>';
     // 过关方案/每日发布/方案方块也跟随选中日期（北单专栏明细同样跟随，2026-09-15 起）
-    renderDream7(days); renderHc7(days); renderAsian7(days); renderScore3(days); renderZucai310(days); renderMax7(days); renderDailyPost(days); renderPlanBlocks(days); renderBeidan(days);
+    renderDream7(days); renderCombo7(days); renderHc7(days); renderAsian7(days); renderScore3(days); renderZucai310(days); renderMax7(days); renderDailyPost(days); renderPlanBlocks(days); renderBeidan(days);
   }
 
   function dayDetail(day) {
@@ -1623,7 +1678,7 @@ function renderApp(days) {
       var stat = ds.direction.total > 0 ? ' · 方向 ' + ds.direction.score + '/' + ds.direction.total : '';
       return '<div class="plan-group-title">' + title +
         '<span style="font-size:11px;color:var(--muted);font-weight:400">' + stat + ' · ' + matches.length + ' 场</span></div>' +
-        matchTable({ matches: matches, max7: day.max7 });
+        matchTable({ matches: matches, combo7: day.combo7, max7: day.max7 });
     }
     return group('⚽ 竞彩', jc) + group('🎌 日韩', jk) + group('🀄 北单', bd);
   }
@@ -1667,8 +1722,9 @@ function renderApp(days) {
   }
 
   function matchTable(day) {
-    // 胆标记：综合过关(max7) key=true 的腿对应的对阵，在「对阵」列加胆徽章
-    var keyLegs = (day.max7 && Array.isArray(day.max7.legs) ? day.max7.legs : []).filter(function (l) { return l && l.key; });
+    // 胆标记：过关串 key=true 的腿对应的对阵，在「对阵」列加胆徽章（combo7 优先, 老日子回退 max7）
+    var danBlk = day.combo7 || day.max7;
+    var keyLegs = (danBlk && Array.isArray(danBlk.legs) ? danBlk.legs : []).filter(function (l) { return l && l.key; });
     function isKeyMatch(m) {
       return keyLegs.some(function (l) {
         var t = String(l.match || '');
@@ -1680,7 +1736,7 @@ function renderApp(days) {
     var rows = day.matches.map(function (m) {
       var pending = !m.finalScore;
       var judge = pending ? '<span class="wait">—</span>'
-        : mark(StatsLib.judgeDirection(m.direction, m.finalScore)) + ' ' +
+        : mark(StatsLib.judgeDirection(m.direction, m.finalScore, m.spHandicap)) + ' ' +
           mark(StatsLib.judgeOverUnder(m.overUnder, m.finalScore)) + ' ' +
           scoreMark(m.score, m.finalScore, m.scoreSp);
       var fs = String(m.finalScore || '').match(/^(\d+)\s*[-:：]\s*(\d+)$/);

@@ -106,7 +106,9 @@ const tickRetry = () => new Promise((r) => setTimeout(r, 700));
   // 场景: 官方把 008 从快照 1.59/3.35/4.95 浮到 1.56/3.40/5.15, 且 003 已过销售截止被下架。
   const today = jcMod.todayBj();
   const liveRows = {
-    '周二008': { num: '周二008', st: 'Selling', sp: [1.56, 3.4, 5.15], hhad: [2.6, 3.4, 2.35], goalLine: -1, upd: '19:01:23' },
+    // ★008 的 hhad[1] 特意取 3.62(与 sp[1]=3.40 不同值): combo7 混排时"这腿取自哪个池"才验得出来 ——
+    //   两池同值时取错池也照样等于期望值, 那种断言是假绿的(见 tools/_smoke_live_odds.js 同款处理)
+    '周二008': { num: '周二008', st: 'Selling', sp: [1.56, 3.4, 5.15], hhad: [2.6, 3.62, 2.35], goalLine: -1, upd: '19:01:23' },
     // 让球-only(官方只开让球、没开胜平负, 见 jc.js noHadOf): 行**在池里**(在售)只是 sp 那一列为空。
     // 这与"下架"(整行不在池里 → 已停售)是两回事: 这场能买, 只是买不到 310
     '周二013': { num: '周二013', st: 'Selling', sp: null, hhad: [2.36, 4.25, 2.13], goalLine: 2, upd: '19:01:23' },
@@ -120,7 +122,14 @@ const tickRetry = () => new Promise((r) => setTimeout(r, 700));
   };
   const todayPayload = {
     date: today,
-    // 方案块 + 方案卡: pct 与 hc7/max7 的 totalOdds 是构建脚本同源写出的同一个数
+    /* combo7 = 竞彩混选过关(让球/不让球同串, 2026-09-21 起取代 hc7+max7 两个板块)。
+       ★两条腿的期望值在两个池里互不相同: 008 的 sp[0]=1.56 / hhad[1]=3.62 —— 取错池立刻对不上。 */
+    combo7: { totalOdds: '7关全串约21.4倍', legs: [
+      { play: '胜平负', match: '008 阿拉维斯 vs 巴伦西亚', pick: '主胜', odds: '1.59' },          // 应取 sp → 1.56
+      { play: '让球胜平负', match: '008 阿拉维斯 vs 巴伦西亚', pick: '让-1 让平', odds: '3.40' }, // 应取 hhad → 3.62
+      { play: '胜平负', match: '003 卡塔尔亚 vs 韩国亚', pick: '客胜', odds: '1.12' },            // 停售 → 保留 1.12
+    ] },
+    // 旧板块仍留在载荷里: 历史日还靠它们渲染, 新日子的回退路径也指它们
     hc7: { totalOdds: '7关全中约858倍', legs: [
       { match: '008 阿拉维斯(-1) vs 巴伦西亚', pick: '让胜', odds: '2.50' },
       { match: '003 卡塔尔亚(+1) vs 韩国亚', pick: '让负', odds: '2.38' },
@@ -130,7 +139,8 @@ const tickRetry = () => new Promise((r) => setTimeout(r, 700));
       { match: '003 卡塔尔亚 vs 韩国亚', pick: '客胜', odds: '1.12', result: 'hit' }, // 已结算 → 不可动
     ] },
     plan: [
-      { market: 'jc', name: '🔵 让球胜平负', pct: '≈858倍', text: '让球七关:008让-1主胜(2.50…)' },
+      // 合并后的过关卡: pct 与 combo7.totalOdds 是构建脚本同源写出的同一个数(21.4 → 实时重算)
+      { market: 'jc', name: '💥 综合过关', pct: '≈21.4倍', text: '008阿拉维斯 主胜(1.56) / 008阿拉维斯 让-1让平(3.62) / 003卡塔尔亚 客胜(1.12)' },
       { market: 'std', name: '🌏 亚洲让球', pct: '≈6.0倍', text: '3串约6.0倍' },
       // 正文在**胜平负口径**下引用了 013('013皇马') → 该卡该挂一句口径说明(见 jc.js noHadNote)。
       // 没有 pct: 这张卡不挂 hc7/max7 的倍数, 只验口径说明那一行
@@ -180,15 +190,22 @@ const tickRetry = () => new Promise((r) => setTimeout(r, 700));
   await tickRetry();
   assert.strictEqual(p7.data.groups.jc[0].spText, '1.59/3.35/4.95', '取数失败应保持快照');
   assert.strictEqual(p7.data.oddsStatus, '实时取数失败, 显示构建时快照');
-  // 方案卡大号倍数: 与 hc7/max7 同源(构建脚本写两处) → 必须跟着实时值走,
+  // 方案卡大号倍数: 与方案块同源(构建脚本写两处) → 必须跟着实时值走,
   // 否则卡片上会是"一列新赔率配一个旧倍数", 用户一乘就说不对
-  assert.strictEqual(p5.data.planJc[0].pct, '≈6.2倍(含1条停售腿)', '让球方案倍数应重算, 实际 ' + p5.data.planJc[0].pct);
-  assert.strictEqual(p5.data.planJc.length, 2, 'planJc 只含 market=jc 的方案卡(让球胜平负 + 双选方向)');
+  assert.strictEqual(p5.data.planJc[0].pct, '≈6.3倍(含1条停售腿)', '过关卡倍数应重算, 实际 ' + p5.data.planJc[0].pct);
+  assert.strictEqual(p5.data.planJc.length, 2, 'planJc 只含 market=jc 的方案卡(综合过关 + 双选方向)');
   assert.strictEqual(p5.data.payload.plan[1].pct, '≈6.0倍', '不同源的方案卡一律不碰');
+  /* ★combo7 混排: 同一条串里两种盘, 每腿各取各的池 —— 取错池时"两端一致"依然成立(两份实现
+     错得一样), 只有拿两池的不同值来卡才验得出来。1.56(sp) × 3.62(hhad) × 1.12(停售保留) = 6.3 */
+  assert.strictEqual(p5.data.payload.combo7.legs.map((l) => l.odds).join(','), '1.56,3.62,1.12',
+    'combo7 混排逐腿取池错, 实际 ' + p5.data.payload.combo7.legs.map((l) => l.odds).join(','));
+  assert.strictEqual(p5.data.payload.combo7.totalOdds,
+    '7关全串约6.3倍(按页面显示赔率连乘, 含 1 条已停售腿构建值)', '实际 ' + p5.data.payload.combo7.totalOdds);
   assert.strictEqual(p5.data.payload.hc7.totalOdds, '7关全中约6.2倍(按页面显示赔率连乘, 含 1 条已停售腿构建值)', '实际 ' + p5.data.payload.hc7.totalOdds);
   assert.strictEqual(p5.data.payload.max7.totalOdds, '7关全串约24倍', '有已结算腿 → 不动倍数');
+  assert.strictEqual(todayPayload.combo7.totalOdds, '7关全串约21.4倍', 'planPatch 不得改写入参');
   assert.strictEqual(todayPayload.hc7.totalOdds, '7关全中约858倍', 'planPatch 不得改写入参');
-  assert.strictEqual(todayPayload.plan[0].pct, '≈858倍');
+  assert.strictEqual(todayPayload.plan[0].pct, '≈21.4倍');
   // 腿映射自证: 「客胜」含'胜'字, 按单字判会归到主胜(下标 0) → 客胜腿拿到主胜赔率
   assert.strictEqual(jcMod.pickIdx('客胜'), 2);
   assert.strictEqual(jcMod.pickIdx('主胜'), 0);

@@ -94,6 +94,15 @@ function overlay(matches, live, dayDate) {
   if (!live || !live.rows) return list;
   if (!isToday(dayDate)) return list;
   return list.map(function (m) {
+    // ★北单补足场(2026-09-21 加, 与 assets/live-odds.js 同款短路): 竞彩实时池里没有「北单NNN」
+    //   这些行, 不短路就会被判成"已过销售截止被下架"→ 场次卡挂「已停售」且**禁投**, 而它们在北单
+    //   渠道正常在售。北单无实时赔率通道 → 保持构建快照, 两个标记都置假(非实时、但也不是停售)。
+    if (m && m.bdSrc) {
+      const nb = Object.assign({}, m);
+      nb.oddsLive = false;
+      nb.oddsClosed = false;
+      return nb;
+    }
     const row = rowOf(live, m && m.id);
     if (row) return applyRow(m, row);
     const out = Object.assign({}, m);
@@ -117,11 +126,12 @@ async function fetchAndOverlay(payload, opts) {
   }
 }
 
-/* ===== 方案块(hc7/max7)与方案卡大号倍数的实时同步 =====
+/* ===== 方案块(hc7/max7/combo7)与方案卡大号倍数的实时同步 =====
    ★与网站 assets/live-odds.js **同一套口径**(小程序与浏览器无法共用模块, 只能各留一份, 改一处必须改另一处):
      · 带 result 的腿已结算 → 一律不碰;
      · 不在实时池(已过销售截止被下架)的场次 → 赔率沿用构建值, 但要在括号里点数说明;
-     · 数字后面必须**确实跟着「倍」**才是同一个口径(如 '≈18万倍级' 里的 18 就不是)。
+     · 数字后面必须**确实跟着「倍」**才是同一个口径(如 '≈18万倍级' 里的 18 就不是);
+     · combo7 是让球/不让球**同串**, 彩池**逐腿按 play 判**(见 poolOfLeg), 不能整块套一个池。
    ★为什么要动它: 方案卡的 '≈858倍' 与 hc7.totalOdds 是构建脚本同源写出的同一个数。
      腿一旦实时化而这里不跟着走, 卡片上就会是"一列新赔率配一个旧倍数", 用户一乘就说不对。
      2026-09-15 实测: 让球七关连乘已从 858 漂到 705。 */
@@ -129,7 +139,12 @@ async function fetchAndOverlay(payload, opts) {
 /* 方案腿的选项 → 赔率下标。
    ★必须整词匹配: 「客胜」含'胜'字, 按单字判会归到主胜(下标 0), 客胜腿就拿到主胜的赔率。 */
 function pickIdx(pick) {
-  const p = String(pick || "").trim();
+  let p = String(pick || "").trim();
+  // 盘口前缀式(「让-1 主胜」「让+1 让胜」): 前缀只是线位, 与选项无关 → 剥掉再判。
+  // ★不剥的话「让+1 让胜」整串既不含 主/客/负 也不含 平, 兜底返回 -1 → 该腿实时赔率永远取不到,
+  //   静默停在构建值(面板只说"含 N 条未刷新腿构建值", 看不出是解析挂了)。历史 hc7 已有 10 条
+  //   这种写法, 而 combo7 的让球腿按约定就是这么写(盘口前缀式) —— 所以必须在这里剥干净。
+  p = p.replace(/^让\s*[+-]?\d+(?:\.\d+)?\s*/, "");
   if (p === "主胜" || p === "让胜") return 0;
   if (p === "平" || p === "让平") return 1;
   if (p === "客胜" || p === "让负") return 2;
@@ -189,6 +204,17 @@ function noHadNote(text, list) {
     + ' 可投的是场次卡上的「让球胜负」';
 }
 
+/* 这条腿该取哪个彩池: 板块级绑定("sp"/"hhad"), 或 **逐腿判**(combo7 = "auto")。
+   ★combo7 把「不让球胜平负」与「让球胜平负」混在同一个 7 关里 —— 一个板块只能有一个池的
+     旧写法在它身上必然取错一半(拿 sp 去让球腿上算 = 赔率对不上, 且页面显示与场次卡打架)。
+     腿自己带的 play 才是唯一权威。旧板块(max7/hc7)一律**保持原绑定**, 口径不许跟着变。
+   与网站侧 assets/live-odds.js 同名同义(改一处必须改另一处, 由 tools/_smoke_parity.js 卡)。 */
+const PLAY_POOL = { "胜平负": "sp", "让球胜平负": "hhad" };
+function poolOfLeg(leg, pool) {
+  if (pool !== "auto") return pool;
+  return PLAY_POOL[String((leg && leg.play) || "").trim()] || "sp";
+}
+
 /* 单腿实时赔率; 拿不到/不适用返回 null(调用方保留原值)。
    ★带 result 的腿是已结算的历史记录, 一律不碰 —— 改它等于篡改战绩。 */
 function legOdds(leg, byId3, arrKey) {
@@ -245,14 +271,15 @@ function substPct(pct, pairs) {
   return pct;
 }
 
-/* 一个方案块: 刷 legs[].odds 并把 totalOdds 重算成**页面实际显示**那几条腿的连乘 */
+/* 一个方案块: 刷 legs[].odds 并把 totalOdds 重算成**页面实际显示**那几条腿的连乘
+   arrKey 是彩池: "sp" / "hhad" / "auto"(逐腿按 play 判, 见 poolOfLeg) */
 function overlayPlan(plan, byId3, arrKey, closedIds) {
   if (!plan || !Array.isArray(plan.legs) || !plan.legs.length) return plan;
   const legs = [];
   let stale = 0, closed = 0, settled = 0;
   plan.legs.forEach(function (l) {
     if (l && l.result) settled++;
-    const v = legOdds(l, byId3, arrKey);
+    const v = legOdds(l, byId3, poolOfLeg(l, arrKey));
     if (v === null) {
       stale++;
       if (closedIds && closedIds[legNum(l.match)]) closed++; // 停售腿: 官方已下架, 这张关本身就买不成
@@ -274,7 +301,7 @@ function overlayPlan(plan, byId3, arrKey, closedIds) {
   return next;
 }
 
-/* payload + 叠加后的 matches → { plan, hc7, max7 } 补丁(纯函数)。
+/* payload + 叠加后的 matches → { plan, hc7, max7, combo7 } 补丁(纯函数)。
    非今日 / 入参不齐 → 返回 null, 调用方原样用旧 payload。 */
 function planPatch(payload, overlaid) {
   if (!payload || !Array.isArray(overlaid) || !overlaid.length) return null;
@@ -287,9 +314,11 @@ function planPatch(payload, overlaid) {
   });
   const hc7 = overlayPlan(payload.hc7, byId3Live, "hhad", closedIds);
   const max7 = overlayPlan(payload.max7, byId3Live, "sp", closedIds);
-  // 方案卡的大号倍数与 hc7/max7 同源(构建脚本写两处) → 同值才换, 见 substPct
+  // combo7 = 竞彩混选过关(让球/不让球同串): 池**按腿判**, 见 poolOfLeg
+  const combo7 = overlayPlan(payload.combo7, byId3Live, "auto", closedIds);
+  // 方案卡的大号倍数与 hc7/max7/combo7 同源(构建脚本写两处) → 同值才换, 见 substPct
   const pairs = [];
-  [[payload.hc7, hc7], [payload.max7, max7]].forEach(function (pr) {
+  [[payload.hc7, hc7], [payload.max7, max7], [payload.combo7, combo7]].forEach(function (pr) {
     const o = pr[0], n = pr[1];
     if (!o || !n || !n.oddsBasis) return;
     const a = totalNum(o.totalOdds), b = totalNum(n.totalOdds);
@@ -308,7 +337,7 @@ function planPatch(payload, overlaid) {
     if (note) o.noHadNote = note;
     return o;
   }) : payload.plan;
-  return { plan: plan, hc7: hc7, max7: max7 };
+  return { plan: plan, hc7: hc7, max7: max7, combo7: combo7 };
 }
 
 if (typeof module !== "undefined" && module.exports) {
@@ -317,6 +346,6 @@ if (typeof module !== "undefined" && module.exports) {
   // 出了偏没人拦得住(这正是本文件与 assets/live-odds.js 之间最容易悄悄漂的一类)
   module.exports = { todayBj, isToday, fetchLive, overlay, applyRow, rowOf, fetchAndOverlay,
     planPatch, pickIdx, legNum, id3, noHadOf, noHadList, noHadNote,
-    legOdds, product, substTotal, totalNum, substPct, overlayPlan,
+    poolOfLeg, legOdds, product, substTotal, totalNum, substPct, overlayPlan,
     JC_RETRY, cloudFnName, cloudReady };
 }

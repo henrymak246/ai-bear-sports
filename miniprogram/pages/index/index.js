@@ -275,7 +275,7 @@ Page({
         // 方案块与方案卡大号倍数跟着走(见 jc.planPatch): 只刷场次卡而不动 '≈858倍',
         // 卡片上就是"一列新赔率配一个旧倍数", 用户一乘就说不对
         const pp = jc.planPatch(payload, r.matches);
-        if (pp) Object.assign(next, { plan: pp.plan, hc7: pp.hc7, max7: pp.max7 });
+        if (pp) Object.assign(next, { plan: pp.plan, hc7: pp.hc7, max7: pp.max7, combo7: pp.combo7 });
         const groups = buildGroups(next, judge);
         // buildGroups 会把 liveScore 清空, 而比分轮询是按下标增量写 groups.jc 的 ——
         // 这里把已滚出来的比分按 id 搬回来, 免得每次叠加赔率都把场上比分闪没一下

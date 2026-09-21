@@ -37,9 +37,11 @@ for (const day of days) {
     assert(out.includes('信心★为1-5星'), '图例应为 1-5 口径');
   }
 }
-// 历史天: 每天 max7 key 腿场应显 5 星(统计验证)
+// 历史天: 每天胆(key 腿)所在场应显 5 星(统计验证)
+// ★胆块: 合并后(9-21 起)是 combo7, 之前是 max7 —— 按"当天实际有什么"取, 两种日子都跑得起来
 for (const day of days) {
-  const keys = (day.max7 && day.max7.legs || []).filter(l => l.key);
+  const blk = day.combo7 || day.max7;
+  const keys = (blk && blk.legs || []).filter(l => l.key);
   if (!keys.length) continue;
   const out = vm.runInContext('matchTable(day)', Object.assign(sandbox, { day }));
   const num = keys[0].match.slice(0, 3);
