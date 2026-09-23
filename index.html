@@ -419,6 +419,7 @@
       <a href="#sec-today" class="sec-nav-item active">📌 今日</a>
       <a href="#sec-history" class="sec-nav-item">📈 历史战绩</a>
       <a href="#sec-columns" class="sec-nav-item">🗂 专栏</a>
+      <a href="#sec-basket" class="sec-nav-item">🏀 篮球</a>
       <a href="#sec-yaogua" class="sec-nav-item">🪙 摇卦</a>
     </nav>
 
@@ -483,6 +484,13 @@
       <div class="panel" id="nePanel">
         <h2>🚄 深夜快车<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">下半夜至白天(00:00-17:59)开赛场次单独累计 · 方向/大小/比分 · 夜猫子专线</span></h2>
         <div id="neBody"></div>
+      </div>
+    </section>
+
+    <section id="sec-basket">
+      <div class="panel" id="basketPanel">
+        <h2>🏀 篮球专栏<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">竞彩篮球四池 · 官方盘 vs 博彩盘中位 · 明细跟随左侧月历</span></h2>
+        <div id="basketBody"></div>
       </div>
     </section>
 
@@ -1551,6 +1559,119 @@ function renderApp(days) {
     renderColumnPanel('beidanBody', bd, hasAnyBd
       ? '本日无北单期次（北单按日开售），点左侧月历切到有北单的日期看当期明细 🀄'
       : '还没有北单场次记录，小熊等补充场 🐾', sum);
+  }
+
+  // ---- 篮球专栏（竞彩篮球四池 · 官方盘 vs 博彩盘中位） ----
+  // ★ 不复用 renderColumnPanel：那套是足球方言（方向/大小/比分三列 + offDir 词表 + judgeScore 比分档），
+  //   篮球无平局、让分带线、胜分差 6+6 档，判定口径完全不同；硬套会把篮球场次用足球语义渲染。
+  // ★★ 已完赛场次**不显示博彩盘**：出奇对已完赛比赛会把博彩公司行刷成滚球/结算值，
+  //   与赛前线不是一个东西（docs/篮球推荐逻辑.md 附B）。数据层的 `bk` 已置 null，这里只如实反映。
+  renderBasket(days);
+  function renderBasket(days) {
+    if (typeof StatsLib.computeBasketball !== 'function') return;
+    var body = document.getElementById('basketBody');
+    if (!body) return;
+    var b = StatsLib.computeBasketball(days, (calState && calState.sel) || '');
+    function item(lbl, val, sub) {
+      return '<span class="bd-item"><b>' + val + '</b>' + lbl + (sub ? '（' + sub + '）' : '') + '</span>';
+    }
+    // 让分口径：官方约定 负 = 主队让分。显示时带符号，正数补 + 号以免误读成主队让分。
+    function lineTxt(v) { return v == null ? '—' : (v > 0 ? '+' + v : String(v)); }
+    function offCell(m) {
+      var o = m.off;
+      if (!o) return '<span class="wait">未上架</span>';
+      var seg = [];
+      if (o.hdc) seg.push('让 ' + lineTxt(o.hdc.line));
+      if (o.hilo) seg.push('大 ' + o.hilo.line);
+      if (o.mnl) seg.push('胜 ' + o.mnl.h + '/' + o.mnl.a);
+      if (o.wnm) seg.push('分差 6+6');
+      return seg.length ? esc(seg.join(' · ')) : '<span class="wait">未上架</span>';
+    }
+    function bkCell(m) {
+      // 不产出博彩盘时**如实说明原因**，而不是笼统一句"无盘"——
+      // 这几种都是"这列不可信"，不是"没数据"，读者必须能分辨。
+      if (!m.bk) {
+        var WHY = {
+          finished: '已完赛不列',      // 出奇已把它刷成结算值
+          started: '取数时已开赛',      // 滚球值（实测 周二304 开赛 07:30 / 取数 07:57）
+          none: '无全场盘',
+          unknown: '取数时刻不可考'
+        };
+        return '<span class="wait">' + (WHY[m.bkNa] || '无盘') + '</span>';
+      }
+      var seg = [];
+      if (m.bk.ah) {
+        seg.push('让 ' + lineTxt(m.bk.ah.med) +
+          (m.bk.ah.lo !== m.bk.ah.hi ? '[' + lineTxt(m.bk.ah.lo) + '~' + lineTxt(m.bk.ah.hi) + ']' : ''));
+      }
+      if (m.bk.ou) {
+        seg.push('大 ' + m.bk.ou.med + (m.bk.ou.lo !== m.bk.ou.hi ? '[' + m.bk.ou.lo + '~' + m.bk.ou.hi + ']' : ''));
+      }
+      return esc(seg.join(' · ')) + '<br><span class="final" style="font-size:11px">' + m.bk.n + ' 家</span>';
+    }
+    function rowHtml(m) {
+      var res = m.played ? '<span class="final">' + esc(m.hs + '-' + m.as) + '</span>' : '<span class="wait">待赛</span>';
+      var gapTxt = '—';
+      if (m.gap != null) {
+        // 符号相反 = 两套盘连方向都不同 ⇒ 分歧场，标 ⚡
+        var flip = m.off.hdc.line !== 0 && m.bk.ah.med !== 0 && (m.off.hdc.line > 0) !== (m.bk.ah.med > 0);
+        gapTxt = (flip ? '⚡ ' : '') + (m.gap > 0 ? '+' : '') + m.gap;
+      }
+      var betTxt = '';
+      if (m.bet) {
+        var singlePools = [], allupPools = [];
+        var NAME = { hdc: '让分', hilo: '大小', mnl: '胜负', wnm: '分差' };
+        Object.keys(m.bet).forEach(function (k) {
+          if (m.bet[k][0]) singlePools.push(NAME[k]);
+          if (m.bet[k][1]) allupPools.push(NAME[k]);
+        });
+        if (singlePools.length || allupPools.length) {
+          betTxt = '<br><span class="final" style="font-size:11px">单关 ' + (singlePools.join('/') || '无') +
+            ' · 过关 ' + (allupPools.join('/') || '无') + '</span>';
+        }
+      }
+      return '<tr><td>' + esc(m.date.slice(5)) + '</td>' +
+        '<td>' + esc((m.tipoff || '').slice(5)) + '</td>' +
+        '<td>' + esc(m.label) + '</td>' +
+        '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
+        '<td>' + offCell(m) + betTxt + '</td>' +
+        '<td>' + bkCell(m) + '</td>' +
+        '<td>' + gapTxt + '</td>' +
+        '<td>' + res + '</td></tr>';
+    }
+    // ★ 口径不能混：明细是"选中日"，池覆盖/背离是"全历史累计"。
+    //   第一版这里写成 `本期 N 场（在售 A · 完赛 B）` 而 A/B 取自全历史，
+    //   会出现「8 场（在售 8 · 完赛 55）」这种自相矛盾的读数。当日数一律从 b.matches 现算。
+    var selPlayed = 0;
+    b.matches.forEach(function (m) { if (m.played) selPlayed++; });
+    var selUp = b.matches.length - selPlayed;
+    var selDate = b.matches.length ? b.matches[0].date : (b.latest || '');
+    var sum = '<div class="bd-sum">' +
+      item('🏀 ' + (selDate ? selDate.slice(5) + ' ' : '') + '本期',
+        (b.matches.length || 0) + ' 场', '在售 ' + selUp + ' · 完赛 ' + selPlayed) +
+      item('📊 池覆盖', '让' + b.pool.hdc + ' 大' + b.pool.hilo + ' 胜' + b.pool.mnl + ' 差' + b.pool.wnm,
+        '全历史累计 ' + b.total + ' 场') +
+      item('⚡ 两套盘背离', b.div.n ? '均 ' + b.div.avgAbs + ' 分' : '—',
+        b.div.n ? b.div.n + ' 场可测' + (b.div.flip ? ' · 符号相反 ' + b.div.flip + ' 场' : '') : '无可测场次') +
+      '</div>';
+    var NOTE = '<div style="margin-top:10px;padding:10px 12px;background:var(--amber-bg);border:1px solid #F5C96B;' +
+      'border-radius:10px;font-size:12px;line-height:1.7">' +
+      '<b>🐻 读表须知</b>：①<b>让分口径</b>　负 = 主队让分（如 -3.5 = 主队让 3.5 分）；' +
+      '②<b>官方盘</b>　竞彩固定奖金，出票即锁定，<b>冻结在收盘</b>；' +
+      '③<b>博彩盘</b>　多家公司<b>全场盘</b>中位，方括号是区间（分歧越大区间越宽），' +
+      '仅<b>取数时尚未开赛</b>的场次提供——出奇会把博彩公司行覆写成滚球/结算值，' +
+      '已完赛（结算值）与取数时已开赛（滚球值）两种都不列，表格里逐行写明原因；' +
+      '④<b>背离</b>　官方让分 − 博彩盘中位，正 = 官方更看主队；标 ⚡ 表示两套盘<b>连方向都相反</b>（信息量最大的场）。' +
+      '</div>';
+    if (!b.matches.length) {
+      body.innerHTML = '<div class="wait" style="font-size:12.5px">本日无竞彩篮球场次（竞彩篮球按日开售），' +
+        '点左侧月历切到有篮球的日期看当期明细 🏀</div>' + NOTE;
+      return;
+    }
+    body.innerHTML = sum +
+      '<table><tr><th>日期</th><th>开赛</th><th>编号</th><th>对阵</th>' +
+      '<th>官方盘（竞彩·冻结在收盘）</th><th>博彩盘中位</th><th>背离</th><th>赛果</th></tr>' +
+      b.matches.map(rowHtml).join('') + '</table>' + NOTE;
   }
 
   // ---- 英超专栏（league 含「英超」的场次单独累计 + 专家视角） ----

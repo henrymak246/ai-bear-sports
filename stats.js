@@ -413,5 +413,63 @@
     return { hit: hit, miss: miss, pending: pending, total: total, rate: rate({ score: hit, total: total }), entries: entries };
   }
 
-  return { parseScore, judgeDirection, judgeOverUnder, judgeScore, computeDayStats, computeOverall, computeTrend, planTypeOf, planStats, isBeidan, computeBeidan, isJK, computeJK, isEPL, computeEPL, isNightExpress, computeNightExpress, computeXinshui };
+  // ---- 篮球专栏(2026-09-23 起)：竞彩篮球四池 + 官方/博彩两套盘口对照 ----
+  // 与上面那四个足球专栏的**根本差别**：篮球还没有"预测→判定"层(尚未产出选场)，
+  //   所以本函数不judge任何方向，只汇总**盘口事实**与两套盘的背离。
+  //   判定层(方向/让分/大小/胜分差命中)待 `day.basketball.plan` 落地后再加 —— 那时才需要 judge 函数，
+  //   且篮球的判定口径与足球方言无关(无平局、让分盘带线、胜分差 6+6 档)，不能复用 judgeDirection。
+  // ★★ 已完赛场次**没有博彩盘**：数据层已把 `bk` 置 null(出奇的 books 对已完赛是滚球/结算值，
+  //   见 docs/篮球推荐逻辑.md 附B)。本函数只当 null 处理，【绝不从别处补】博彩盘。
+  function computeBasketball(days, selDate) {
+    var COLS = ['hdc', 'hilo', 'mnl', 'wnm'];
+    var pool = { hdc: 0, hilo: 0, mnl: 0, wnm: 0 };
+    var nPlayed = 0, nUpcoming = 0, nTotal = 0, nNoOff = 0;
+    var div = [];                       // 两套盘背离(仅两者都在的场次)
+    var list = [];                      // 明细(选中日/最新期)
+    var latest = null;
+    (days || []).forEach(function (day) {
+      var bb = day && day.basketball;
+      if (!bb || !Array.isArray(bb.matches) || !bb.matches.length) return;
+      if (latest === null || day.date > latest) latest = day.date;
+    });
+    (days || []).forEach(function (day) {
+      var bb = day && day.basketball;
+      if (!bb || !Array.isArray(bb.matches)) return;
+      var showDay = selDate ? day.date === selDate : (latest === null || day.date === latest);
+      bb.matches.forEach(function (m) {
+        nTotal++;
+        if (m.played) nPlayed++; else nUpcoming++;
+        var anyOff = false;
+        COLS.forEach(function (c) { if (m.off && m.off[c]) { pool[c] += 1; anyOff = true; } });
+        // 官方完全未上架(如 9-23 三场: 竞彩还没开售) —— 与"上架但某池没开"要分开计
+        if (!anyOff) nNoOff++;
+        // 背离 = 官方让分 − 博彩盘中位。两套盘已统一成官方口径(负=主队让分)，
+        //   ⇒ 差为正 = 官方比市场更看主队; 差为负 = 官方更看客队; 符号相反即"分歧场"。
+        var gap = null;
+        if (m.off && m.off.hdc && m.off.hdc.line != null &&
+            m.bk && m.bk.ah && m.bk.ah.med != null) {
+          gap = +(m.off.hdc.line - m.bk.ah.med).toFixed(1);
+          div.push({ date: day.date, label: m.label, home: m.home, away: m.away,
+                     off: m.off.hdc.line, med: m.bk.ah.med, gap: gap, n: m.bk.n });
+        }
+        if (showDay) {
+          list.push({ date: day.date, label: m.label, tipoff: m.tipoff, home: m.home, away: m.away,
+                      league: m.league, played: !!m.played, off: m.off || null, bk: m.bk || null,
+                      bkNa: m.bkNa || null, bet: m.bet || null, hs: m.hs, as: m.as, gap: gap });
+        }
+      });
+    });
+    div.sort(function (a, b) { return Math.abs(b.gap) - Math.abs(a.gap); });   // 分歧最大的排前
+    var sumAbs = 0, nAbs = 0, nFlip = 0;
+    div.forEach(function (d) { sumAbs += Math.abs(d.gap); nAbs++; if (d.gap !== 0 && (d.off > 0) !== (d.med > 0)) nFlip++; });
+    list.sort(function (a, b) { return a.tipoff < b.tipoff ? -1 : a.tipoff > b.tipoff ? 1 : 0; }); // 按真实开赛时间
+    return {
+      total: nTotal, played: nPlayed, upcoming: nUpcoming, noOff: nNoOff,
+      pool: pool, latest: latest,
+      div: { n: nAbs, avgAbs: nAbs ? +(sumAbs / nAbs).toFixed(1) : null, flip: nFlip, list: div },
+      matches: list,
+    };
+  }
+
+  return { parseScore, judgeDirection, judgeOverUnder, judgeScore, computeDayStats, computeOverall, computeTrend, planTypeOf, planStats, isBeidan, computeBeidan, isJK, computeJK, isEPL, computeEPL, isNightExpress, computeNightExpress, computeXinshui, computeBasketball };
 });
