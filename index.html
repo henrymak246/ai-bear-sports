@@ -1609,6 +1609,25 @@ function renderApp(days) {
       }
       return esc(seg.join(' · ')) + '<br><span class="final" style="font-size:11px">' + m.bk.n + ' 家</span>';
     }
+    // ★ 行内加粗：方向层文案里用 **x** 标重点(与 day.plan 同一语法)。
+    //   **必须先 esc 再转 <b>，顺序反了会把标签本身也转义掉而变成字面量**。
+    //   注：足球侧 .pb-text 是直接 esc 的、没有这一步(现有缺陷，不在本次范围)；篮球自渲染自处理，
+    //   不去动共享的 esc()，避免波及正在并行编辑的足球板块。
+    function rich(s) {
+      return esc(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+    }
+    // 方向层逐场徽章。★ 缺字段一律显示「—」而不是空白 —— 空白会被读成"漏了"，而这是"没给"。
+    function dirCell(m) {
+      if (!m.direction) return '<span class="wait">—</span>';
+      var s = '<b>' + esc(m.direction) + '</b>';
+      if (m.confidence) s += ' <span style="color:#C98A2B">' + Array(m.confidence + 1).join('★') + '</span>';
+      if (m.dirTag) s += '<br><span class="final" style="font-size:11px">' + esc(m.dirTag) + '</span>';
+      var sub = [];
+      if (m.ahPick) sub.push('让分 ' + m.ahPick);
+      if (m.ouPick) sub.push('大小 ' + m.ouPick);
+      if (sub.length) s += '<br><span class="final" style="font-size:11px">' + esc(sub.join(' · ')) + '</span>';
+      return s;
+    }
     function rowHtml(m) {
       var res = m.played ? '<span class="final">' + esc(m.hs + '-' + m.as) + '</span>' : '<span class="wait">待赛</span>';
       var gapTxt = '—';
@@ -1634,6 +1653,7 @@ function renderApp(days) {
         '<td>' + esc((m.tipoff || '').slice(5)) + '</td>' +
         '<td>' + esc(m.label) + '</td>' +
         '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
+        '<td>' + dirCell(m) + '</td>' +
         '<td>' + offCell(m) + betTxt + '</td>' +
         '<td>' + bkCell(m) + '</td>' +
         '<td>' + gapTxt + '</td>' +
@@ -1654,6 +1674,39 @@ function renderApp(days) {
       item('⚡ 两套盘背离', b.div.n ? '均 ' + b.div.avgAbs + ' 分' : '—',
         b.div.n ? b.div.n + ' 场可测' + (b.div.flip ? ' · 符号相反 ' + b.div.flip + ' 场' : '') : '无可测场次') +
       '</div>';
+    // ---- 🐻 方向层 ----
+    // ★ 这块**不是** computeBasketball 算出来的，是人工撰写、由 tools/_lq_site.js 按 num 回挂的
+    //   (生成器只拥有 period/matches —— 见该脚本顶部的"方向层"注释)。
+    //   渲染层只负责显示，**不做任何口径换算**：方向一律「胜负口径」(谁赢)，让分线只作程度层。
+    function planHtml(plan) {
+      if (!plan || !plan.length) return '';
+      return '<div class="plan-blocks" style="margin-bottom:12px">' + plan.map(function (p, i) {
+        var c = TIER_COLORS[i % TIER_COLORS.length];
+        return '<div class="plan-block" style="border-top-color:' + c + ';cursor:default">' +
+          '<div class="pb-head">' + esc(p.name || '') + '</div>' +
+          (p.pct ? '<div class="pb-pct" style="color:' + c + '">' + esc(p.pct) + '</div>' : '') +
+          '<div class="pb-text">' + rich(p.text || '') + '</div>' +
+          (p.detail ? '<details style="margin-top:7px"><summary style="cursor:pointer;font-size:11px;' +
+            'color:var(--honey-dark);font-weight:700">依据 ▾</summary>' +
+            '<div class="pb-text" style="margin-top:5px">' + rich(p.detail) + '</div></details>' : '') +
+          '</div>';
+      }).join('') + '</div>';
+    }
+    // 逐场依据：synthesis 回答"这一场为什么"，plan.detail 回答"这一天为什么" —— 两块分工，不重复写。
+    function dirListHtml(list) {
+      var rows = list.filter(function (m) { return m.synthesis || m.note; });
+      if (!rows.length) return '';
+      return '<div style="margin-top:12px">' + rows.map(function (m) {
+        return '<div style="padding:8px 10px;margin-bottom:6px;background:#FFFDF7;border:1px solid #F0E4CE;' +
+          'border-radius:8px;font-size:12px;line-height:1.75">' +
+          '<b>' + esc(m.label) + '</b> ' + esc(m.home) + ' vs ' + esc(m.away) +
+          (m.direction ? '　🐻 <b>' + esc(m.direction) + '</b>' +
+            (m.confidence ? ' <span style="color:#C98A2B">' + Array(m.confidence + 1).join('★') + '</span>' : '') : '') +
+          (m.synthesis ? '<br>' + rich(m.synthesis) : '') +
+          (m.note ? '<br><span style="color:#8A6A45">' + rich(m.note) + '</span>' : '') +
+          '</div>';
+      }).join('') + '</div>';
+    }
     var NOTE = '<div style="margin-top:10px;padding:10px 12px;background:var(--amber-bg);border:1px solid #F5C96B;' +
       'border-radius:10px;font-size:12px;line-height:1.7">' +
       '<b>🐻 读表须知</b>：①<b>让分口径</b>　负 = 主队让分（如 -3.5 = 主队让 3.5 分）；' +
@@ -1668,10 +1721,10 @@ function renderApp(days) {
         '点左侧月历切到有篮球的日期看当期明细 🏀</div>' + NOTE;
       return;
     }
-    body.innerHTML = sum +
-      '<table><tr><th>日期</th><th>开赛</th><th>编号</th><th>对阵</th>' +
+    body.innerHTML = sum + planHtml(b.plan) +
+      '<table><tr><th>日期</th><th>开赛</th><th>编号</th><th>对阵</th><th>🐻 方向</th>' +
       '<th>官方盘（竞彩·冻结在收盘）</th><th>博彩盘中位</th><th>背离</th><th>赛果</th></tr>' +
-      b.matches.map(rowHtml).join('') + '</table>' + NOTE;
+      b.matches.map(rowHtml).join('') + '</table>' + dirListHtml(b.matches) + NOTE;
   }
 
   // ---- 英超专栏（league 含「英超」的场次单独累计 + 专家视角） ----

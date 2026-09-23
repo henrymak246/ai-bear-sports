@@ -129,22 +129,62 @@ for (const f of poolFiles) {
 // 同日多 period(理论上不该有): 按开赛时间排, 保证输出稳定
 Object.values(byDate).forEach(d => d.matches.sort((a, b) => (a.tipoff < b.tipoff ? -1 : a.tipoff > b.tipoff ? 1 : 0)));
 
-// ---- 写入 ----
-let nDay = 0, nNew = 0, nUpd = 0, nMiss = [];
+// ---- ★★ 人工撰写的方向层: 生成器只拥有 period/matches, 不拥有 plan 与逐场方向 ----
+//   为什么必须有这一段: 本脚本此前是**整对象替换**(`day.basketball = bball`),
+//   而方向层(日级 plan + 逐场 direction/synthesis/...)是**分析产物**、不是数据映射 ——
+//   整对象替换会把作者写好的判断**静默清空**, 且因为不报错, 只在页面上表现为"方向又没了"。
+//   改为按 num 回挂。★ 用 num 当连接键与 _bd_pool / _lq_pool 同一条纪律(实测 num 是完美连接键)。
+//   两种情况必须分辨:
+//     · 旧方向层的场次这次还在  ⇒ 回挂(正常)
+//     · 旧方向层的场次这次没了  ⇒ 不进 nDropDir 就**静默丢失**, 必须报出来让人决定
+const KEEP = ["direction", "dirTag", "confidence", "synthesis", "ahPick", "ouPick", "note"];
+let nDay = 0, nNew = 0, nUpd = 0, nMiss = [], nKeepPlan = 0, nKeepDir = 0, nDropDir = [];
 const log = [];
 for (const [date, bball] of Object.entries(byDate)) {
   const day = days.find(d => d.date === date);
   if (!day) { nMiss.push(date + "(period " + bball.period + ")"); continue; }
   const had = day.basketball ? 1 : 0;
+  const old = (had ? day.basketball : null) || {};
+  // 1) 日级 plan —— 原样保留(它属于"这一天", 不随场次增减)
+  if (old.plan) { bball.plan = old.plan; nKeepPlan++; }
+  // 2) 逐场方向 —— 按 num 回挂
+  const oldByNum = {};
+  (old.matches || []).forEach(m => { if (m && m.num != null) oldByNum[String(m.num)] = m; });
+  const hit = {};
+  let keptHere = 0;
+  bball.matches.forEach(m => {
+    const o = oldByNum[String(m.num)];
+    if (!o) return;
+    hit[String(m.num)] = 1;
+    // ★ 判据是「字段在不在」而不是「值非不非空」—— 空串是**有意义的署名**
+    //   (ouPick:"" = 这一场明确不出大小分观点, 与"没有这个字段"不同)。
+    //   两处判据不一致会让 `_lq_site.js` 重跑**不是幂等的**:
+    //   实测漏掉 3 个 ouPick:"" ⇒ 每跑一次少 88 字节, 于是"真变化"和"噪声"再也分不开。
+    KEEP.forEach(k => { if (o[k] !== undefined) { m[k] = o[k]; keptHere++; } });
+  });
+  if (keptHere) { nKeepDir++; }
+  // 3) 旧方向层里这次挂不上的场次 —— 报了才不算静默丢
+  Object.keys(oldByNum).forEach(n => {
+    if (!hit[n] && KEEP.some(k => oldByNum[n][k] !== undefined)) {
+      nDropDir.push(date + " / num " + n + " " + (oldByNum[n].label || ""));
+    }
+  });
   day.basketball = bball;
   nDay++; had ? nUpd++ : nNew++;
   const nPlayed = bball.matches.filter(m => m.played).length;
   const nOff = bball.matches.filter(m => m.off).length;
   const nBk = bball.matches.filter(m => m.bk).length;
   log.push("  " + date + "  period " + bball.period + "  " + bball.matches.length + " 场" +
-    " (完赛 " + nPlayed + " · 官方线 " + nOff + " · 博彩盘 " + nBk + ")" + (had ? "  [覆盖旧值]" : "  [新增]"));
+    " (完赛 " + nPlayed + " · 官方线 " + nOff + " · 博彩盘 " + nBk + ")" + (had ? "  [覆盖旧值]" : "  [新增]") +
+    (keptHere ? "  ↳保留方向层 " + keptHere + " 项" : ""));
 }
 if (nMiss.length) console.log("⚠️ 这些 period 在 predictions.js 里找不到对应日期, 已跳过: " + nMiss.join(", "));
+if (nKeepPlan || nKeepDir) console.log("↳ 方向层保留: plan " + nKeepPlan + " 篇 · 含逐场方向 " + nKeepDir + " 天");
+if (nDropDir.length) {
+  // 不静默丢: 旧方向层里这次挂不上的场次, 一定是场次从池里消失了(改名/退赛/期号变), 得人来决定
+  console.log("⚠️ 旧方向层有 " + nDropDir.length + " 场的判断这次挂不上(该场已不在池里), 请确认是否另存:");
+  nDropDir.forEach(x => console.log("   · " + x));
+}
 if (!nDay) { console.log("· 没有任何一天需要写, 退出"); return; }
 console.log("将写入 " + nDay + " 天 (新增 " + nNew + " / 覆盖 " + nUpd + "):");
 log.forEach(l => console.log(l));

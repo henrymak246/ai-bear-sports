@@ -426,6 +426,7 @@
     var nPlayed = 0, nUpcoming = 0, nTotal = 0, nNoOff = 0;
     var div = [];                       // 两套盘背离(仅两者都在的场次)
     var list = [];                      // 明细(选中日/最新期)
+    var plan = null;                    // 人工撰写的方向层(日级方案卡, 见 tools/_lq_site.js 的回挂)
     var latest = null;
     (days || []).forEach(function (day) {
       var bb = day && day.basketball;
@@ -453,9 +454,18 @@
                      off: m.off.hdc.line, med: m.bk.ah.med, gap: gap, n: m.bk.n });
         }
         if (showDay) {
+          if (bb.plan) plan = bb.plan;
           list.push({ date: day.date, label: m.label, tipoff: m.tipoff, home: m.home, away: m.away,
                       league: m.league, played: !!m.played, off: m.off || null, bk: m.bk || null,
-                      bkNa: m.bkNa || null, bet: m.bet || null, hs: m.hs, as: m.as, gap: gap });
+                      bkNa: m.bkNa || null, bet: m.bet || null, hs: m.hs, as: m.as, gap: gap,
+                      // ★ 人工撰写的方向层(由 tools/_lq_site.js 按 num 回挂)——
+                      //   这里**只透传、不加工**: 篮球方向一律「胜负口径」表述，让分线只作程度层，
+                      //   两者的关系与禁用措辞见 docs/篮球推荐逻辑.md §三。
+                      //   ★ 缺字段时给空串而非 undefined，让渲染层不必到处判空。
+                      direction: m.direction || '', dirTag: m.dirTag || '',
+                      confidence: (m.confidence == null ? null : m.confidence),
+                      synthesis: m.synthesis || '', ahPick: m.ahPick || '', ouPick: m.ouPick || '',
+                      note: m.note || null });
         }
       });
     });
@@ -467,7 +477,7 @@
       total: nTotal, played: nPlayed, upcoming: nUpcoming, noOff: nNoOff,
       pool: pool, latest: latest,
       div: { n: nAbs, avgAbs: nAbs ? +(sumAbs / nAbs).toFixed(1) : null, flip: nFlip, list: div },
-      matches: list,
+      matches: list, plan: plan,
     };
   }
 
