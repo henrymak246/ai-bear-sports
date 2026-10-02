@@ -485,6 +485,10 @@
         <h2>🚄 深夜快车<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">下半夜至白天(00:00-17:59)开赛场次单独累计 · 方向/大小/比分 · 夜猫子专线</span></h2>
         <div id="neBody"></div>
       </div>
+      <div class="panel" id="investPanel">
+        <h2>💰 投资策略<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">61 天全量资金回测 · 三层仓位结构 · 稳定微利 + 彩票博取</span></h2>
+        <div id="investBody"></div>
+      </div>
     </section>
 
     <section id="sec-basket">
@@ -1766,6 +1770,42 @@ function renderApp(days) {
       item('🏅 比分', frac(ne.score), pct(ne.score.rate)) +
       '</div>';
     renderColumnPanel('neBody', ne, '还没有深夜/白天场次记录，小熊等补充场 🐾', sum, true);
+  }
+
+  // ---- 💰 投资策略专栏(2026-10-02 上线, 依据 docs/投资策略研究_20261002.md) ----
+  renderInvest(days);
+  function renderInvest(days) {
+    var box = document.getElementById('investBody');
+    if (!box) return;
+    function rich(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
+    /* ① 三层结构卡(静态) */
+    var html = '<div class="insight" style="margin-bottom:12px">' +
+      '<b>📐 三层仓位结构</b>(本金 1000 元示例, 非彩票日 12 元 / 彩票日 138 元上限)<br>' +
+      '🛡 <b>稳定层</b>: 胆 SP≤1.5 每日 <b>10 元</b> —— 61 天唯一实测正期望(SP≤1.3 档 90.9% 命中 / ROI 105.7%); 无胆、SP>1.5、忌日 = <b>空仓</b>(61 天 70% 天数空仓, 空仓本身就是最大的正期望来源)<br>' +
+      '🎲 <b>增强层</b>: 亚盘串每日 <b>2 元</b>娱乐仓 —— 断一腿率 35%, ROI 91% 接近打平, 练手定位<br>' +
+      '🎫 <b>彩票层</b>: 北单小复式 <b>≤128 元、每周 ≤2 次、只用盈利出不动本金</b> —— 61 天中 2 次(9-26 +2056/9-30 +110), 波动博取非收入工具<br>' +
+      '⛔ <b>已证伪砍掉</b>: dream7 总进球复式(38 天烧 2588 / ROI 3.1%) · score3 比分串(35 天 0 中) · 双选跟单(74.9% 命中也亏钱 / ROI 82.4%)<br>' +
+      '⚠️ <b>铁律</b>: 彩票层只花稳定层累计盈利, 盈利耗尽即停手; 绝不滚存加注; 休市期一律停手。</div>';
+    /* ② 回测数字表(静态, 61 天全量) */
+    html += '<div class="insight" style="margin-bottom:12px"><b>📊 61 天全量回测</b>(2 元/注固定本金, 90 分钟口径; 北单按欧赔均值结算存在高估, 真实约 7 折)<br>' +
+      '胆(SP≤1.5) <b>ROI 105.7~119%</b> ✓ · 亚盘串 91.3% △ · 双选全包 82.4% ✗ · 单选 54.2% ✗ · combo7 0%(7 天 0 中) · dream7 3.1% ✗✗ · score3 0%(35 天 0 中) · 北单 132.5%⚠️(2 次大中撑起, 回撤 1477 元超本金)。' +
+      '完整论证见 docs/投资策略研究_20261002.md。</div>';
+    /* ③ 每日策略卡回放(动态, 近 7 张) */
+    var cards = [];
+    (days || []).forEach(function (d) {
+      var c = (d.plan || []).find(function (p) { return p.name === '💰 投注建议'; });
+      if (c) cards.push({ date: d.date, text: c.text });
+    });
+    if (cards.length) {
+      html += '<div class="insight" style="margin-bottom:0"><b>🗓 每日策略卡</b>(每天 plan 首位同步展示)</div>';
+      cards.slice(0, 7).forEach(function (c) {
+        html += '<div style="border-left:3px solid #F5A623;padding:6px 10px;margin:8px 0;background:#FFFDF8;border-radius:0 8px 8px 0">' +
+          '<div style="font-size:12px;color:var(--muted);margin-bottom:3px">' + esc(c.date) + '</div>' +
+          '<div style="font-size:13px;line-height:1.7">' + rich(c.text) + '</div></div>';
+      });
+    }
+    html += '<div style="font-size:11px;color:var(--muted);margin-top:10px">⚠️ 仅供研究参考, 不构成投注建议; 历史命中率/回测不代表未来收益; 样本小(胆 18 天/北单约 20 天), 结论需 4-8 周实盘继续验证; 请遵守所在地法律法规, 理性购彩。</div>';
+    box.innerHTML = html;
   }
 
   // ---- 小熊成绩单 ----
