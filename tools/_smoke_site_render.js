@@ -153,16 +153,57 @@ const todayDays = () => {
       && m.hhad.length === 3 && !skip.has(String(m.id).slice(-3)));
     // 优先挑"正文里点过场次号"的: ③b 的口径说明靠"正文引用了这场"才挂得出来
     const texts = (d.plan || []).map((p) => String(p.text || '')).join(' ');
-    const donor = cands.filter((m) => texts.indexOf(String(m.id).slice(-3)) !== -1)[0] || cands[0];
-    assert(donor, '今日无让球-only 场, 且找不到可改造的替身场(需: 非首场 + 有 hhad + 不在任何方案块腿里)');
+    /* ★薄日兜底(2026-09-29 首踩): 在售仅 2 场时「非首场 + 不在方案块腿里」可能全不满足
+       (两场都在腿里) ⇒ 候选集为空。与 _smoke_parity.js ⑤ 同款处置: 放宽"不在腿里"这条(只失
+       去"腿场也整洁"的洁癖), **但必须保留"非首场"** —— 首场被 fixture 挪作"已停售"盲场
+       (skipFirst), 替身若落它头上, ③b 的「让球SP 换官方实时值」就永远够不着(当场实测假红)。
+       放宽后的让球-only 只存在于内存副本, 数据文件不动。 */
+    const relaxed = (d.matches || []).filter((m, i) => i > 0 && m.sp && Array.isArray(m.hhad) && m.hhad.length === 3);
+    const donor = cands.filter((m) => texts.indexOf(String(m.id).slice(-3)) !== -1)[0] || cands[0]
+      || relaxed.filter((m) => texts.indexOf(String(m.id).slice(-3)) !== -1)[0] || relaxed[relaxed.length - 1];
+    assert(donor, '今日无让球-only 场, 且找不到可改造的替身场(需: 非首场 + 有 sp + 有 hhad 的场)');
+    if (cands.length === 0) console.log('  · 今日在售场太少(候选空) → 兜底改造 ' + donor.id + '(薄日放宽「不在腿里」, 只动内存副本)');
     delete donor.sp;
     console.log('  · 今日官方池无让球-only 场 → 内存副本里把 ' + donor.id + ' 改造为让球-only, ①b/③b 照常真跑');
+    /* ★donor 路径同款缺口(2026-09-25 首踩): 选 donor 只看「正文有点过场次号」(010 子串),
+       但挂口径说明的机制认的是「号紧跟队名首字」(010波) —— 当天文风若是「010 波兰」(带空格),
+       说明挂不出来, ③b 必红, 而红的原因是文风不是机制。处置与 else 分支同款:
+       在内存副本里给首张卡补一句合规引用, 数据文件不动, 认的仍是实现自己的正则。 */
+    const dch = String(donor.home || '').charAt(0);
+    const dAllText = (d.plan || []).map((p) => String(p.text || '')).join(' ');
+    if (d.plan && d.plan.length && dch && dAllText.indexOf(donor.id.slice(-3) + dch) === -1) {
+      d.plan[0].text = String(d.plan[0].text || '') + ' ★' + donor.id.slice(-3) + dch + '照胜平负写(冒烟注入)';
+      console.log('  · 替身场 ' + donor.id + ' 正文无「号紧跟队名首字」写法 → 副本里给首张卡补一句, ③b 照常真跑');
+    }
+  } else {
+    /* ★今日**真有**让球-only 场, 但"挂口径说明"还要求正文用**紧跟式**引用它("013皇马"),
+       而这是**文风**性质、不是机制性质: 2026-09-23 的正文写"002 日本亚场"(场次号与队名之间
+       **有空格**), 实现认的是**紧跟** ⇒ 说明挂不出来, ③b 必红 —— 而红的原因是"这天没这么写",
+       不是机制坏了。处置与上面造替身场、与 _smoke_parity.js ⑤ 同款: 在**内存副本**里给首张卡
+       补一句合规引用, 让这条路真跑一次。数据文件不动; 认的仍是实现自己的正则。 */
+    const noHad = (d.matches || []).filter(isNoHad)[0];
+    const ch = String(noHad.home || '').charAt(0);
+    const allText = (d.plan || []).map((p) => String(p.text || '')).join(' ');
+    if (d.plan && d.plan.length && ch && allText.indexOf(noHad.id.slice(-3) + ch) === -1) {
+      d.plan[0].text = String(d.plan[0].text || '') + ' ★' + noHad.id.slice(-3) + ch + '照胜平负写(冒烟注入)';
+      console.log('  · 今日真实让球-only ' + noHad.id + ', 但正文没有「号紧跟队名首字」的写法 → '
+        + '副本里给首张卡补一句, ③b 照常真跑');
+    }
   }
   return [d];
 };
-/* 构建时快照里"让球胜平负"卡的大号倍数。★不写死 858: 那是当天那份数据的数, 建了新一天就换数。
-   要断言的是"首屏显示的是构建时快照"/"叠加后不再是无口径标注的旧值", 不是"数字恰好是 858"。 */
-const SNAP_PCT = ((SRC.plan || [])[2] || {}).pct || '≈858倍';
+/* 构建时快照里"跟着方案块实时重算"的那张卡的大号倍数。★不写死 858: 那是当天那份数据的数, 建了新一天就换数。
+   要断言的是"首屏显示的是构建时快照"/"叠加后不再是无口径标注的旧值", 不是"数字恰好是 858"。
+   ★★也不能**按下标**取(`plan[2]`): 方案卡的**张数与顺序每天不同** —— 北单卡会回归/缺席、合并后 combo7 加入,
+   下标一漂就会取到一张**本来就不参与实时叠加**的卡(如 asian7 走的是自己的取数, 不接官方池),
+   那张卡的倍数**按设计**就该保持构建值 ⇒ ③ 会假红(2026-09-23 首次踩上: plan[2] 恰好是 asian7 的 ≈3.26倍)。
+   改成**按"哪个方案块参与叠加"反推**: 可叠加块只有 combo7/hc7/max7, 卡片的 pct 与块的 totalOdds 同构(≈N倍),
+   取第一张对得上的卡 —— 谁参与叠加就验谁, 与卡片顺序、数量都无关。 */
+const _OV = ['combo7', 'hc7', 'max7']
+  .map(function (k) { return ((SRC[k] || {}).totalOdds || '').match(/[\d.]+(?=倍)/); })
+  .filter(Boolean).map(function (m) { return '≈' + m[0] + '倍'; });
+const SNAP_PCT = (SRC.plan || []).map(function (p) { return p.pct; })
+  .filter(function (p) { return _OV.indexOf(p) !== -1; })[0] || '≈858倍';
 
 // ---- 伪 DOM: 一份 sandbox = 一个 document(与浏览器一致) ----
 function mkEl(id) {
@@ -378,9 +419,22 @@ const realFetch = global.fetch; // ⑥ 要真打官方, 先留一份
        按名字查表查不到 —— 只有走 pickIdx 才对得上, 而 pickIdx 的前缀剥离正是合并后最该盯的地方。 */
   const FIX_IDX = { hhad: [1.50, 3.50, 5.00], sp: [2.00, 3.00, 4.00] };
   const closed3 = String(d[0].matches[0].id).slice(-3); // fixture skipFirst → 首场不在官方池里
-  const isClosed = (l) => String(l.match).startsWith(closed3);
+  /* 双前缀日(周四/周五同号)按队名消歧(2026-10-08 起): 3 位号撞号时不能按号判停售腿 */
+  const isClosed = (l) => {
+    const id3 = String(l.match || '').slice(0, 3);
+    if (id3 !== closed3) return false;
+    const names = String(l.match || '').slice(4).split(' vs ');
+    if (names.length !== 2) return true; // 老数据只有 3 位号 → 按号判
+    const m0 = d[0].matches[0];
+    return names[0] === m0.home && names[1] === m0.away;
+  };
+  /* 薄日兜底(10-07 首踩): 当天无真·让球-only 场时, 脚手架把 周三002 内存改造为让球-only(sp=null)
+     充当替身场 —— 它的胜平负腿在官方 had 池里被剔除(hadMissing), 站点只保留构建值(未刷新非停售)。
+     期望公式须同口径: 该场 sp 腿用构建值, hhad 腿照常吃 fixture 固定价。 */
+  const nh3 = new Set(nhIds.map((x) => String(x).slice(-3)));
   const expectOdds = (legs, poolOf) => {
-    const v = legs.reduce((a, l) => a * (isClosed(l) ? parseFloat(l.odds)
+    const v = legs.reduce((a, l) => a * ((isClosed(l) || (poolOf(l) === 'sp' && nh3.has(String(l.match).slice(0, 3))))
+      ? parseFloat(l.odds)
       : FIX_IDX[poolOf(l)][LO._internals.pickIdx(l.pick)]), 1);
     return v >= 100 ? Math.round(v) : v.toFixed(1);
   };

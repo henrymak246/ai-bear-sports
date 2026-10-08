@@ -23,7 +23,11 @@ let ok = 0, bad = 0, settled = 0;
 const fails = [];
 days.forEach((d) => {
   const byId3 = {};
-  (d.matches || []).forEach((m) => { byId3[String(m.id).slice(-3)] = m; });
+  (d.matches || []).forEach((m) => {
+    const k = String(m.id).slice(-3);
+    if (byId3[k] === undefined) byId3[k] = m;
+    else byId3[String(m.id)] = m; // 双前缀日(周四/周五同号)撞号 → 补全 id 键
+  });
   /* 板块级彩池: combo7 是 'auto'(逐腿按 play 判)。自证要走 poolOfLeg —— 直接拿 'auto' 当池名
      去查 m['auto'] 只会全数落空, 那验的不是映射而是"我传错了参数"。 */
   [['combo7', 'auto'], ['hc7', 'hhad'], ['max7', 'sp']].forEach((pair) => {

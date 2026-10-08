@@ -222,7 +222,16 @@ function legOdds(leg, byId3, arrKey) {
   const picks = String(leg.pick || "").split("/");
   const odds = String(leg.odds || "").split("/");
   if (picks.length !== odds.length) return null; // 结构不符(如「胆/双选」混排) → 不猜
-  const m = byId3[legNum(leg.match)];
+  let m = byId3[legNum(leg.match)];
+  // 双前缀日(周四/周五同号): 3 位号撞号时按队名消歧(2026-10-08 起)
+  const names = String(leg.match || "").slice(4).split(" vs ");
+  // 老 hc7 腿队名带盘口后缀(「阿拉维斯(-1)」), 须按「队名(」前缀识别
+  const bad = names.length === 2 && m && m.home && names[0] !== m.home && String(names[0]).indexOf(String(m.home) + "(") !== 0;
+  if (bad) {
+    const alt = Object.keys(byId3).map(k => byId3[k]).find(x => x && x.home === names[0] && x.away === names[1]);
+    if (alt) m = alt;
+    else return null; // 撞号且按队名找不到 → 该场不可用(停售/未刷), 不得错用同号场
+  }
   const arr = m && m[arrKey];
   if (!Array.isArray(arr)) return null;
   const out = picks.map(function (pk) {
@@ -309,8 +318,10 @@ function planPatch(payload, overlaid) {
   const byId3Live = {};
   const closedIds = {};
   overlaid.forEach(function (m) {
-    if (m && m.oddsClosed) closedIds[id3(m)] = true;
-    else byId3Live[id3(m)] = m;
+    if (m && m.oddsClosed) { closedIds[id3(m)] = true; return; }
+    const k = id3(m);
+    if (byId3Live[k] === undefined) byId3Live[k] = m;
+    else byId3Live[String(m.id)] = m; // 双前缀日(周四/周五同号)撞号 → 补全 id 键
   });
   const hc7 = overlayPlan(payload.hc7, byId3Live, "hhad", closedIds);
   const max7 = overlayPlan(payload.max7, byId3Live, "sp", closedIds);

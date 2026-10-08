@@ -165,6 +165,19 @@
     if (picks.length !== odds.length) return null; // 结构不符(如「胆/双选」混排) → 不猜, 保留原值
     var m = byId3[legNum(leg.match)];
     if (!m) return null;
+    // 双前缀日(周四/周五同号): 3 位号撞号时按队名消歧(2026-10-08 起)
+    var names = String(leg.match || '').slice(4).split(' vs ');
+    // 老 hc7 腿队名带盘口后缀(「阿拉维斯(-1)」), 须按「队名(」前缀识别
+    var bad = names.length === 2 && m.home && names[0] !== m.home && String(names[0]).indexOf(String(m.home) + '(') !== 0;
+    if (bad) {
+      var alt = null;
+      Object.keys(byId3).forEach(function (k) {
+        var x = byId3[k];
+        if (x && x.home === names[0] && x.away === names[1]) alt = x;
+      });
+      if (alt) { m = alt; }
+      else { return null; } // 撞号且按队名找不到 → 该场不可用(停售/未刷), 不得错用同号场
+    }
     var arr = m[arrKey];
     if (!Array.isArray(arr)) return null;
     var out = picks.map(function (pk) {
@@ -270,7 +283,11 @@
   function overlayDay(day, rows) {
     if (!day || !rows || day.date !== todayBj()) return day;
     var byId3 = {};
-    (day.matches || []).forEach(function (m) { byId3[id3(m)] = m; });
+    (day.matches || []).forEach(function (m) {
+      var k = id3(m);
+      if (byId3[k] === undefined) { byId3[k] = m; }
+      else { byId3[String(m.id)] = m; } // 双前缀日(周四/周五同号)撞号 → 补全 id 键
+    });
 
     var live = {};
     var matches = (day.matches || []).map(function (m) {
@@ -304,8 +321,10 @@
     var byId3Live = {};
     var closedIds = {};
     matches.forEach(function (m) {
-      if (m.oddsClosed) closedIds[id3(m)] = true;   // 停售场不给实时值(下架了没有可投价), 但要让方案块知道它停售
-      else byId3Live[id3(m)] = m;
+      if (m.oddsClosed) { closedIds[id3(m)] = true; return; }   // 停售场不给实时值(下架了没有可投价), 但要让方案块知道它停售
+      var k = id3(m);
+      if (byId3Live[k] === undefined) { byId3Live[k] = m; }
+      else { byId3Live[String(m.id)] = m; } // 双前缀日(周四/周五同号)撞号 → 补全 id 键
     });
 
     var hc7 = overlayPlan(day.hc7, byId3Live, 'hhad', closedIds);

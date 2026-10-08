@@ -79,6 +79,51 @@ if (!hasBlock(day0)) {
     + ' 不让球), 让②的「按腿取池」也落在混排串上');
 })();
 
+/* ★薄日保混排(2026-09-29 首踩): combo7 存在但**全为同一个盘**(当日全部方向腿 SP<1.5 ——
+   9-13 口径「低赔强队改用让球表达」下 001 朝鲜 1.32 / 007 日本 1.15 只剩让球表达),
+   此时末尾的「混排验收」在真实数据上构造不出, 必红 —— 而红的原因是数据形态不是机制。
+   与上行 synthCombo7 / _smoke_site_render.js 同款处置: 在**内存副本**里把一条让球腿改写成
+   该场**真实存在**的胜平负腿(取 sp 池对应档, 价随池走), 让「按腿取池」这条最易两端漂移的路
+   真跑一次。数据文件不动; 认的仍是两端实现自己的池路由。 */
+(function ensureMixedCombo7() {
+  const c = day.combo7;
+  if (!c || !Array.isArray(c.legs) || !c.legs.length) return;
+  const plays = {};
+  c.legs.forEach((l) => { plays[String(l.play)] = 1; });
+  if (plays['胜平负'] && plays['让球胜平负']) return;
+  if (plays['让球胜平负'] && !plays['胜平负']) {
+    /* 9-29 分支: combo7 全让球腿时注入一条真实胜平负腿 */
+    const leg = c.legs.find((l) => {
+      const m = (day.matches || []).find((x) => String(x.id).slice(-3) === String(l.match).slice(0, 3));
+      return m && Array.isArray(m.sp) && m.sp.length === 3 && /主胜|客胜/.test(String(l.pick));
+    });
+    if (!leg) return;
+    const m = (day.matches || []).find((x) => String(x.id).slice(-3) === String(leg.match).slice(0, 3));
+    const idx = /客胜/.test(String(leg.pick)) ? 2 : 0;
+    const pick = idx === 2 ? '客胜' : '主胜';
+    console.log('注: 今日 combo7 全为让球腿(方向腿 SP<1.5 薄日) → 副本里把 ' + String(leg.match).slice(0, 3)
+      + ' 的腿改写为胜平负 ' + pick + '@' + Number(m.sp[idx]).toFixed(2) + ', 混排两端口径照常真验(数据不动)');
+    leg.play = '胜平负';
+    leg.pick = pick;
+    leg.odds = Number(m.sp[idx]).toFixed(2);
+    return;
+  }
+  /* 2026-10-06 分支: combo7 全直盘腿(忌日直胜表达)时注入一条真实让球胜平负腿 */
+  const leg = c.legs.find((l) => {
+    const m = (day.matches || []).find((x) => String(x.id).slice(-3) === String(l.match).slice(0, 3));
+    return m && Array.isArray(m.hhad) && m.hhad.length === 3;
+  });
+  if (!leg) return;
+  const m = (day.matches || []).find((x) => String(x.id).slice(-3) === String(leg.match).slice(0, 3));
+  const idx = /客胜/.test(String(leg.pick)) ? 2 : 0;
+  const pick = idx === 2 ? '客胜' : '主胜';
+  console.log('注: 今日 combo7 全为直盘腿(忌日直胜表达) → 副本里把 ' + String(leg.match).slice(0, 3)
+    + ' 的腿改写为让球胜平负 ' + pick + '@' + Number(m.hhad[idx]).toFixed(2) + ', 混排两端口径照常真验(数据不动)');
+  leg.play = '让球胜平负';
+  leg.pick = pick;
+  leg.odds = Number(m.hhad[idx]).toFixed(2);
+})();
+
 /* ---- 网站侧: 浏览器 IIFE, 在 vm 里给它一个 window 就行(它只在 fetchLive 里才碰 fetch) ---- */
 const W = (function () {
   const sb = { console, Date, Math, JSON, Promise, Object, Array, String, Number, isFinite, isNaN, fetch };
@@ -237,19 +282,24 @@ if (settled) {
   console.log('注: 借来的 ' + day.date + ' 有 ' + settled + ' 条腿已回填 result(赛后终值, legOdds 按设计短路)'
     + ' → 副本里清成 null 恢复成"待赛"面貌, ②③ 才有得验; 数据文件不动');
 }
-/* 取两场**不同场**的未结算腿所在场次(跨板块优先, 只有一个板块时就取该板块的两条腿) */
-const stopIds = [];
+/* 取两场**不同场**的未结算腿所在场次(跨板块优先, 只有一个板块时就取该板块的两条腿)。
+   双前缀日(周四/周五同号)按队名消歧(2026-10-08 起): 3 位号撞号时不能再按号过滤场次。 */
+const stopMatches = [];
 BLOCKS.forEach(function (b) {
   (day[b[0]].legs || []).forEach(function (l) {
     if (l.result) return;
-    const id = l.match.slice(0, 3);
-    if (stopIds.indexOf(id) !== -1 || stopIds.length >= 2) return;
-    stopIds.push(id);
+    const id3 = String(l.match || '').slice(0, 3);
+    const names = String(l.match || '').slice(4).split(' vs ');
+    const cands = (day.matches || []).filter((m) => String(m.id || '').slice(-3) === id3);
+    const m = cands.find((x) => x.home === names[0] && x.away === names[1]) || cands[0];
+    if (!m) return;
+    if (stopMatches.some((x) => x.id === m.id) || stopMatches.length >= 2) return;
+    stopMatches.push(m);
   });
 });
-assert(stopIds.length >= 1, '找不到未结算腿, 造不出停售');
-const dropIds = day.matches.filter((m) => stopIds.indexOf(m.id.slice(-3)) !== -1).map((m) => m.id);
-assert.strictEqual(dropIds.length, stopIds.length, '应恰好造出 ' + stopIds.length + ' 场停售, 实际 ' + dropIds.length);
+assert(stopMatches.length >= 1, '找不到未结算腿, 造不出停售');
+const dropIds = stopMatches.map((m) => m.id);
+assert.strictEqual(dropIds.length, stopMatches.length, '应恰好造出 ' + stopMatches.length + ' 场停售, 实际 ' + dropIds.length);
 const rows = mkRows(day, dropIds);
 
 /* ---- ② 端到端: 同一份日对象 + 同一份实时行 ---- */
@@ -274,11 +324,22 @@ assert.deepStrictEqual(J(wOut.plan.map((p) => p.text)), mOut.plan.map((p) => p.t
    combo7 混排时让球腿必须取自 hhad、不让球腿必须取自 sp。取错池时两端可能**依然互相一致**
    (两份实现错得一模一样), 只有拿场次卡上的两套 SP 对照才查得出来 —— 这正是本次合并的核心。 */
 const liveById = {};
-mOverlaid.forEach((m) => { liveById[m.id.slice(-3)] = m; });
+mOverlaid.forEach((m) => {
+  const k = String(m.id).slice(-3);
+  if (liveById[k] === undefined) liveById[k] = m;
+  else liveById[String(m.id)] = m; // 双前缀日(周四/周五同号)撞号 → 补全 id 键
+});
 BLOCKS.forEach(function (b) {
   const k = b[0];
   mOut[k].legs.forEach(function (l) {
-    const m = liveById[l.match.slice(0, 3)];
+    let m = liveById[l.match.slice(0, 3)];
+    if (m && m.home) { // 双前缀日按队名消歧(与两端 legOdds 同口径)
+      const names = String(l.match).slice(4).split(' vs ');
+      if (names.length === 2 && m.home !== names[0]) {
+        const alt = Object.keys(liveById).map((x) => liveById[x]).find((x) => x && x.home === names[0] && x.away === names[1]);
+        if (alt) m = alt;
+      }
+    }
     if (!m || m.oddsClosed) return;
     const pool = M.poolOfLeg(l, b[1]);
     const arr = pool === 'hhad' ? m.hhad : m.sp;
@@ -302,9 +363,16 @@ console.log('OK 2/5 端到端对齐: ' + BLOCKS.map(function (b) { return b[0] +
 /* ---- ③ 停售腿: 两端都要"保留构建值 + 写明依据", 且必须真的出现这个依据 ---- */
 /* 按板块统计各丢了几条腿 —— 只有一个板块的日子(combo7)两条腿都落它头上, 旧日子则一板块一条 */
 const lost = {};
-stopIds.forEach(function (id) {
+stopMatches.forEach(function (m0) {
   BLOCKS.forEach(function (b) {
-    if ((day[b[0]].legs || []).some((l) => l.match.slice(0, 3) === id)) lost[b[0]] = (lost[b[0]] || 0) + 1;
+    (day[b[0]].legs || []).forEach(function (l) {
+      const id3 = String(l.match || '').slice(0, 3);
+      if (id3 !== String(m0.id).slice(-3)) return;
+      const names = String(l.match || '').slice(4).split(' vs ');
+      const cands = (day.matches || []).filter((m) => String(m.id || '').slice(-3) === id3);
+      const m = cands.find((x) => x.home === names[0] && x.away === names[1]) || cands[0];
+      if (m && m.id === m0.id) lost[b[0]] = (lost[b[0]] || 0) + 1;
+    });
   });
 });
 assert(Object.keys(lost).length >= 1, '③ 造出的停售场没有命中的方案腿, 这条路等于没验');
@@ -318,12 +386,19 @@ Object.keys(lost).forEach(function (k) {
   assert.strictEqual(wOut[k].oddsStale, mOut[k].oddsStale, '③ ' + k + ' 未刷新腿计数两端不一致');
   assert.strictEqual(wOut[k].oddsBasis, 'closed', '③ ' + k + ' 有停售腿时依据应为 closed');
   // 停售腿的赔率必须还是构建值(下架了没有可投价, 拿旧值只是为了把倍数算得出来)
-  stopIds.forEach(function (id) {
-    const wLeg = (wOut[k].legs || []).find((l) => l.match.slice(0, 3) === id);
-    const oLeg = (day[k].legs || []).find((l) => l.match.slice(0, 3) === id);
+  stopMatches.forEach(function (m0) {
+    const id3 = String(m0.id).slice(-3);
+    const nameOf = (l) => { const n = String(l.match || '').slice(4).split(' vs '); return [n[0], n[1]]; };
+    const isLeg = (l) => { // 双前缀日按队名消歧
+      if (String(l.match || '').slice(0, 3) !== id3) return false;
+      const n = nameOf(l);
+      return n.length === 2 ? (n[0] === m0.home && n[1] === m0.away) : true;
+    };
+    const wLeg = (wOut[k].legs || []).find(isLeg);
+    const oLeg = (day[k].legs || []).find(isLeg);
     if (!wLeg || !oLeg) return;
     assert.strictEqual(wLeg.odds, oLeg.odds, '③ 网站侧 ' + k + ' 停售腿赔率应保留构建值');
-    const mLeg = (mOut[k].legs || []).find((l) => l.match.slice(0, 3) === id);
+    const mLeg = (mOut[k].legs || []).find(isLeg);
     assert.strictEqual(mLeg.odds, oLeg.odds, '③ 小程序侧 ' + k + ' 停售腿赔率应保留构建值');
   });
 });
@@ -362,18 +437,35 @@ console.log('OK 4/5 日期闸与失败兜底两端一致, 且都不改写入参'
    ★用户 2026-09-15 的原话: "013皇马是-2球的盘, 没有开不让球的胜平负" ——
      页面却把这场的 310 方向当可投的写着。这里造一场真的让球-only(官方 sp 池里没有它),
      验两端对**判定、场次号清单、方案卡上那句口径说明**逐字符一致。 */
-/* 挑一场**不是任何方案块腿**的场来做: 它是让球-only 之后那些腿的赔率就取不到了,
-   会把 ②③ 手算出来的倍数一起带偏 —— 本阶段只想隔离出"让球-only"这一个变量。
-   ★combo7 也要算进来: 漏了它就会挑中一条混选腿的场, 让 ②③ 的停售/倍数断言跟着一起乱 */
+/* 挑场原则: 优先**不是任何方案块腿**的场 —— 它变成让球-only 之后那些腿的赔率就取不到了,
+   会把 ②③ 手算出来的倍数一起带偏; 本阶段只想隔离出"让球-only"这一个变量。
+   ★combo7 也要算进来: 漏了它就会挑中一条混选腿的场, 让 ②③ 的停售/倍数断言跟着一起乱。
+   (取不到非腿场时退用腿所在场, 见下 —— ②③ 已跑完, 不受影响) */
 const legIds = [].concat(...BLOCKS.map((b) => (day[b[0]].legs || []).map((l) => l.match.slice(0, 3))));
-const solo = day.matches.filter((m) => legIds.indexOf(m.id.slice(-3)) === -1)[0];
-assert(solo, '⑤ 找不到非方案腿的场次, 无从造让球-only');
+/* ★★候选必须是**真的能变成让球-only**的场: 判据与实现同款 —— `Array.isArray(m.hhad) && m.hhad.length === 3`。
+   不筛这一条会挑中场次表里的**北单场**(2026-09-23 首次踩上: 竞彩在售仅 2 场、combo7 只出 2 腿,
+   非腿场**全是北单场**, 而北单场的 hhad 恒为 null ⇒ 官方池里永远没有它的让球池, 让球-only 在它们身上
+   根本不可能成立) ⇒ 造完 sp=null 两端仍不认得, ⑤ 假红在一条**构造不出场景**的选场上。
+   ★优先非方案腿(隔离"让球-only"这一个变量), 取不到就退用腿所在场: ②③ 在上面**已经跑完并断言过**,
+   ⑤ 再动这些腿的赔率不会回头影响它们。 */
+const canNoHad = (m) => Array.isArray(m.hhad) && m.hhad.length === 3;
+const soloCands = day.matches.filter(canNoHad);
+assert(soloCands.length, '⑤ 今日没有一场有让球池(全北单日), 无从造让球-only');
+const solo = soloCands.filter((m) => legIds.indexOf(m.id.slice(-3)) === -1)[0] || soloCands[0];
 const soloId = solo.id.slice(-3);
+const soloCh = [String(solo.home || '').charAt(0), String(solo.away || '').charAt(0)];
 const rowsSolo = mkRows(day, []);
 rowsSolo[solo.id] = Object.assign({}, rowsSolo[solo.id], { sp: null }); // 官方 had 池里没有它
-const wSolo = W.overlayDay(JSON.parse(JSON.stringify(day)), rowsSolo);
-const mSoloOverlaid = M.overlay(JSON.parse(JSON.stringify(day.matches)), { rows: rowsSolo }, day.date);
-const mSolo = M.planPatch(JSON.parse(JSON.stringify(day)), mSoloOverlaid);
+/* ★口径说明的触发条件是**正文形态**(场次号**紧跟**主客队名首字), 属数据/文风性质, 不是机制性质。
+   今日方案卡正文里没有一处是这个写法(今日写"001 中国亚", 号与队名之间**有空格**) ⇒ 这一天天然
+   挂不出说明, 下面那条反空跑断言(noted.length >= 1)必然红 —— 而它红的原因是"这天没这么写",
+   不是"机制坏了"。处置与 ②③ 借日子、清 result、synthCombo7 同款: 在**内存副本**里补一句合规引用,
+   让这条路真跑一次。数据文件不动; 认的仍是实现自己的正则, 没有放宽任何断言。 */
+const daySolo = JSON.parse(JSON.stringify(day));
+daySolo.plan[0].text = String(daySolo.plan[0].text || '') + ' ★' + soloId + soloCh[0] + '照胜平负写(冒烟注入)';
+const wSolo = W.overlayDay(daySolo, rowsSolo);
+const mSoloOverlaid = M.overlay(JSON.parse(JSON.stringify(daySolo.matches)), { rows: rowsSolo }, day.date);
+const mSolo = M.planPatch(JSON.parse(JSON.stringify(daySolo)), mSoloOverlaid);
 assert(W._internals.noHadList(wSolo.matches).map((x) => x.id).indexOf(soloId) !== -1, '⑤ 网站侧没认出这场是让球-only');
 assert.strictEqual(M.noHadOf(mSoloOverlaid.find((m) => m.id.slice(-3) === soloId)), true,
   '⑤ 小程序侧没认出这场是让球-only');
@@ -383,7 +475,6 @@ assert.deepStrictEqual(J(wSolo.plan.map((p) => p.noHadNote || '')), mSolo.plan.m
 /* 说明必须挂在**把它当胜平负写**的那张卡上, 且不能挂到让球/比分口径的卡上 */
 const getPlan = (pl) => (pl.plan || []).map((p) => [p.name, p.text || '', p.noHadNote || '']);
 const wPlan = getPlan(wSolo);
-const soloCh = [String(solo.home || '').charAt(0), String(solo.away || '').charAt(0)];
 const cited = (t) => { // 该卡正文是否用「场次号 + 主客队名首字」引用了这场
   for (let i = t.indexOf(soloId); i !== -1; i = t.indexOf(soloId, i + 1)) {
     if (i > 0 && /\d/.test(t.charAt(i - 1))) continue;

@@ -26,6 +26,14 @@ const violations = [];
 function matchOf(idx3) {
   return (day.matches || []).find(m => String(m.id || "").slice(-3) === idx3) || null;
 }
+/* 腿 → 场次解析: 双前缀日(周四/周五同号)按队名消歧(2026-10-08 起) */
+function matchOfLeg(l) {
+  const id3 = String(l.match || "").slice(0, 3);
+  const cands = (day.matches || []).filter(m => String(m.id || "").slice(-3) === id3);
+  if (cands.length <= 1) return cands[0] || null;
+  const names = String(l.match || "").slice(4).split(" vs ");
+  return cands.find(m => m.home === names[0] && m.away === names[1]) || cands[0];
+}
 
 // ---- V3.2 ★4+ 门禁 ----
 function checkAh(tag, pickText, conf, text) {
@@ -54,7 +62,7 @@ function checkAh(tag, pickText, conf, text) {
   const odds = parseFloat(l.odds) || 0;
   const isHome = /主胜/.test(l.pick || "") || (/让/.test(l.pick || "") && /主/.test(l.pick || ""));
   const isAway = /客胜/.test(l.pick || "");
-  const m = matchOf(String(l.match || "").slice(0, 3));
+  const m = matchOfLeg(l);
   const lg = m ? m.league : null;
   if (lg && COLD_LEAGUES.has(lg)) {
     violations.push(`[胆] ${l.match} ${l.pick}@${l.odds}: 放弃清单联赛(${lg})不当胆`);
@@ -78,7 +86,7 @@ const c7legs = (day.combo7 && day.combo7.legs) || [];
 c7legs.forEach(l => {
   const play = String(l.play || "");
   const pick = String(l.pick || "");
-  const m = matchOf(String(l.match || "").slice(0, 3));
+  const m = matchOfLeg(l);
   // ★1.5 硬地板(2026-09-21 用户拍板): 超深赔(1.14/1.19 这类)不再当"低赔底盘"入串 ——
   //   它们把整串压到 7.83 倍却没有赔率价值。命中率最高的那盘若 <1.5, 须改用该场另一盘(≥1.5), 两盘都 <1.5 则换场。
   //   放在最前面: 下面两条分支各有 return, 地板必须对所有腿生效。
@@ -117,7 +125,8 @@ if (day.combo7) {
 if (c7legs.length) {
   const seen = {};
   c7legs.forEach(l => {
-    const t = String(l.match || "").slice(0, 3);
+    const m = matchOfLeg(l);
+    const t = m ? String(m.id) : String(l.match || "").slice(0, 3); // 双前缀日按消歧后的整场 id 判重
     if (seen[t]) violations.push(`[混选] 场次 ${t} 在同一条串里出现两次(整串相关性过强, 一腿一场)`);
     seen[t] = 1;
   });
