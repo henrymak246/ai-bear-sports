@@ -94,16 +94,19 @@ function cqSnap() {
       const fs1 = fs.readdirSync(dir).filter((f) => /^cq_\d{4}\.json$/.test(f)).sort();
       if (fs1.length) {
         const j = JSON.parse(fs.readFileSync(path.join(dir, fs1[fs1.length - 1]), "utf8"));
-        return j.rows || j.data || [];
+        return j.matches || j.rows || j.data || [];
       }
     } catch (e) { /* 下一处 */ }
   }
   return [];
 }
-function cqScore(home, away) {
+/* 出奇快照按 label(竞彩号/北单号)精确匹配: 新结构 hs/as 计分, played=true 即终场 */
+function cqScoreLabel(label, lottery) {
   for (const r of cqSnap()) {
-    const h = String(r.home || ""), a = String(r.away || "");
-    if (h.includes(home) && a.includes(away) && r.played) return String(r.score || "").replace(" ", "");
+    if (r.label !== label || !r.played) continue;
+    if (lottery && r.lottery !== lottery) continue;
+    if (typeof r.score === "string" && r.score) return r.score.replace(/ /g, "");
+    if (r.hs != null && r.as != null) return r.hs + "-" + r.as;
   }
   return null;
 }
@@ -127,11 +130,11 @@ const fills = [];
       console.log((got ? "✓ " : "? ") + m.id + " [" + lg + "] " + (got ? got.raw : "(未找到)"));
     }
   } else {
-    const c = cqScore(m.home, m.away);
-    if (c) { got = { score: c, status: "FT(cq)" }; src = "cq"; }
+    const c = cqScoreLabel(m.id, "竞彩");
+    if (c) { got = { score: c, status: "FULL_TIME" }; src = "cq"; }
     if (probe) console.log("? " + m.id + " [cq] " + (got ? got.score : "(未找到)"));
   }
-  if (got && (got.status === "FULL_TIME" || got.status === "FT" || String(got.status).includes("FT"))) {
+  if (got && got.status === "FULL_TIME") {
     m.finalScore = got.score;
     touched++;
     fills.push(m.id + " " + got.score + " (" + src + ")");
@@ -152,11 +155,11 @@ if (d.beidan310 && Array.isArray(d.beidan310.legs)) {
       got = findScoreExact(src[0], TEAM[home] || home, TEAM[away] || away, src[1]);
       if (got) from = src[0];
     } else {
-      const c = cqScore(home, away);
-      if (c) { got = { score: c, status: "FT(cq)" }; from = "cq"; }
+      const c = cqScoreLabel("北单" + parseInt(num, 10), "北单");
+      if (c) { got = { score: c, status: "FULL_TIME" }; from = "cq"; }
     }
     if (probe) console.log("? 北单" + num + " [" + (src[0] || "cq") + "] " + (got ? got.raw || got.score : "(未找到)"));
-    if (got && (got.status === "FULL_TIME" || got.status === "FT" || String(got.status).includes("FT"))) {
+    if (got && got.status === "FULL_TIME") {
       l.finalScore = got.score;
       touched++;
       fills.push("北单" + num + " " + got.score + " (" + from + ")");
