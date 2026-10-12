@@ -12,9 +12,9 @@ const probe = process.argv.includes("--probe");
 
 /* 场次 → ESPN 联赛码(null = 无码走出奇) */
 const LEAGUES = {
-  "周日004": "ned.1", "周日005": "ita.1", "周日006": "eng.2", "周日007": "esp.2",
+  "周日004": "ned.1", "周日005": "ita.1", "周日006": "eng.2", "周日007": "esp.1",
   "周日008": null,                                                        // 芬超 fin.1 已死 → 出奇
-  "周日009": "ned.1", "周日010": "nor.1", "周日011": "eng.2", "周日012": "eng.1",
+  "周日009": "ned.1", "周日010": "nor.1", "周日011": "eng.1", "周日012": "eng.1",
   "周日013": "ita.1", "周日014": "ita.1", "周日015": "fra.1", "周日016": "ger.1",
   "周日017": "esp.1", "周日018": "eng.1", "周日019": "ger.1", "周日020": "ita.1",
   "周日021": "esp.1", "周日022": "por.1", "周日023": "nor.1", "周日024": "ita.1",
@@ -33,7 +33,7 @@ const TEAM = {
   "拉齐奥": "Lazio", "蒙扎": "Monza",
   "莱切": "Lecce", "博洛尼亚": "Bologna",
   "尼斯": "Nice", "斯特拉斯": "Strasbourg",
-  "科隆": "Köln", "门兴": "Mönchengladbach",
+  "科隆": "Cologne", "门兴": "Mönchengladbach",
   "皇家社会": "Real Sociedad", "拉科": "Deportivo",
   "利物浦": "Liverpool", "曼城": "Manchester City",
   "弗赖堡": "Freiburg", "沙尔克04": "Schalke",
@@ -44,7 +44,7 @@ const TEAM = {
   "卡利亚里": "Cagliari", "尤文图斯": "Juventus",
   "特鲁瓦": "Troyes", "马赛": "Marseille",
   "桑坦德": "Racing Santander", "巴伦西亚": "Valencia",
-  "米竞技": "Mineiro", "桑托斯": "Santos",
+  "米竞技": "Atlético", "桑托斯": "Santos",
   "圣路易城": "St. Louis", "洛城银河": "Galaxy",
 };
 const DATES = ["20261011", "20261012"];
