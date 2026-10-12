@@ -317,7 +317,36 @@ Page({
       onUpdate: (changed) => self.applyScores(changed),
     });
     this._poller.start();
+    // ★2026-10-12 起: 每 30 分钟静默重拉 payload, 把服务器每小时回填的 finalScore
+    //   合入轮询池(免下拉, 场卡赛果自动浮现); 只合分不重渲染整页。
+    this._payloadTimer = setInterval(() => self.refreshScoresSilent(), 30 * 60000);
     this.setData({ scoreStatus: '滚动更新中' });
+  },
+
+  /* 静默重拉 payload, 只把新 finalScore 合入 _pollMatches 并触发一轮 poller tick
+     (scorePoller 里 finalScore 优先 → 完场场次自动切「完场 x-x」显示)。 */
+  refreshScoresSilent() {
+    const self = this;
+    api
+      .fetchTodayPayload()
+      .then((payload) => {
+        if (!payload || !Array.isArray(payload.matches)) return;
+        const by = {};
+        payload.matches.forEach((m) => {
+          if (m && m.id) by[String(m.id)] = m.finalScore || '';
+        });
+        const list = self._pollMatches || [];
+        let any = false;
+        list.forEach((m) => {
+          if (by[m.id] && m.finalScore !== by[m.id]) {
+            m.finalScore = by[m.id];
+            any = true;
+          }
+        });
+        if (!any || !self._poller) return;
+        self._poller.tick().then((changed) => self.applyScores(changed));
+      })
+      .catch(() => { /* 静默轮失败不留痕, 下次自然重试 */ });
   },
 
   /* 仅更新变化场(按 groups.jc 下标路径 setData, 不全量替换) */
@@ -340,6 +369,10 @@ Page({
     if (this._poller) {
       this._poller.stop();
       this._poller = null;
+    }
+    if (this._payloadTimer) {
+      clearInterval(this._payloadTimer);
+      this._payloadTimer = null;
     }
     if (!silent && this.data.scoreStatus) this.setData({ scoreStatus: '已暂停' });
   },

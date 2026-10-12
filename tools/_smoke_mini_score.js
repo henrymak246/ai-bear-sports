@@ -46,14 +46,18 @@ assert.strictEqual(cart.buildLeg(m2, 'ah').odds, '2.03', 'FC首尔-0.25 别名�
 console.log('OK 2/4 detectSource(bd/jc/ah) + 亚盘水位(主/客/别名) 全对');
 
 // ---- ③ scorePoller ----
-// TEAM_MAP 是日抛生成数据(gen_mini_espn 每日重生成), 不写死队名: 动态取首两条造样本。
+// TEAM_MAP 是日抛生成数据(gen_mini_espn 每日重生成), 不写死队名: 动态取首四条造样本。
 // 样本场 id 用非"周Xnnn"形态, 永不撞 MATCH_LEAGUES 日抛注册表; league 走 LEAGUE_MAP 静态表。
+// ★三样本三通道(2026-10-12 改): mLiv=英超未完场(服务端无比分)→ ESPN 即时; mDone=意甲
+//   服务端已有 finalScore → 完场直显不请求 ESPN(常规联赛兜底); mKor=死链 → MANUAL。
 const cnTeams = Object.keys(espn.TEAM_MAP);
-assert(cnTeams.length >= 2, 'TEAM_MAP 应至少 2 条(当日生成产物), 实际 ' + cnTeams.length);
+assert(cnTeams.length >= 4, 'TEAM_MAP 应至少 4 条(当日生成产物), 实际 ' + cnTeams.length);
 const homeCn = cnTeams[0], awayCn = cnTeams[1];
-const mLiv = { id: 'TEST-LIVE', league: '英超', home: homeCn, away: awayCn, finalScore: '0-0', liveScore: '', liveSt: '' };
+const doneHome = cnTeams[2], doneAway = cnTeams[3];
+const mLiv = { id: 'TEST-LIVE', league: '英超', home: homeCn, away: awayCn, finalScore: '', liveScore: '', liveSt: '' };
+const mDone = { id: 'TEST-DONE', league: '意甲', home: doneHome, away: doneAway, finalScore: '2-1', liveScore: '', liveSt: '' };
 const mKor = { id: 'TEST-DEAD', league: '韩职', home: '甲队', away: '乙队', finalScore: '2-1', liveScore: '', liveSt: '' };
-const matches = [mLiv, mKor];
+const matches = [mLiv, mDone, mKor];
 const board = {
   events: [{
     competitions: [{
@@ -78,9 +82,11 @@ const poller = createScorePoller({
 
 (async () => {
   const changed = await poller.tick();
-  assert.strictEqual(changed.length, 2, '首轮 tick 应有 2 场变化, 实际 ' + changed.length);
-  assert.strictEqual(mLiv.liveScore, '0-0', homeCn + '场 liveScore 应为 0-0, 实际 ' + mLiv.liveScore);
+  assert.strictEqual(changed.length, 3, '首轮 tick 应有 3 场变化, 实际 ' + changed.length);
+  assert.strictEqual(mLiv.liveScore, '0-0', homeCn + '场 liveScore 应为 0-0(ESPN 通道), 实际 ' + mLiv.liveScore);
   assert.strictEqual(mLiv.liveSt, 'STATUS_FULL_TIME', homeCn + '场 liveSt 应为 STATUS_FULL_TIME');
+  assert.strictEqual(mDone.liveScore, '2-1', '常规联赛 finalScore 兜底应直显 2-1, 实际 ' + mDone.liveScore);
+  assert.strictEqual(mDone.liveSt, 'STATUS_FULL_TIME', '意甲兜底场应标 STATUS_FULL_TIME(完场)');
   assert.strictEqual(mKor.liveScore, '2-1', '死链联赛场应 finalScore 兜底 2-1, 实际 ' + mKor.liveScore);
   assert.strictEqual(mKor.liveSt, 'MANUAL', '韩职场(LEAGUE_MAP null)应标 MANUAL');
   assert.strictEqual(updates, 1, 'onUpdate 应回调 1 次, 实际 ' + updates);
@@ -88,7 +94,7 @@ const poller = createScorePoller({
   const changed2 = await poller.tick();
   assert.strictEqual(changed2.length, 0, '二次 tick 应无变化');
   assert.strictEqual(updates, 1, '二次 tick 不应再回调 onUpdate');
-  console.log('OK 3/4 scorePoller: ' + homeCn + ' 0-0 完场 + 韩职 MANUAL 兜底 + 幂等');
+  console.log('OK 3/4 scorePoller: ESPN 0-0 + 常规联赛 finalScore 直显 + 韩职 MANUAL + 幂等');
 
   // ---- ④ buildLeg jcHad / jcHhad ----
   const leg8 = cart.buildLeg(m8, 'jcHad'); // direction=主胜, sp=null 容错

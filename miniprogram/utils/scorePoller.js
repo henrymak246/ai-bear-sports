@@ -1,11 +1,14 @@
 /* scorePoller.js — 场卡实时比分轮询(微信小程序 / Node 双环境, 手写)。
  * createScorePoller({ getMatches, onUpdate, intervalMs, fetcher }) → { start, stop, tick }
  * tick 逻辑:
- *   按当日 matches 涉及联赛去重(espn.MATCH_LEAGUES 场次号→联赛码 优先,
- *   espn.LEAGUE_MAP 中文联赛名→联赛码 兜底), 串行逐联赛 fetchBoard(两日 DATES),
- *   对每场未结束场 findScore 写回 { liveScore, liveSt };
- *   LEAGUE_MAP 值为 null 的死链联赛(如韩职)用 match.finalScore 兜底并标 liveSt='MANUAL';
- *   单联赛失败仅缺该联赛不阻断; onUpdate(changed) 仅在比分/状态变化时回调(changed=数组)。
+ *   ① 服务端 finalScore 优先: prediction_days 由东京服务器每小时回填并同步 Supabase,
+ *      页面刷新/静默重拉拿到后 → 常规联赛直接完场显示, 死链联赛标 MANUAL('(人工)');
+ *      ★这是赛果兜底主链(2026-10-12 起): 真机 ESPN 云链断/慢时, 常规联赛场卡照样有赛果,
+ *      不再只有死链联赛才显示 finalScore;
+ *   ② 未完场场次按联赛去重(espn.MATCH_LEAGUES 场次号→联赛码 优先,
+ *      espn.LEAGUE_MAP 中文联赛名→联赛码 兜底), 串行逐联赛 fetchBoard(两日 DATES),
+ *      对每场未结束场 findScore 写回 { liveScore, liveSt };
+ *   ③ 单联赛失败仅缺该联赛不阻断; onUpdate(changed) 仅在比分/状态变化时回调(changed=数组)。
  * 间隔默认 300000ms(5分钟), start=立即 tick+setInterval, stop=clearInterval。
  * match 鸭子类型: { id, league, home, away, finalScore?, liveScore?, liveSt? }(原地写回)。 */
 const espn = require('./espn.js');
@@ -50,15 +53,17 @@ function createScorePoller(opts) {
     try {
       const matches = (getMatches() || []).filter(Boolean);
 
-      // 死链联赛: finalScore 人工兜底(有比分才标 MANUAL, 无比分保持显示开赛时间)
+      // ① 服务端 finalScore(每小时回填同步 Supabase) → 完场直显, 不依赖 ESPN 链路:
+      //    常规联赛标 STATUS_FULL_TIME('完场'), 死链联赛(如韩职)标 MANUAL('(人工)')。
+      //    ★2026-10-12 起常规联赛同样兜底 —— 真机 ESPN 云链断/慢时场卡照样有赛果。
       matches.forEach((m) => {
         if (isFinished(m)) return;
-        if (leagueCodeOf(m) === null && m.finalScore) {
-          if (m.liveScore !== m.finalScore || m.liveSt !== 'MANUAL') {
-            m.liveScore = m.finalScore;
-            m.liveSt = 'MANUAL';
-            changed.push(m);
-          }
+        if (!m.finalScore) return; // 服务端无比分 → 待 ESPN 即时比分
+        const st = leagueCodeOf(m) === null ? 'MANUAL' : 'STATUS_FULL_TIME';
+        if (m.liveScore !== m.finalScore || m.liveSt !== st) {
+          m.liveScore = m.finalScore;
+          m.liveSt = st;
+          changed.push(m);
         }
       });
 

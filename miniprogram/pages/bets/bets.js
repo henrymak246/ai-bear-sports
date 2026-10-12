@@ -16,6 +16,7 @@ const api = require('../../utils/api.js');
 const settle = require('../../utils/settle.js');
 const espn = require('../../utils/espn.js');
 const cart = require('../../utils/cart.js');
+const betEdit = require('../../utils/betEdit.js');
 const slipCanvas = require('../../utils/slipCanvas.js');
 
 const POLL_MS = 300000; // 自动结算轮询间隔(5 分钟)
@@ -95,22 +96,40 @@ function previewOf(bet, li, leg, opts) {
   return c.stakes === oldS ? head : head + ' (原 ' + oldS + '注/' + money(bet.amount) + '元)';
 }
 
+/* 单条腿 → 腿行视图模型。decorateBet 与「修改模式」草稿共用同一份(两处渲染的字段必须一致,
+   否则删完腿重建行会闪字段) */
+function legRowOf(leg) {
+  const mark = RESULT_MARK[leg.result] || { t: '待', cls: 'judge-pending' };
+  return {
+    matchText: leg.match || ((leg.home || '') + ' vs ' + (leg.away || '')),
+    finalScore: leg.finalScore || '',
+    pickText: leg.pick || '',
+    oddsText: leg.odds !== undefined && leg.odds !== null ? String(leg.odds) : '',
+    bdNumText: leg.bdNum ? '北单' + leg.bdNum : '',
+    mark: mark.t,
+    markCls: mark.cls,
+    canEdit: canEditLeg(leg),
+  };
+}
+
+/* 统计卡下的「当日累计」一行: 当日 = 列表里最新 bet_date(不是日历日 —— 场次多在当晚~次日凌晨,
+   跨零点按日历日会显示 0 元)。金额口径 = Σ amount, 与 stats.totalAmount 同源。 */
+function todayLineOf(bets) {
+  const t = betEdit.todaySum(bets);
+  if (!t.date) return '';
+  return t.date.slice(5) + ' 当日投注 ' + money(t.amount) + ' 元 · ' + t.count + ' 单';
+}
+
+/* 修改模式的金额行(展示字符串在此预拼接, 与 bet-foot 的写法一致) */
+function slipMoneyLine(m, mult) {
+  return m.stakes + '注 · 单注 ' + money(m.unit) + '元' +
+    (mult > 1 ? ' ×' + mult + '倍' : '') + ' · 投入 ' + money(m.amount) + '元';
+}
+
 /* bet → 视图模型(展示字符串在此预拼接, WXML 只做插值) */
 function decorateBet(bet) {
   const src = SRC[bet.source] || { label: bet.source || '?', cls: 'badge-gray' };
-  const legRows = (bet.legs || []).map(function (leg) {
-    const mark = RESULT_MARK[leg.result] || { t: '待', cls: 'judge-pending' };
-    return {
-      matchText: leg.match || ((leg.home || '') + ' vs ' + (leg.away || '')),
-      finalScore: leg.finalScore || '',
-      pickText: leg.pick || '',
-      oddsText: leg.odds !== undefined && leg.odds !== null ? String(leg.odds) : '',
-      bdNumText: leg.bdNum ? '北单' + leg.bdNum : '',
-      mark: mark.t,
-      markCls: mark.cls,
-      canEdit: canEditLeg(leg),
-    };
-  });
+  const legRows = (bet.legs || []).map(legRowOf);
   const cap = STATUS_CAPSULE[bet.status] || STATUS_CAPSULE.pending;
   const profit = parseFloat(bet.profit) || 0;
   return Object.assign({}, bet, {
@@ -150,6 +169,14 @@ Page({
     editOpts: [],
     editPreview: '',
     editSaving: false,
+    // 整单修改模式(左滑删腿 + 倍数 + 金额累计) —— 与上面的抽屉是两套独立状态, 键名刻意不共用
+    slipEditId: '',   // 正在修改的注单 id('' = 不在修改模式)
+    slipLegs: [],     // 草稿腿(带 dx/dragging); 增删只动这里, 未保存前 _bets 原样不动
+    slipMult: 1,      // 整单一个倍数(1~99)
+    slipBase: 2,      // 单注(倍数作用在它身上 → unit = slipBase × slipMult)
+    slipMoney: '',    // 草稿重算的金额行(注数 · 单注 · 投入, JS 预拼好字符串)
+    slipSaving: false,
+    todayLine: '',    // 统计卡下的「当日累计」一行
   },
 
   onShow() {
@@ -160,6 +187,7 @@ Page({
   onHide() {
     this.stopPoll();
     if (this.data.editOpen) this.closeEdit(); // 抽屉会跨 tab 存活, 离开时收起来
+    if (this.data.slipEditId) this.cancelEdit(); // 修改模式同理(草稿不写库, 直接丢)
   },
 
   onUnload() {
@@ -187,7 +215,12 @@ Page({
       .then((bets) => {
         const list = Array.isArray(bets) ? bets : [];
         this._bets = list; // 原始数据(未 decorate), 供 pollTick 判"是否还有未完场腿"
-        this.setData({ bets: list.map(decorateBet), stats: settle.calcStats(list), loading: false });
+        this.setData({
+          bets: list.map(decorateBet),
+          stats: settle.calcStats(list),
+          todayLine: todayLineOf(list),
+          loading: false,
+        });
         this.stopPull();
         return this.autoSettle(list, silent, seq);
       })
@@ -198,6 +231,7 @@ Page({
           errMsg: errText(e),
           bets: [],
           stats: settle.calcStats([]),
+          todayLine: '',
         });
         this.stopPull();
       });
@@ -246,9 +280,14 @@ Page({
       const key = settle.legKey(leg);
       const dk = (bet.bet_date || '') + '|' + key;
       if (!(dk in scoreCache)) {
-        scoreCache[dk] = settle.fetchScoreForLeg(leg, bet.bet_date, boardFetcher).then(function (fs) {
+        // ★payload 优先(2026-10-12 起): prediction_days 由服务器每小时回填同步,
+        //   完场比分既快又稳(真机 ESPN 云链断/慢时不用干等超时);
+        //   服务端还没有比分(未完场/掉出两天窗口)→ 再走 ESPN 即时通道兜底。
+        //   Promise.resolve 必须包: payloadScore 缓存命中路径返回裸字符串(非 Promise),
+        //   直接 .then 会 TypeError 并被链上 catch 静默吞掉(整票永无回写)。
+        scoreCache[dk] = Promise.resolve(payloadScore(bet.bet_date, key)).then(function (fs) {
           if (fs) return fs;
-          return payloadScore(bet.bet_date, key); // 死链联赛/未命中回退当日推荐 finalScore
+          return settle.fetchScoreForLeg(leg, bet.bet_date, boardFetcher);
         });
       }
       return scoreCache[dk];
@@ -533,6 +572,203 @@ Page({
       });
   },
 
+  /* ---- 整单修改模式: 左滑删腿 + 倍数 + 金额累计 ----
+     状态: 草稿(_slip:{id,bet,legs,baseUnit,mult}) + data.slipXxx(纯渲染镜像)。
+     ★草稿必须放在 _slip/this._slipLegs 而不是 data.bets[i] 里 —— load()/pollTick 会把 data.bets
+       整数组换成新对象(带 decorate 字段), 草稿混在里面会被轮询覆盖掉用户刚删的腿。 */
+
+  /* 注卡「✏ 修改」: 进修改模式。同一时刻只允许一张票 —— 换票即丢弃上一张的草稿(未写库, 无损)。 */
+  startEdit(e) {
+    const id = (e.currentTarget.dataset || {}).id;
+    const bet = this.findBet(id);
+    if (!bet || !Array.isArray(bet.legs) || !bet.legs.length) return;
+    if (this.data.slipSaving) return;
+    if (this.data.editOpen) this.closeEdit(); // 与「改选项」抽屉互斥(都改同一张票, 同开必打架)
+    const bu = betEdit.baseUnitOf(bet.unit);
+    this._slip = { id: id, bet: bet, legs: bet.legs.slice(), baseUnit: bu.baseUnit, mult: bu.mult };
+    const m = betEdit.moneyOf(this._slip.legs, bu.baseUnit, bu.mult);
+    this.setData({
+      slipEditId: id,
+      slipLegs: this._slipRows(),
+      slipBase: bu.baseUnit,
+      slipMult: bu.mult,
+      slipMoney: slipMoneyLine(m, bu.mult),
+      slipSaving: false,
+    });
+  },
+
+  /* 草稿腿 → 视图行(dx 归零: 删完一条后别的行不该还挂着「删除」) */
+  _slipRows() {
+    const legs = (this._slip && this._slip.legs) || [];
+    return legs.map(function (l) {
+      return Object.assign(legRowOf(l), { dx: 0, dragging: false });
+    });
+  },
+
+  /* 草稿结构性变更(删腿)后: 重建行 + 重算金额 */
+  _slipApply() {
+    const s = this._slip;
+    if (!s) return;
+    const m = betEdit.moneyOf(s.legs, s.baseUnit, s.mult);
+    this.setData({ slipLegs: this._slipRows(), slipMoney: slipMoneyLine(m, s.mult) });
+  },
+
+  /* 「取消」: 草稿直接丢, 库里的票一个字节都没动(删错腿的兜底) */
+  cancelEdit() {
+    if (this.data.slipSaving) return; // 保存中不许退, 否则结果无处落地
+    this._slip = null;
+    this._sw = null;
+    this.setData({
+      slipEditId: '', slipLegs: [], slipMult: 1, slipBase: betEdit.DEF_UNIT,
+      slipMoney: '', slipSaving: false,
+    });
+  },
+
+  /* 倍数 ±(整单一个倍数, 1~99) —— 只改单注金额 unit, 不动 expect_payout 的 ×2 口径 */
+  stepMult(e) {
+    const s = this._slip;
+    if (!s || this.data.slipSaving) return;
+    const next = betEdit.stepMult(s.mult, (e.currentTarget.dataset || {}).d);
+    if (next === s.mult) {
+      wx.showToast({ title: next >= betEdit.MAX_MULT ? '倍数上限 ' + betEdit.MAX_MULT : '倍数下限 ' + betEdit.MIN_MULT, icon: 'none' });
+      return;
+    }
+    s.mult = next;
+    const m = betEdit.moneyOf(s.legs, s.baseUnit, next);
+    this.setData({ slipMult: next, slipMoney: slipMoneyLine(m, next) });
+  },
+
+  /* 左滑露出的「删除」被点: 删掉这条腿(只在草稿里; 保存前不写库)。
+     删空 = 作废, 该走整单「🗑 删除」→ 拒绝并提示, 不静默存一张空票。 */
+  delLegTap(e) {
+    const s = this._slip;
+    if (!s || this.data.slipSaving) return;
+    const li = parseInt((e.currentTarget.dataset || {}).li, 10);
+    const next = betEdit.delLeg(s.legs, li);
+    if (!next) {
+      wx.showToast({ title: '至少保留一关, 想作废请用「🗑 删除」', icon: 'none' });
+      return;
+    }
+    s.legs = next;
+    this._slipApply();
+  },
+
+  /* ---- 左滑手势(项目里无先例, 手写) ----
+     小程序 touchmove 没有 preventDefault, 只能靠"不响应"给页面滚动让路: 方向锁判定竖向就完全不接管,
+     确认横向才 setData 跟随。松手过半吸附出「删除」, 否则弹回。 */
+  legTouchStart(e) {
+    if (!this._slip || this.data.slipSaving) return;
+    const t = (e.touches && e.touches[0]) || {};
+    const li = parseInt((e.currentTarget.dataset || {}).li, 10);
+    if (!(li >= 0)) return;
+    const row = (this.data.slipLegs || [])[li] || {};
+    this._sw = { li: li, x: t.clientX || 0, y: t.clientY || 0, dx0: row.dx || 0, dir: '' };
+  },
+
+  legTouchMove(e) {
+    const sw = this._sw;
+    if (!sw || !this._slip || this.data.slipSaving) return;
+    const t = (e.touches && e.touches[0]) || {};
+    const dx = (t.clientX || 0) - sw.x;
+    const dy = (t.clientY || 0) - sw.y;
+    if (!sw.dir) {
+      sw.dir = betEdit.lockDir(dx, dy);
+      if (sw.dir !== 'h') return; // 竖向/未定 → 放给页面滚动
+      // 拖动中关掉过渡, 否则跟随有粘滞感; 松手时再打开做吸附动画
+      this.setData({ ['slipLegs[' + sw.li + '].dragging']: true });
+    }
+    if (sw.dir !== 'h') return;
+    const v = betEdit.clampDx(sw.dx0 + dx);
+    const cur = ((this.data.slipLegs || [])[sw.li] || {}).dx || 0;
+    if (Math.abs(v - cur) < 2) return; // 位移不足 2rpx 不 setData(高频事件省渲染)
+    this.setData({ ['slipLegs[' + sw.li + '].dx']: v });
+  },
+
+  legTouchEnd() {
+    const sw = this._sw;
+    this._sw = null;
+    if (!sw || !this._slip || sw.dir !== 'h') return;
+    const row = (this.data.slipLegs || [])[sw.li] || {};
+    const v = betEdit.snapDx(row.dx || 0);
+    const patch = { ['slipLegs[' + sw.li + '].dragging']: false };
+    if (v !== (row.dx || 0)) patch['slipLegs[' + sw.li + '].dx'] = v;
+    this.setData(patch);
+  },
+
+  /* 「保存」: 草稿腿 → 重算注数/投入 → mini_edit_bet(倍数折进 unit) → 弹本单金额+当日累计 → 静默重拉。
+     ★unit 只在真改了倍数时才送上: p_unit 是后加的尾参, 老库没升级时不送 → 其余路径零感知;
+       真改了倍数却没升级 → RPC 404, 这里明确告知, 绝不会写出"金额三倍、奖金一倍"的坏账。
+     ★单注/倍数口径: unit = slipBase × slipMult; settle.js 结算就是 acc = unit × ∏legSpFactor。 */
+  saveSlip() {
+    const self = this;
+    const s = this._slip;
+    if (!s || this.data.slipSaving) return;
+    const bet = this.findBet(s.id) || s.bet;
+    if (!bet || !Array.isArray(s.legs) || !s.legs.length) {
+      wx.showToast({ title: '注单已不存在, 请下拉刷新', icon: 'none' });
+      this.cancelEdit();
+      return;
+    }
+    const c = cart.calc(s.legs);
+    const m = betEdit.moneyOf(s.legs, s.baseUnit, s.mult);
+    const oldUnit = Math.round((parseFloat(bet.unit) || betEdit.DEF_UNIT) * 100) / 100;
+    const patch = { legs: s.legs, stakes: c.stakes, amount: m.amount, expect_payout: c.expectPayout };
+    if (m.unit !== oldUnit) patch.unit = m.unit;
+    this.setData({ slipSaving: true });
+    // 返回 promise 便于冒烟 await(bindtap 回调忽略返回值, 无副作用)
+    return api.editBet(s.id, patch)
+      .then(function () {
+        // 就地更新本地这张票 → 弹窗里的"当日累计"、统计卡、列表立刻是新数, 不等 load 回来
+        const local = self.findBet(s.id);
+        if (local) {
+          local.legs = s.legs;
+          local.stakes = c.stakes;
+          local.unit = m.unit;
+          local.amount = m.amount;
+          local.expect_payout = c.expectPayout;
+          local.status = 'pending'; // 与 SQL 侧一致(改完重来)
+          local.actual_payout = 0;
+          local.profit = 0;
+          local.settled_at = null;
+        }
+        const list = self._bets || [];
+        const t = betEdit.todaySum(list);
+        self._slip = null;
+        self._sw = null;
+        self.setData({
+          bets: list.map(decorateBet),
+          stats: settle.calcStats(list),
+          todayLine: todayLineOf(list),
+          slipEditId: '', slipLegs: [], slipMult: 1, slipBase: betEdit.DEF_UNIT,
+          slipMoney: '', slipSaving: false,
+        });
+        wx.showModal({
+          title: '已保存',
+          content: '本单金额 ' + money(m.amount) + ' 元' +
+            (m.unit !== oldUnit ? '(单注 ' + money(m.unit) + ' 元' + (s.mult > 1 ? ' · ' + s.mult + ' 倍' : '') + ')' : '') +
+            '\n' + (t.date ? t.date.slice(5) + ' 当日累计 ' + money(t.amount) + ' 元 · ' + t.count + ' 单' : ''),
+          showCancel: false,
+          confirmText: '好',
+        });
+        // 静默重拉: 顺带用 _seq 作废在飞的旧结算回写, 并按新腿立即重判(改完回到待结算)
+        self.load(true);
+      })
+      .catch(function (err) {
+        self.setData({ slipSaving: false }); // 一定要复位, 否则保存按钮永久禁用
+        const msg = String((err && err.message) || err || '');
+        if (/HTTP 404|PGRST202/.test(msg)) {
+          wx.showModal({
+            title: '本次修改没有写入',
+            content: '改倍数要先更新数据库函数 mini_edit_bet(见 supabase/mini_rpc.sql), 在 Supabase SQL 编辑器整段重跑一次即可。',
+            showCancel: false,
+            confirmText: '好',
+          });
+          return;
+        }
+        wx.showToast({ title: '保存失败: ' + errText(err).slice(0, 24), icon: 'none' });
+      });
+  },
+
   /* 「🗑 删除」: 确认弹窗 → 库里真删 → 本地同步(_bets + bets + stats 一起改,
      否则 pollTick 还会为已删票发请求) */
   removeBet(e) {
@@ -555,7 +791,11 @@ Page({
           .then(function () {
             self._delBusy = false;
             self._bets = (self._bets || []).filter(function (b) { return !b || b.id !== id; });
-            self.setData({ bets: self._bets.map(decorateBet), stats: settle.calcStats(self._bets) });
+            self.setData({
+              bets: self._bets.map(decorateBet),
+              stats: settle.calcStats(self._bets),
+              todayLine: todayLineOf(self._bets),
+            });
             wx.showToast({ title: '已删除', icon: 'success' });
           })
           .catch(function (err) {
@@ -575,5 +815,5 @@ Page({
 });
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { decorateBet, errText, canEditLeg, pickMatch, previewOf };
+  module.exports = { decorateBet, errText, canEditLeg, pickMatch, previewOf, legRowOf, todayLineOf };
 }
