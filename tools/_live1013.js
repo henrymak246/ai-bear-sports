@@ -20,6 +20,8 @@ const LEAGUES = {
   "周三005": "uefa.champions", "周三006": "uefa.champions", "周三008": "uefa.champions",
   "周三009": "uefa.champions", "周三010": "uefa.champions", "周三011": "uefa.champions",
   "周三012": "uefa.champions", "周三013": "conmebol.libertadores",
+  /* 10-14 日职(日联杯)扩容场: 北单-only, 无 ESPN 码走出奇兜底(label 无前导零) */
+  "北单028": null, "北单031": null, "北单033": null, "北单034": null, "北单035": null,
 };
 /* 中名(竞彩口径) → ESPN displayName 子串(不区分大小写; --probe 可再验) */
 const TEAM = {
@@ -106,9 +108,12 @@ const fills = [];
       console.log((got ? "✓ " : "? ") + m.id + " [" + lg + "] " + (got ? got.raw : "(未找到)"));
     }
   } else {
-    const c = cqScoreLabel(m.id, "竞彩", parseInt(d.date.replace(/-/g, ""), 10));
+    const isBd = m.id.startsWith("北单");
+    const c = isBd
+      ? cqScoreLabel(m.id.replace(/^北单0+/, "北单"), "北单", 26104) // 北单 label 无前导零, 期号 5 位
+      : cqScoreLabel(m.id, "竞彩", parseInt(d.date.replace(/-/g, ""), 10));
     if (c) { got = { score: c, status: "FULL_TIME" }; src = "cq"; }
-    if (probe) console.log("? " + m.id + " [cq] " + (got ? got.score : "(未找到)"));
+    if (probe) console.log("? " + m.id + " [cq" + (isBd ? "/bd" : "") + "] " + (got ? got.score : "(未找到)"));
   }
   if (got && got.status === "FULL_TIME") {
     m.finalScore = got.score;
