@@ -116,7 +116,7 @@ function main() {
       console.log("%s %s vs %s | %s", mm.id, mm.home, mm.away, hit ? hit.raw : "(未找到)");
       continue;
     }
-    if (hit && /^(STATUS_FULL_TIME|FT)$/i.test(hit.status) && hit.score !== "0-0") {
+    if (hit && /^(STATUS_FULL_TIME|FULL_TIME|FT)$/i.test(hit.status) && hit.score !== "0-0") {
       if (mm.finalScore !== hit.score) {
         console.log("%s %s vs %s → %s", mm.id, mm.home, mm.away, hit.score);
         mm.finalScore = hit.score;
