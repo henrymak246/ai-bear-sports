@@ -128,7 +128,7 @@ function buildLeg(match, kind, subPick) {
     const side = teamSide(named, m.home, m.away);
     const water = m.ah ? (side === 'away' ? m.ah.away : m.ah.home) : '';
     const w = parseFloat(water);
-    const odds = isNaN(w) ? '' : (1 + w).toFixed(2);
+    const odds = isNaN(w) ? '' : (w >= 1.25 ? w : 1 + w).toFixed(2); // 0.xx=老水(球探)需+1; 1.xx=十进制赔率(澳客/折算)直接用(2026-10-19)
     return {
       kind: 'ah',
       id: m.id || '',
@@ -148,7 +148,7 @@ function buildLeg(match, kind, subPick) {
     const isOver = String(pick).indexOf('大') === 0;
     const water = isOver ? o.over : o.under;
     const w = parseFloat(water);
-    const odds = isNaN(w) ? '' : (1 + w).toFixed(2);
+    const odds = isNaN(w) ? '' : (w >= 1.25 ? w : 1 + w).toFixed(2); // 0.xx=老水(球探)需+1; 1.xx=十进制赔率(澳客/折算)直接用(2026-10-19)
     return {
       kind: 'ahOu',
       id: m.id || '',
