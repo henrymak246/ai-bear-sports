@@ -1,6 +1,5 @@
-/* 10-19 复盘(周一深夜快车 8 场, 可重复执行; 赛果由 _live1019.js 回填)。
-   🎯=0胆0单选 push; 🔵=双选红多于黑 hit; 🏅/🀄=对应串全红 hit 否则 miss;
-   asian7(亚盘)/大小盘结果由终审按 judgeAh 口径手工回填; 胜负彩无新期。
+/* 10-19 深夜快车窗口复盘(北单池 23 场, 可重复执行; 赛果由 _live1019.js 回填)。
+   🎯=0胆0单选 push; 🔵=双选红多于黑 hit; asian7(混合过关)结果由终审按 leg 口径手工回填。
    用法: node tools/_review1019.js; DRY=1 node tools/_review1019.js 只打印不写。 */
 const fs = require("fs");
 const path = require("path");
@@ -11,15 +10,7 @@ const d = days.find(x => x.date === "2026-10-19");
 if (!d) { console.log("无 2026-10-19 数据"); process.exit(1); }
 let touched = 0;
 
-function findM(matchStr) {
-  const id3 = String(matchStr || "").slice(0, 3);
-  const names = String(matchStr || "").slice(4).split(" vs ");
-  const cands = (d.matches || []).filter(x => String(x.id).slice(-3) === id3);
-  if (cands.length === 1) return cands[0];
-  return cands.find(x => x.home === names[0] && x.away === names[1]) || cands[0];
-}
-
-let dblH = 0, dblM = 0, dirH = 0, dirN = 0, scH = 0, scN = 0;
+let dblH = 0, dblM = 0, dirH = 0, dirN = 0;
 (d.matches || []).forEach(m => {
   if (!m.finalScore || !m.direction) return;
   const v = S.judgeDirection(m.direction, m.finalScore, m.spHandicap);
@@ -29,49 +20,8 @@ let dblH = 0, dblM = 0, dirH = 0, dirN = 0, scH = 0, scN = 0;
     const r = (v === 1 || (s && s.home === s.away)) ? "hit" : "miss";
     r === "hit" ? dblH++ : dblM++;
   }
-  if (Array.isArray(m.score) && m.score.includes(m.finalScore)) scH++;
-  scN++;
 });
 const allJudged = (d.matches || []).every(m => m.finalScore);
-
-function legHitScore3(l) {
-  const m = findM(l.match);
-  if (!m || !m.finalScore) return null;
-  return m.finalScore === l.pick ? 1 : 0;
-}
-function legHitBd(l) {
-  const m = findM(l.match);
-  const fs = m && m.finalScore ? m.finalScore : l.finalScore;
-  if (!fs) return null;
-  const s = S.parseScore(fs);
-  if (!s) return null;
-  const hc = parseInt(l.handicap, 10) || 0;
-  const adjH = s.home + hc;
-  const side = adjH > s.away ? "3" : adjH < s.away ? "0" : "1";
-  return String(l.pick).split("/").includes(side) ? 1 : 0;
-}
-function blockResultOf(blk, fn) {
-  const rs = blk.legs.map(fn);
-  if (rs.some(r => r === null)) return null;
-  return rs.every(r => r === 1) ? "hit" : "miss";
-}
-
-if (d.score3) {
-  d.score3.legs.forEach(l => {
-    const r = legHitScore3(l);
-    if (r !== null && l.result !== (r === 1 ? "hit" : "miss")) { l.result = r === 1 ? "hit" : "miss"; touched++; }
-  });
-  const br = blockResultOf(d.score3, legHitScore3);
-  if (br !== null && d.score3.result !== br) { d.score3.result = br; touched++; }
-}
-if (d.beidan310) {
-  d.beidan310.legs.forEach(l => {
-    const r = legHitBd(l);
-    if (r !== null && l.result !== (r === 1 ? "hit" : "miss")) { l.result = r === 1 ? "hit" : "miss"; touched++; }
-  });
-  const br = blockResultOf(d.beidan310, legHitBd);
-  if (br !== null && d.beidan310.result !== br) { d.beidan310.result = br; touched++; }
-}
 
 function card(name) { return (d.plan || []).find(p => p.name === name); }
 const setCard = (name, v) => { const c = card(name); if (c && c.result !== v) { c.result = v; touched++; } };
@@ -79,8 +29,6 @@ if (allJudged) {
   const sp = card("🎯 胜平负");
   if (sp && sp.text.indexOf("0胆0单选") !== -1) setCard("🎯 胜平负", "push");
   setCard("🔵 双选方向", dblH + dblM === 0 ? null : (dblH > dblM ? "hit" : "miss"));
-  setCard("🏅 比分", (d.score3 && d.score3.result) || "miss");
-  setCard("🀄 北单310", (d.beidan310 && d.beidan310.result) || "miss");
 }
 
 console.log("--- 方向层逐场 ---");
@@ -89,16 +37,13 @@ console.log("--- 方向层逐场 ---");
   const v = S.judgeDirection(m.direction, m.finalScore, m.spHandicap);
   const s = S.parseScore(m.finalScore);
   const dbl = String(m.dirTag || "").includes("双选") ? (v === 1 || (s && s.home === s.away) ? "红" : "黑") : "-";
-  const sc = Array.isArray(m.score) && m.score.includes(m.finalScore) ? "比分红" : "";
-  console.log("  " + m.id + " ★" + m.confidence + " " + m.direction + " (双选" + dbl + ") " + m.finalScore + " 方向=" + (v === 1 ? "红" : "黑") + " " + sc);
+  console.log("  " + m.id + " ★" + m.confidence + " " + m.direction + " (双选" + dbl + ") " + m.finalScore + " 方向=" + (v === 1 ? "红" : "黑"));
 });
 console.log("--- 统计(已判场) ---");
 console.log("方向页面口径: " + dirH + "/" + dirN);
 console.log("双选语义: " + dblH + "红" + dblM + "黑");
-console.log("比分命中: " + scH + "/" + scN);
 console.log("全日赛果齐: " + (allJudged ? "是" : "否(有待赛场)"));
-console.log("[score3]=" + (d.score3 ? d.score3.result : "无"));
-console.log("[beidan310]=" + (d.beidan310 ? d.beidan310.result : "无"));
+console.log("[asian7 混合过关]=" + (d.asian7 ? "待终审按腿手工判" : "无"));
 
 if (process.env.DRY) { console.log("DRY 模式, 不写文件"); process.exit(0); }
 if (touched) {

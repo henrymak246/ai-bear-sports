@@ -6,23 +6,28 @@ const fs = require("fs");
 const path = require("path");
 
 const toolsDir = __dirname;
-const src = fs.readdirSync(toolsDir)
+// 合并最近两个 _live*.js(双前缀/跨日: 今日 23 场 + 明日池同入小程序映射, 2026-10-19 起)
+const srcs = fs.readdirSync(toolsDir)
   .filter(f => /^_live\d+\.js$/.test(f))
   .sort()
-  .reverse()[0];
-if (!src) { console.error("未找到 tools/_live*.js"); process.exit(1); }
-const srcRel = "tools/" + src;
-const text = fs.readFileSync(path.join(toolsDir, src), "utf8");
+  .reverse()
+  .slice(0, 2);
+if (!srcs.length) { console.error("未找到 tools/_live*.js"); process.exit(1); }
+const srcRel = srcs.map(s => "tools/" + s).join(" + ");
 
-function extractLiteral(name) {
+function extractLiteral(name, text) {
   const m = text.match(new RegExp("const " + name + " = (\\{[\\s\\S]*?\\});"));
-  if (!m) throw new Error("未能从 " + srcRel + " 抽取 " + name);
+  if (!m) throw new Error("未能抽取 " + name);
   // 校验为合法对象字面量并取值(键含中文引号, 用 Function 求值最稳)
   return new Function("return (" + m[1] + ");")();
 }
 
-const LEAGUES = extractLiteral("LEAGUES");
-const TEAM = extractLiteral("TEAM");
+const LEAGUES = {}, TEAM = {};
+for (const src of srcs) {
+  const text = fs.readFileSync(path.join(toolsDir, src), "utf8");
+  Object.assign(LEAGUES, extractLiteral("LEAGUES", text));
+  Object.assign(TEAM, extractLiteral("TEAM", text));
+}
 
 const header = "/* 由 gen_mini_espn.js 于 " + new Date().toISOString() + " 从 " + srcRel + " 生成, 勿手改 */\n";
 const indent = s => JSON.stringify(s, null, 2).split("\n").join("\n  ");
