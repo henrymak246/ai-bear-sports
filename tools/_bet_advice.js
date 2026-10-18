@@ -49,9 +49,10 @@ function betAdviceCard(day, days) {
     const m = String(l.match || "").replace(/^\d{3}\s*/, "").replace(/\s+/g, "");
     return (l.bdNum ? l.bdNum + " " : "") + m + " " + (l.pick || "?");
   }).join(" ｜ ") : "";
+  const bdDoubleCount = bd ? bd.legs.filter(l => String(l.pick || "").includes("/")).length : 0;
   const bdLine = !bd ? "🎫 彩票层: ▫️ 今日无北单块"
     : bdAmt === 0 ? `🎫 彩票层: ✂️ 已裁剪(总金额超限) —— 北单 ${bd.legs.length} 腿复式只看不买(${bdLegList})`
-    : `🎫 彩票层: ✅ **${bdAmt} 元**(${bd.stakes || "?"}注×2元) → 北单 ${bd.legs.length} 腿复式\n   ▪ ${bdLegList}\n   ▪ 口径: 3=主胜 / 1=平 / 0=客胜(全部让球=0 直盘; 双选腿两档皆可, 单注 2 元 × 2^5=32 注)`;
+    : `🎫 彩票层: ✅ **${bdAmt} 元**(${bd.stakes || "?"}注×2元) → 北单 ${bd.legs.length} 腿复式\n   ▪ ${bdLegList}\n   ▪ 口径: 3=主胜 / 1=平 / 0=客胜(让球场按让球后比分判定; ${bdDoubleCount} 个双选腿 ⇒ 2^${bdDoubleCount}=${2 ** bdDoubleCount} 注, 每注 2 元)`;
 
   const sumLine = total > 0
     ? `💵 **今日方案合计 ${total} 元**(总金额上限 ${CAP} 元${cutNote ? "; 已超限裁剪" + cutNote : ""})`
