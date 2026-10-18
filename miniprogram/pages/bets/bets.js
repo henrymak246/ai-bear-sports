@@ -19,7 +19,7 @@ const cart = require('../../utils/cart.js');
 const betEdit = require('../../utils/betEdit.js');
 const slipCanvas = require('../../utils/slipCanvas.js');
 
-const POLL_MS = 300000; // 自动结算轮询间隔(5 分钟)
+const POLL_MS = 60000; // 自动结算轮询间隔(60 秒, 2026-10-18 提速)
 
 const SRC = {
   jc: { label: '🎫 竞彩', cls: 'badge-red' },
@@ -33,7 +33,7 @@ const RESULT_MARK = {
   push: { t: '走', cls: 'judge-pending' },
 };
 const STATUS_CAPSULE = {
-  pending: { t: '待结算', cls: 'cap-pending' },
+  pending: { t: '进行中·完赛后自动出结果', cls: 'cap-pending' },
   hit: { t: '全红', cls: 'cap-hit' },
   miss: { t: '未中', cls: 'cap-miss' },
   half: { t: '半红', cls: 'cap-half' },

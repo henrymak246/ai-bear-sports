@@ -16,6 +16,7 @@
   </view>
 
   <view class="err-banner" wx:if="{{errMsg}}">⚠️ {{errMsg}}</view>
+  <view class="stale-banner" wx:if="{{staleTip}}">🕐 {{staleTip}}</view>
   <view class="loading" wx:if="{{loading && !payload}}">小熊搬运中…</view>
 
   <!-- ============ 🎫 竞彩 Tab ============ -->
@@ -129,6 +130,17 @@
 
   <!-- ============ 🌏 亚盘 Tab ============ -->
   <block wx:if="{{tab === 'ah' && payload}}">
+    <!-- 🌏 亚盘推荐串(asian7 七腿, 来自网站同源数据) -->
+    <view class="card a7-card" wx:if="{{asian7View}}">
+      <view class="a7-head"><text class="a7-title">🌏 今日亚盘推荐串(asian7)</text></view>
+      <view class="a7-leg" wx:for="{{asian7View.legs}}" wx:key="index">
+        <text class="a7-pick">{{item.pick}}</text>
+        <text class="a7-match muted">{{item.match}}</text>
+        <text class="a7-odds">@{{item.odds}}</text>
+      </view>
+      <view class="a7-note muted" wx:if="{{asian7View.note}}">{{asian7View.note}}</view>
+    </view>
+    <view class="empty" wx:else>今日暂无亚盘推荐串🐾</view>
     <view class="card match-card" wx:for="{{groups.ah}}" wx:key="id">
       <view class="m-head">
         <view class="m-teams">
@@ -147,9 +159,18 @@
       </view>
       <view class="m-line muted" wx:if="{{item.ahName}}">盘口 {{item.ahName}} ｜ 主水 {{item.ahHome}} ／ 客水 {{item.ahAway}}</view>
       <view class="m-line muted" wx:if="{{item.ouName}}">大小 {{item.ouName}} ｜ 大水 {{item.ouOver}} ／ 小水 {{item.ouUnder}}</view>
-      <!-- 组串勾选: 亚盘场卡整卡可勾(ah 腿) -->
+      <!-- 组串勾选: 让球腿/大小球腿各自独立勾选, ⇄ 切换选项后自由组合 -->
       <view class="m-cart" wx:if="{{cartMode}}">
-        <checkbox class="m-check" checked="{{!!cartSel['ah:' + item.id]}}" data-key="ah:{{item.id}}" data-type="ah" data-id="{{item.id}}" bindtap="toggleCart" />
+        <view class="m-cart-row">
+          <checkbox class="m-check" checked="{{!!cartSel['ah:' + item.id]}}" data-key="ah:{{item.id}}" data-type="ah" data-id="{{item.id}}" bindtap="toggleCart" />
+          <text class="m-cart-label">让球 {{item.ahPick}}</text>
+          <text class="m-switch" data-id="{{item.id}}" data-kind="ah" catchtap="switchAhSide">⇄</text>
+        </view>
+        <view class="m-cart-row" wx:if="{{item.ouPick}}">
+          <checkbox class="m-check" checked="{{!!cartSel['ahOu:' + item.id]}}" data-key="ahOu:{{item.id}}" data-type="ahOu" data-id="{{item.id}}" bindtap="toggleCart" />
+          <text class="m-cart-label">大小 {{item.ouPick}}</text>
+          <text class="m-switch" data-id="{{item.id}}" data-kind="ahOu" catchtap="switchAhSide">⇄</text>
+        </view>
       </view>
     </view>
     <view class="empty" wx:if="{{!groups.ah.length}}">等小熊补充🐾</view>

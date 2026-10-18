@@ -141,6 +141,26 @@ function buildLeg(match, kind, subPick) {
     };
   }
 
+  // 大小球腿(2026-10-18 新增): pick='大2.5'/'小2.5', odds=对应水位+1
+  if (kind === 'ahOu') {
+    const o = m.ouOdds || {};
+    const pick = subPick || m.ouPick || '';
+    const isOver = String(pick).indexOf('大') === 0;
+    const water = isOver ? o.over : o.under;
+    const w = parseFloat(water);
+    const odds = isNaN(w) ? '' : (1 + w).toFixed(2);
+    return {
+      kind: 'ahOu',
+      id: m.id || '',
+      home: m.home || '',
+      away: m.away || '',
+      league: m.league || '',
+      pick,
+      odds,
+      desc: head + ' 大小球 ' + pick + (odds ? '@' + odds : ''),
+    };
+  }
+
   // 默认 jcHad
   const pick = subPick || dirToPick(m.direction);
   const raw = m.sp && m.sp[pickIndex(pick)];

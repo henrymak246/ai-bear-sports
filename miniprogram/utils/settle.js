@@ -1,7 +1,7 @@
 /* settle.js — 投注结算模块(微信小程序 / Node 双环境, 手写)
  * settleLeg(leg, finalScore)      单腿判定 → 'hit'|'miss'|'half'|'push'|null(未完场)
  *   分派: 有 handicap 字段 → 北单 judgeBd310;
- *         pick 含 +/-数字盘口或"平手" → 亚盘 judgeAh(side 自动推导);
+ *         pick 含 +/-数字盘口 / 裸数字盘口(斯托克城0 ≡ -0) / "平手" → 亚盘 judgeAh(side 自动推导);
  *         否则 → 竞彩方向 judgeDirection('3'→主胜/'1'→平/'0'→客胜, 多选按 '/' 拆)。
  *   leg.result 已是 hit/miss/half/push 时直接沿用(人工回填/北单未开售 push 优先)。
  * settleBet(bet, scoreOf)         全腿有结果才结算, 否则返回 null(调用方做腿级就地展示)。
@@ -47,18 +47,18 @@ function nameEq(a, b) {
   return x.indexOf(y) !== -1 || y.indexOf(x) !== -1;
 }
 
-/* pick 是否亚盘形态: 尾部 +/-数字盘口(美因茨-0.5/富勒姆+1.25)或含"平手" */
+/* pick 是否亚盘形态: 尾部 +/-数字盘口(美因茨-0.5/富勒姆+1.25)/含"平手"/裸数字盘口(斯托克城0 ≡ -0)。
+   ★判据必须与 judge.judgeAh 同源(judge.ahLineOf), 两边劈叉会坏成两种相反的样子:
+     判得出但认不出 → settleLeg 掉进竞彩方向分支(judgeDirection 拿"斯托克城0"当赛果比)→ **恒判 miss**;
+     认得出但判不出 → judgeAh 返 null → AH2VOCAB[null]=undefined → 该腿挂着永不判。
+   2026-09-19 实测: '斯托克城0' 是平手盘主队全赢(斯托克城 2-1 谢菲联), 恒判 miss 会砸中奖票。 */
 function isAhPick(pick) {
-  const p = String(pick || '');
-  return /[+-]\d+(?:\.\d+)?$/.test(p) || p.indexOf('平手') !== -1;
+  return judge.ahLineOf(pick) !== null;
 }
 
-/* pick 截掉尾部盘口数字/平手二字 → 命名队 */
+/* pick 截掉尾部盘口数字/平手二字 → 命名队('斯托克城0'→'斯托克城') */
 function pickTeam(pick) {
-  return String(pick || '')
-    .replace(/[+-]\d+(?:\.\d+)?$/, '')
-    .replace(/平手/g, '')
-    .trim();
+  return judge.ahTeamOf(pick);
 }
 
 /* side 推导: 命名队与 leg.home/away 子串比对(不区分大小写) → 'home'|'away';
@@ -95,6 +95,17 @@ function settleLeg(leg, finalScore) {
   if (isAhPick(leg.pick)) {
     const r = judge.judgeAh(leg.pick, finalScore, deriveAhSide(leg.pick, leg.home, leg.away).side);
     return r ? AH2VOCAB[r] : null;
+  }
+  // 大小球腿: '大2.5'/'小2.5'(2026-10-18 新增, kind='ahOu')
+  const om = String(leg.pick || '').match(/^(大|小)\s*([\d.]+)$/);
+  if (om) {
+    const s = judge.parseScore(finalScore);
+    if (!s) return null;
+    const total = s.home + s.away;
+    const line = parseFloat(om[2]);
+    const over = om[1] === '大';
+    if (total === line) return 'push';
+    return (total > line) === over ? 'hit' : 'miss';
   }
   // 竞彩方向腿: '3'/'1'/'0' 映射主胜/平/客胜, 多选按 '/' 拆, 命中其一即红
   const s = judge.parseScore(finalScore);

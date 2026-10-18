@@ -270,3 +270,19 @@
   left: -2000px;
   top: 0;
 }
+
+/* 🌏 亚盘推荐串(asian7) + 数据新鲜度提示(2026-10-18 整改) */
+.a7-card { border-left: 4rpx solid #0284c7; padding: 20rpx; }
+.a7-head { margin-bottom: 12rpx; }
+.a7-title { font-weight: 600; font-size: 30rpx; }
+.a7-leg { display: flex; align-items: center; gap: 12rpx; padding: 8rpx 0; border-bottom: 1rpx dashed #e5e7eb; }
+.a7-pick { font-weight: 600; color: #0284c7; min-width: 190rpx; }
+.a7-match { flex: 1; font-size: 24rpx; }
+.a7-odds { color: #d97706; font-weight: 600; }
+.a7-note { margin-top: 12rpx; font-size: 24rpx; line-height: 1.5; }
+.stale-banner { background: #fef3c7; color: #92400e; font-size: 24rpx; padding: 10rpx 20rpx; margin: 8rpx 0; border-radius: 8rpx; }
+
+/* 亚盘腿双勾选+选项切换(2026-10-18) */
+.m-cart-row { display: flex; align-items: center; gap: 10rpx; padding: 6rpx 0; }
+.m-cart-label { font-size: 24rpx; color: #374151; flex: 1; }
+.m-switch { font-size: 26rpx; color: #0284c7; padding: 2rpx 12rpx; border: 1rpx solid #0284c7; border-radius: 8rpx; }

@@ -160,6 +160,8 @@ Page({
     // 以下为渲染派生字段(renderPayload 时一并写入)
     planJc: [],
     planBd: [],
+    asian7View: null, // 🌏 亚盘推荐串(asian7 七腿)
+    staleTip: '', // 数据新鲜度提示(最新预测日≠今天时显示)
     bdNote: '',
     bdDisabled: true,
     dailyTitle: '',
@@ -168,7 +170,8 @@ Page({
     // 组串登记
     cartMode: false, // 勾选态
     cartOpen: false, // 组串抽屉
-    cartSel: {}, // key → leg; key='jc:'+id / 'bd:'+bdNum / 'ah:'+id
+    cartSel: {}, // key → leg; key='jc:'+id / 'bd:'+bdNum / 'ah:'+id / 'ahOu:'+id
+    ahSubSel: {}, // 亚盘腿自定义选项: key → pick(如 'ah:周日003' → '客队-1'; 'ahOu:周日003' → '小2.5')
     cartLegs: [], // cartSel 的数组形态(带 _key)
     cartCount: 0,
     cartCalc: { stakes: 0, expectPayout: 0 },
@@ -224,6 +227,8 @@ Page({
             groups: { jc: [], bd: [], ah: [] },
             planJc: [],
             planBd: [],
+            asian7View: null,
+            staleTip: '',
             bdNote: '',
             bdDisabled: true,
             dailyTitle: '',
@@ -237,6 +242,7 @@ Page({
   renderPayload(payload, errMsg) {
     const plan = payload.plan || [];
     const bd = payload.beidan310;
+    const a7 = payload.asian7;
     this.setData({
       payload,
       groups: buildGroups(payload, judge),
@@ -245,6 +251,13 @@ Page({
       bdNote: (bd && bd.note) || '',
       bdDisabled: !(bd && Array.isArray(bd.legs) && bd.legs.length),
       dailyTitle: (payload.dailyPost && payload.dailyPost.title) || '',
+      // 🌏 亚盘推荐串(asian7): 七腿推荐+来源提示, 亚盘 Tab 顶部展示
+      asian7View: (a7 && Array.isArray(a7.legs) && a7.legs.length) ? {
+        legs: a7.legs.map((l) => ({ pick: l.pick || '', match: l.match || '', odds: l.odds || '' })),
+        note: a7.note || '',
+      } : null,
+      // 数据新鲜度提示: 最新预测日≠今天时标注(避免用户误读为"今日数据不准")
+      staleTip: jc.isToday(payload && payload.date) ? '' : ('以下为 ' + (payload && payload.date) + ' 的预测数据, 今日场次以最新发布为准'),
       errMsg,
       loading: false,
       lastUpdated: nowText(),
@@ -315,11 +328,11 @@ Page({
     this._poller = scorePoller.createScorePoller({
       getMatches: () => self._pollMatches || [],
       onUpdate: (changed) => self.applyScores(changed),
+      intervalMs: 60000, // 2026-10-18 起 5 分钟 → 60 秒(用户要求赛事实时更新)
     });
     this._poller.start();
-    // ★2026-10-12 起: 每 30 分钟静默重拉 payload, 把服务器每小时回填的 finalScore
-    //   合入轮询池(免下拉, 场卡赛果自动浮现); 只合分不重渲染整页。
-    this._payloadTimer = setInterval(() => self.refreshScoresSilent(), 30 * 60000);
+    // ★2026-10-12 起: 每 30 分钟静默重拉 payload; 2026-10-18 提速到 10 分钟
+    this._payloadTimer = setInterval(() => self.refreshScoresSilent(), 10 * 60000);
     this.setData({ scoreStatus: '滚动更新中' });
   },
 
@@ -424,7 +437,8 @@ Page({
       }
       return null;
     }
-    if (d.type === 'ah') return cart.buildLeg(m, 'ah');
+    if (d.type === 'ah') return cart.buildLeg(m, 'ah', (this.data.ahSubSel || {})['ah:' + d.id]);
+    if (d.type === 'ahOu') return cart.buildLeg(m, 'ahOu', (this.data.ahSubSel || {})['ahOu:' + d.id]);
     // ★让球-only 场(官方没开胜平负, 见 utils/jc.js noHadOf): 只有让球腿可投 ——
     //   默认腿型是 jcHad, 不拦就会往票里塞一条 odds 为空、奖金算成 0 的"买不到的单"
     const useHad = this.data.jcKindMap[d.id] !== 'hhad' && !jc.noHadOf(m);
@@ -463,6 +477,35 @@ Page({
     const sel = Object.assign({}, this.data.cartSel);
     delete sel[key];
     this.commitCart(sel);
+  },
+
+  /* ⇄ 亚盘腿选项切换(2026-10-18): 让球腿=让球方翻转(主队-盘口 ↔ 客队-盘口);
+     大小球腿=大/小翻转。已勾选则按新选项重建腿。 */
+  switchAhSide(e) {
+    const id = e.currentTarget.dataset.id;
+    const kind = e.currentTarget.dataset.kind;
+    const key = kind + ':' + id;
+    const m = ((this.data.payload || {}).matches || []).find((x) => x.id === id);
+    if (!m) return;
+    const sub = Object.assign({}, this.data.ahSubSel || {});
+    const cur = sub[key];
+    let next;
+    if (kind === 'ah') {
+      const goals = parseFloat((m.ah && m.ah.goals) || '0');
+      const isHome = !cur || String(cur).indexOf(m.home.slice(0, 2)) === 0;
+      if (goals === 0) next = isHome ? m.away + '平手' : m.home + '平手';
+      else next = isHome ? m.away + '-' + Math.abs(goals) : m.home + '-' + Math.abs(goals);
+    } else {
+      const line = (m.ouOdds && m.ouOdds.goals) || '2.5';
+      next = (!cur || String(cur).indexOf('大') === 0) ? '小' + line : '大' + line;
+    }
+    sub[key] = next;
+    this.setData({ ahSubSel: sub });
+    if (this.data.cartSel[key]) {
+      const cs = Object.assign({}, this.data.cartSel);
+      cs[key] = cart.buildLeg(m, kind, next);
+      this.commitCart(cs);
+    }
   },
 
   /* 选中集 → 派生字段(腿数组/计数/注数/理论奖金/来源/金额) */
