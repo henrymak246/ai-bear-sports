@@ -122,7 +122,7 @@ async function main() {
   console.log(`回填 ${patched} / 跳过(已有) ${skipped} / 缺失 ${missing.length}`);
 
   if (!dry && patched) {
-    fs.writeFileSync(file, head + JSON.stringify(days, null, 2) + ';\nif (typeof module !== 'undefined' && module.exports) module.exports = PREDICTION_DAYS;\n', 'utf8');
+    fs.writeFileSync(file, head + JSON.stringify(days, null, 2) + ";\nif (typeof module !== 'undefined' && module.exports) module.exports = PREDICTION_DAYS;\n", 'utf8');
     console.log('已写回 data/predictions.js(记得跑 sync-data.js + 部署东京)');
   }
 }
