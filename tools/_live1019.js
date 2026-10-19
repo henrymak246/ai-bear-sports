@@ -98,7 +98,7 @@ function main() {
     let hit = null;
     if (lg) hit = findScore(lg, TEAM[mm.home], TEAM[mm.away]);
     if (!hit) {
-      const cq = cqScoreLabel(mm.id, "北单", 20261019);
+      const cq = cqScoreLabel(mm.id, "北单", 26105);
       if (cq) hit = { score: cq.score, status: "FULL_TIME", raw: cq.raw };
     }
     if (probe) {
