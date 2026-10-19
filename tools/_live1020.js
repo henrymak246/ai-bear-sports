@@ -1,8 +1,7 @@
-/* 10-20(周二, 周一池明日凌晨) 比分盯梢回填: 深夜快车 8 场(周一001-008, 10-20 00:30~07:00 开球)。
-   通道: ESPN 主通道 + 出奇兜底(瑞超 swe.1/法乙 fra.2 板内映射, 兜底走 cq 快照)。
-   注意: 服务器 watch.sh 于 10-20(周二) 窗口自动跑本脚本回填。
-   用法: node tools/_live1019.js          正常回填(有变更才写文件)
-         node tools/_live1019.js --probe  只打印原始状态(调试映射) */
+/* 10-20(周二) 深夜快车窗口比分盯梢: 周一001-008 全凌晨(00:30~07:00 开球)。
+   通道: ESPN 主通道(8 场全标准联赛) + 出奇兜底(全 8 场有北单号 344/346/354/355/357/358/360/364)。
+   用法: node tools/_live1020.js          正常回填(有变更才写文件)
+         node tools/_live1020.js --probe  只打印原始状态(调试映射) */
 const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
@@ -11,9 +10,8 @@ const SKILL = path.join(process.env.HOME || process.env.USERPROFILE, ".agents", 
 const probe = process.argv.includes("--probe");
 
 const LEAGUES = {
-  "周一001": "ita.1", "周一002": "swe.1", "周一003": "ita.1",
-  "周一004": "fra.2", "周一005": "eng.1", "周一006": "esp.1",
-  "周一007": "por.1", "周一008": "bra.1",
+  "周一001": "ita.1", "周一002": "swe.1", "周一003": "ita.1", "周一004": "fra.2",
+  "周一005": "eng.1", "周一006": "esp.1", "周一007": "por.1", "周一008": "bra.1",
 };
 const TEAM = {
   "蒙扎": "Monza", "卡利亚里": "Cagliari",
@@ -23,9 +21,13 @@ const TEAM = {
   "热刺": "Tottenham", "考文垂": "Coventry",
   "赫塔费": "Getafe", "巴列卡诺": "Rayo Vallecano",
   "布拉加": "Braga", "吉维森特": "Gil Vicente",
-  "科林蒂安": "Corinthians", "维多利亚": "Vitória",
+  "科林蒂安": "Corinthians", "维多利亚": "Vitoria",
 };
-/* 北京 10-20 凌晨=UTC 10-19 傍晚, 双日期覆盖 ESPN 板日界 */
+// 出奇兜底: 竞彩号 → 北单对阵表号(出奇 label=北单NNN, 与 bd500 表一致)
+const BDNUM = {
+  "周一001": "北单344", "周一002": "北单346", "周一003": "北单354", "周一004": "北单355",
+  "周一005": "北单357", "周一006": "北单358", "周一007": "北单360", "周一008": "北单364",
+};
 const DATES = ["20261019", "20261020"];
 
 const boards = {};
@@ -85,7 +87,7 @@ function main() {
     let hit = null;
     if (lg) hit = findScore(lg, TEAM[mm.home], TEAM[mm.away]);
     if (!hit) {
-      const cq = cqScoreLabel(mm.id, "竞彩", 20261019);
+      const cq = cqScoreLabel(BDNUM[mm.id], "北单", 26105);
       if (cq) hit = { score: cq.score, status: "FULL_TIME", raw: cq.raw };
     }
     if (probe) {
