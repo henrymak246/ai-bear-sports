@@ -1,4 +1,4 @@
-/* 由 gen_mini_espn.js 于 2026-10-18T18:37:24.308Z 从 tools/_live1020.js + tools/_live1019.js 生成, 勿手改 */
+/* 由 gen_mini_espn.js 于 2026-10-19T09:05:50.581Z 从 tools/_live1020.js + tools/_live1019.js 生成, 勿手改 */
 module.exports = {
   LEAGUES: {
     "周一001": "ita.1",
@@ -49,7 +49,7 @@ module.exports = {
     "布拉加": "Braga",
     "吉维森特": "Gil Vicente",
     "科林蒂安": "Corinthians",
-    "维多利亚": "Vitória",
+    "维多利亚": "Vitoria",
     "赫罗纳": "Girona",
     "FC安道尔": "Andorra",
     "巴利亚多利德": "Valladolid",
