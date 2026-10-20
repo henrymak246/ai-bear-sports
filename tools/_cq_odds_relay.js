@@ -56,22 +56,30 @@ function cleanRemote() {
 }
 
 /* 自动分析链: 快照推送后, 对 predictions.js 里存在的 今日/明日 比赛日跑盘路分析并单日 sync(实时盘路上线, 2026-10-20)
+   ★防分叉(2026-10-21 事故修复): 服务器 watch.sh 每小时回填比分, 本机版若不先拉服务器版就跑分析+sync,
+     会把服务器新回填的 finalScore 覆盖成 null(每小时循环冲掉回填)——故分析前先 scp 拉东京版,
+     分析写入后立即推回东京, 保持 本机/东京/Supabase 三方一致。
    注意: _ah_moves 要求窗口内快照≥2, 不足会退出码 1 —— catch 吞掉不影响主流程 */
 function autoAnalyze() {
   try {
-    const days = require(path.join(__dirname, "..", "data", "predictions.js"));
+    const pjFile = path.join(__dirname, "..", "data", "predictions.js");
+    // ① 防分叉: 先拉东京最新版(服务器比分回填为底)
+    execSync(`scp -q tokyo-via-proxy:/root/football/data/predictions.js "${pjFile}"`, { stdio: "pipe" });
+    const days = require(pjFile);
     const dates = [0, 1].map((off) => {
       const d = new Date(Date.now() + 8 * 3600 * 1000 + off * 86400000);
       return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
     }).filter((dt) => days.some((x) => x.date === dt));
     if (!dates.length) return;
+    let wrote = false;
     for (const dt of dates) {
       try {
         const out = execSync(`node "${path.join(__dirname, "_ah_moves.js")}" ${dt} --write`, { stdio: "pipe" }).toString();
         const m = out.match(/分析 (\d+)\/(\d+) 场/);
-        if (m) log(`盘路分析 ${dt}: ${m[1]}/${m[2]} 场`);
+        if (m) { log(`盘路分析 ${dt}: ${m[1]}/${m[2]} 场`); wrote = true; }
       } catch (e) { log(`盘路分析 ${dt} 跳过: ` + String(e.message).slice(0, 80)); }
     }
+    if (wrote) execSync(`scp -q "${pjFile}" tokyo-via-proxy:/root/football/data/`, { stdio: "pipe" }); // ② 推回东京(含 ahMoves)
     execSync(`node "${path.join(__dirname, "sync-data.js")}" --only=${dates.join(",")}`, { stdio: "pipe" });
     log(`✓ 单日 sync 完成: ${dates.join(",")}`);
   } catch (e) { log("自动分析链失败(忽略): " + String(e.message).slice(0, 120)); }
