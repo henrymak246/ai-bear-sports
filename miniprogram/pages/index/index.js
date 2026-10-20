@@ -141,6 +141,7 @@ function buildGroups(payload, judgeLib) {
       ahName: m.ah ? m.ah.name : '',
       ahHome: m.ah ? m.ah.home : '',
       ahAway: m.ah ? m.ah.away : '',
+      ahMoves: (m.ahMoves && m.ahMoves.verdict && m.ahMoves.verdict.indexOf('无明显') !== 0) ? m.ahMoves.verdict : '',
       ouName: m.ouOdds ? m.ouOdds.name : '',
       ouOver: m.ouOdds ? m.ouOdds.over : '',
       ouUnder: m.ouOdds ? m.ouOdds.under : '',

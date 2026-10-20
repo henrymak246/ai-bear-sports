@@ -329,6 +329,7 @@
   .pred-jc { background:#4A90D9; color:#fff; }
   .pred-ah { background:var(--honey); color:#fff; }
   .odds { font-size:10.5px; color:var(--muted); }
+  .ahmv { font-size:10.5px; font-weight:700; color:#B25E09; background:#FFF3E0; border-radius:4px; padding:1px 5px; display:inline-block; margin-top:2px; }
   .dtag { font-size:10px; font-weight:800; border-radius:4px; padding:0 4px; margin-left:3px; }
   .dtag-dan { background:var(--coral); color:#fff; }
   .dtag-shuang { background:#4A90D9; color:#fff; }
@@ -2012,7 +2013,9 @@ function renderApp(days) {
         if (day._hasAhPred) {
           var ahTxt = m.ahPick ? esc(m.ahPick) + (m.ahConf ? ' <span class="stars">' + '★'.repeat(m.ahConf) + '</span>' : '') : (m.dirTag === '弃选' ? '弃选' : '—');
           var ouTxt = m.ouPick ? esc(m.ouPick) + (m.ouConf ? ' <span class="stars">' + '★'.repeat(m.ouConf) + '</span>' : '') : '—';
-          ahCell = '<div><b>' + ahTxt + '</b></div><div><b>' + ouTxt + '</b></div>' + (ahOdds ? '<div>' + ahOdds + '</div>' : '');
+          // 盘路时序变动(2026-10-20 _ah_moves.js): 有信号才显示(无信号=「无明显资金信号」不打扰)
+          var ahMvTxt = (m.ahMoves && m.ahMoves.verdict && m.ahMoves.verdict.indexOf('无明显') !== 0) ? '<div><span class="ahmv">📈 ' + esc(m.ahMoves.verdict) + '</span></div>' : '';
+          ahCell = '<div><b>' + ahTxt + '</b></div><div><b>' + ouTxt + '</b></div>' + (ahOdds ? '<div>' + ahOdds + '</div>' : '') + ahMvTxt;
         } else {
           ahCell = ahOdds ? '<div>' + ahOdds + '</div>' : '<span class="wait">—</span>';
         }

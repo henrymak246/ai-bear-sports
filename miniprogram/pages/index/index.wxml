@@ -158,6 +158,7 @@
         <text class="star" wx:if="{{item.ouStars}}">{{item.ouStars}}</text>
       </view>
       <view class="m-line muted" wx:if="{{item.ahName}}">盘口 {{item.ahName}} ｜ 主水 {{item.ahHome}} ／ 客水 {{item.ahAway}}</view>
+      <view class="m-line ahmv" wx:if="{{item.ahMoves}}">📈 盘路 {{item.ahMoves}}</view>
       <view class="m-line muted" wx:if="{{item.ouName}}">大小 {{item.ouName}} ｜ 大水 {{item.ouOver}} ／ 小水 {{item.ouUnder}}</view>
       <!-- 组串勾选: 让球腿/大小球腿各自独立勾选, ⇄ 切换选项后自由组合 -->
       <view class="m-cart" wx:if="{{cartMode}}">

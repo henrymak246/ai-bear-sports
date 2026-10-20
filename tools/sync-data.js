@@ -28,8 +28,10 @@ function loadEnv() {
 
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
+  const onlyArg = process.argv.slice(2).find(function (a) { return a.indexOf('--only=') === 0; });
+  const onlyDates = onlyArg ? onlyArg.slice(7).split(',') : null; // --only=2026-10-21[,2026-10-22] 只同步指定日(盘路时序自动链用)
   process.argv.slice(2).forEach(function (a) {
-    if (a !== '--dry-run') console.error('警告：忽略未知参数 ' + a + '（想干跑请用 --dry-run）');
+    if (a !== '--dry-run' && a.indexOf('--only=') !== 0) console.error('警告：忽略未知参数 ' + a + '（想干跑请用 --dry-run）');
   });
   const days = require(path.join(__dirname, '..', 'data', 'predictions.js'));
   if (!Array.isArray(days) || days.length === 0) throw new Error('predictions.js 为空或不是数组');
@@ -40,9 +42,11 @@ async function main() {
     if (seen[d.date]) throw new Error('date 重复: ' + d.date);
     seen[d.date] = true;
   });
-  const rows = days.map(function (d) {
+  let rows = days.map(function (d) {
     return { date: d.date, payload: d, updated_at: new Date().toISOString() };
   });
+  if (onlyDates) rows = rows.filter(function (r) { return onlyDates.indexOf(r.date) >= 0; });
+  if (onlyDates && !rows.length) { console.log('--only 无匹配日: ' + onlyDates.join(',')); return; }
   console.log('待同步 ' + rows.length + ' 天: ' + rows.map(function (r) { return r.date; }).join(', '));
   if (dryRun) { console.log('[dry-run] 不连接 Supabase，本地校验通过 ✓'); return; }
 

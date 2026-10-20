@@ -79,6 +79,7 @@
   font-size: 25rpx;
 }
 .m-dir { font-weight: 800; color: #8B5A2B; }
+.ahmv { font-size: 22rpx; font-weight: 700; color: #B25E09; background: #FFF3E0; border-radius: 8rpx; padding: 2rpx 10rpx; }
 
 /* 竞彩赔率时效(见 utils/jc.js): 角标说明这行 SP 是官方实时还是构建时快照;
    已停售场整卡压暗且不再可勾选 —— 官方下架了就不该让人往里投。 */

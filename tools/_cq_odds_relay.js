@@ -55,6 +55,28 @@ function cleanRemote() {
   } catch (e) { log("东京清理失败(忽略): " + String(e.message).slice(0, 120)); }
 }
 
+/* 自动分析链: 快照推送后, 对 predictions.js 里存在的 今日/明日 比赛日跑盘路分析并单日 sync(实时盘路上线, 2026-10-20)
+   注意: _ah_moves 要求窗口内快照≥2, 不足会退出码 1 —— catch 吞掉不影响主流程 */
+function autoAnalyze() {
+  try {
+    const days = require(path.join(__dirname, "..", "data", "predictions.js"));
+    const dates = [0, 1].map((off) => {
+      const d = new Date(Date.now() + 8 * 3600 * 1000 + off * 86400000);
+      return `${d.getUTCFullYear()}-${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
+    }).filter((dt) => days.some((x) => x.date === dt));
+    if (!dates.length) return;
+    for (const dt of dates) {
+      try {
+        const out = execSync(`node "${path.join(__dirname, "_ah_moves.js")}" ${dt} --write`, { stdio: "pipe" }).toString();
+        const m = out.match(/分析 (\d+)\/(\d+) 场/);
+        if (m) log(`盘路分析 ${dt}: ${m[1]}/${m[2]} 场`);
+      } catch (e) { log(`盘路分析 ${dt} 跳过: ` + String(e.message).slice(0, 80)); }
+    }
+    execSync(`node "${path.join(__dirname, "sync-data.js")}" --only=${dates.join(",")}`, { stdio: "pipe" });
+    log(`✓ 单日 sync 完成: ${dates.join(",")}`);
+  } catch (e) { log("自动分析链失败(忽略): " + String(e.message).slice(0, 120)); }
+}
+
 async function main() {
   const buf = await get(ODDS_URL);
   // 有效性检查: JSON 且含 odds.ah 表
@@ -68,6 +90,7 @@ async function main() {
 
   cleanLocal();
   cleanRemote();
+  autoAnalyze();
 }
 
 main().then(() => log("✓ 盘路中继完成")).catch((e) => { log("✗ 盘路中继失败: " + String(e.message).slice(0, 200)); process.exit(1); });
