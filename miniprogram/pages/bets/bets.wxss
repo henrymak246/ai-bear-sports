@@ -172,6 +172,87 @@
 .btn-save { background: #F5A623; color: #FFFFFF; }
 .btn-cancel[disabled], .btn-save[disabled] { opacity: 0.5; }
 .btn-cancel::after, .btn-save::after { border: none; }
+/* ---- 整单修改模式: 左滑删腿 + 倍数 + 金额 ----
+   交互: 腿行 transform 左移, 露出绝对定位的「删除」; 吸附阈值在 utils/betEdit.js(snapDx)。
+   ★DEL_W 140rpx 与 betEdit.js 的 DEL_W 必须一致, 改一处要改两处。 */
+.leg-swipe {
+  position: relative;
+  overflow: hidden;
+  /* ★间距必须挂在这里, 不能留给里面的 .leg-row: .leg-row 自带的 margin-top:14rpx
+     会把行推到容器顶之下 14rpx, 而「删除」是按 top:0 贴容器顶的 →
+     静止态每条腿顶部露出一条 14rpx 的红边(模拟器实测 7px)。 */
+  margin-top: 14rpx;
+}
+.leg-del {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 140rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F25C5C;
+  color: #FFFFFF;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+/* 腿行本身要盖住底下的「删除」(背景照抄 .card 的 #FFFDF8, 否则会浅一档) */
+.leg-drag {
+  position: relative;
+  background: #FFFDF8;
+}
+/* 容器内清零上边距, 行才能与容器等高 → 完整盖住「删除」(选择器权重 2 > .leg-row 的 1) */
+.leg-swipe .leg-row {
+  margin-top: 0;
+}
+/* 松手吸附的过渡; 拖动中不挂(挂了跟手有粘滞感, 见 bets.js legTouchMove) */
+.leg-anim {
+  transition: transform 0.18s ease-out;
+}
+.slip-hint {
+  margin-top: 14rpx;
+  font-size: 22rpx;
+}
+.mult-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 14rpx;
+}
+.mult-label {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #8B5A2B;
+}
+.mult-btn {
+  width: 56rpx;
+  height: 56rpx;
+  line-height: 54rpx;
+  text-align: center;
+  border: 1rpx solid #D9C7AE;
+  border-radius: 50%;
+  color: #8B5A2B;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+.mult-val {
+  min-width: 60rpx;
+  text-align: center;
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #8B5A2B;
+}
+/* 金额行独占一行(min-width:100% 在 flex-wrap 里强制换行) */
+.slip-money {
+  flex: 1;
+  min-width: 100%;
+  font-size: 24rpx;
+  color: #4A3A28;
+  line-height: 1.6;
+}
+
 /* 投注参考图屏外画布 */
 .slip-canvas {
   position: fixed;

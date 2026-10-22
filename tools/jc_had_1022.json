@@ -1,287 +1,578 @@
 [
-  {
-    "num": "周三004",
-    "date": "2026-10-21",
-    "league": "欧冠",
-    "home": "科莫",
-    "away": "曼联",
-    "homeRank": "[欧冠17]",
-    "awayRank": "[欧冠18]",
-    "time": "00:45:00",
-    "sp": {
-      "h": "2.28",
-      "d": "3.60",
-      "a": "2.42"
-    }
+ {
+  "num": "周四001",
+  "date": "2026-10-22",
+  "league": "欧罗巴",
+  "home": "格风暴",
+  "away": "马赛",
+  "homeRank": "[欧罗巴26]",
+  "awayRank": "[欧罗巴31]",
+  "time": "00:45:00",
+  "sp": {
+   "a": "1.66",
+   "af": "-1",
+   "d": "3.85",
+   "df": "1",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "3.75",
+   "hf": "1",
+   "updateDate": "2026-10-22",
+   "updateTime": "16:10:53"
   },
-  {
-    "num": "周三005",
-    "date": "2026-10-21",
-    "league": "欧冠",
-    "home": "里尔",
-    "away": "加拉塔萨",
-    "homeRank": "[欧冠34]",
-    "awayRank": "[欧冠35]",
-    "time": "00:45:00",
-    "sp": {
-      "h": "1.81",
-      "d": "3.65",
-      "a": "3.30"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-23"
+ },
+ {
+  "num": "周四002",
+  "date": "2026-10-22",
+  "league": "欧罗巴",
+  "home": "波兹南",
+  "away": "桑德兰",
+  "homeRank": "[欧罗巴36]",
+  "awayRank": "[欧罗巴9]",
+  "time": "00:45:00",
+  "sp": {
+   "a": "1.48",
+   "af": "-1",
+   "d": "3.98",
+   "df": "1",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "4.93",
+   "hf": "1",
+   "updateDate": "2026-10-22",
+   "updateTime": "16:09:06"
   },
-  {
-    "num": "周三006",
-    "date": "2026-10-21",
-    "league": "西甲",
-    "home": "莱万特",
-    "away": "毕尔巴鄂",
-    "homeRank": "",
-    "awayRank": "",
-    "time": "02:00:00",
-    "sp": {
-      "h": "3.90",
-      "d": "3.21",
-      "a": "1.78"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-23"
+ },
+ {
+  "num": "周四003",
+  "date": "2026-10-22",
+  "league": "欧罗巴",
+  "home": "萨迪纳摩",
+  "away": "奈梅亨",
+  "homeRank": "[欧罗巴14]",
+  "awayRank": "[欧罗巴27]",
+  "time": "00:45:00",
+  "sp": {
+   "a": "5.65",
+   "af": "1",
+   "d": "4.60",
+   "df": "1",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "1.36",
+   "hf": "-1",
+   "updateDate": "2026-10-22",
+   "updateTime": "16:13:58"
   },
-  {
-    "num": "周三007",
-    "date": "2026-10-21",
-    "league": "欧冠",
-    "home": "皇马",
-    "away": "莱红牛",
-    "homeRank": "[欧冠9]",
-    "awayRank": "[欧冠23]",
-    "time": "03:00:00",
-    "sp": {
-      "h": "1.13",
-      "d": "7.00",
-      "a": "9.80"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-23"
+ },
+ {
+  "num": "周四004",
+  "date": "2026-10-22",
+  "league": "欧罗巴",
+  "home": "尤文图斯",
+  "away": "雷恩",
+  "homeRank": "[欧罗巴1]",
+  "awayRank": "[欧罗巴13]",
+  "time": "00:45:00",
+  "sp": {
+   "a": "6.85",
+   "af": "1",
+   "d": "4.80",
+   "df": "1",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "1.29",
+   "hf": "-1",
+   "updateDate": "2026-10-22",
+   "updateTime": "16:21:08"
   },
-  {
-    "num": "周三008",
-    "date": "2026-10-21",
-    "league": "欧冠",
-    "home": "维拉",
-    "away": "维京",
-    "homeRank": "[欧冠4]",
-    "awayRank": "[欧冠29]",
-    "time": "03:00:00",
-    "sp": {
-      "h": "1.12",
-      "d": "6.85",
-      "a": "11.00"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-23"
+ },
+ {
+  "num": "周四006",
+  "date": "2026-10-22",
+  "league": "欧罗巴",
+  "home": "伯恩茅斯",
+  "away": "AC米兰",
+  "homeRank": "[欧罗巴5]",
+  "awayRank": "[欧罗巴16]",
+  "time": "03:00:00",
+  "sp": {
+   "a": "3.30",
+   "af": "1",
+   "d": "3.50",
+   "df": "1",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "1.85",
+   "hf": "-1",
+   "updateDate": "2026-10-22",
+   "updateTime": "17:00:51"
   },
-  {
-    "num": "周三009",
-    "date": "2026-10-21",
-    "league": "欧冠",
-    "home": "贝蒂斯",
-    "away": "费耶诺德",
-    "homeRank": "[欧冠10]",
-    "awayRank": "[欧冠24]",
-    "time": "03:00:00",
-    "sp": {
-      "h": "1.42",
-      "d": "4.65",
-      "a": "4.75"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-23"
+ },
+ {
+  "num": "周四007",
+  "date": "2026-10-22",
+  "league": "欧罗巴",
+  "home": "凯尔特人",
+  "away": "塞尔塔",
+  "homeRank": "[欧罗巴34]",
+  "awayRank": "[欧罗巴29]",
+  "time": "03:00:00",
+  "sp": {
+   "a": "2.38",
+   "af": "0",
+   "d": "3.30",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "2.46",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "10:50:10"
   },
-  {
-    "num": "周三010",
-    "date": "2026-10-21",
-    "league": "欧冠",
-    "home": "拜仁",
-    "away": "阿森纳",
-    "homeRank": "[欧冠12]",
-    "awayRank": "[欧冠8]",
-    "time": "03:00:00",
-    "sp": {
-      "h": "2.03",
-      "d": "3.40",
-      "a": "2.92"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-23"
+ },
+ {
+  "num": "周四008",
+  "date": "2026-10-22",
+  "league": "欧罗巴",
+  "home": "贝西克塔",
+  "away": "水晶宫",
+  "homeRank": "[欧罗巴4]",
+  "awayRank": "[欧罗巴15]",
+  "time": "03:00:00",
+  "sp": {
+   "a": "2.95",
+   "af": "0",
+   "d": "3.75",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "1.91",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "15:56:36"
   },
-  {
-    "num": "周三012",
-    "date": "2026-10-21",
-    "league": "欧冠",
-    "home": "布鲁日",
-    "away": "朗斯",
-    "homeRank": "[欧冠20]",
-    "awayRank": "[欧冠21]",
-    "time": "03:00:00",
-    "sp": {
-      "h": "1.56",
-      "d": "4.50",
-      "a": "3.75"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-23"
+ },
+ {
+  "num": "周四009",
+  "date": "2026-10-22",
+  "league": "欧罗巴",
+  "home": "霍芬海姆",
+  "away": "里昂",
+  "homeRank": "[欧罗巴30]",
+  "awayRank": "[欧罗巴8]",
+  "time": "03:00:00",
+  "sp": {
+   "a": "2.65",
+   "af": "-1",
+   "d": "3.85",
+   "df": "-1",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "2.03",
+   "hf": "1",
+   "updateDate": "2026-10-22",
+   "updateTime": "16:46:41"
   },
-  {
-    "num": "周三013",
-    "date": "2026-10-21",
-    "league": "解放者杯",
-    "home": "帕梅拉斯",
-    "away": "弗鲁米嫩",
-    "homeRank": "[解放者杯2]",
-    "awayRank": "[解放者杯2]",
-    "time": "08:30:00",
-    "sp": {
-      "h": "1.58",
-      "d": "3.25",
-      "a": "5.30"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-23"
+ },
+ {
+  "num": "周四010",
+  "date": "2026-10-22",
+  "league": "欧罗巴",
+  "home": "利勒斯特",
+  "away": "皇家社会",
+  "homeRank": "[欧罗巴22]",
+  "awayRank": "[欧罗巴23]",
+  "time": "03:00:00",
+  "sp": {
+   "a": "1.28",
+   "af": "1",
+   "d": "5.00",
+   "df": "-1",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "6.75",
+   "hf": "-1",
+   "updateDate": "2026-10-22",
+   "updateTime": "16:25:25"
   },
-  {
-    "num": "周四001",
-    "date": "2026-10-22",
-    "league": "欧罗巴",
-    "home": "格风暴",
-    "away": "马赛",
-    "homeRank": "[欧罗巴26]",
-    "awayRank": "[欧罗巴31]",
-    "time": "00:45:00",
-    "sp": {
-      "h": "3.30",
-      "d": "3.65",
-      "a": "1.81"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-23"
+ },
+ {
+  "num": "周四011",
+  "date": "2026-10-22",
+  "league": "欧协联",
+  "home": "阿贾克斯",
+  "away": "亚特兰大",
+  "homeRank": "[欧协联25]",
+  "awayRank": "[欧协联4]",
+  "time": "03:00:00",
+  "sp": {
+   "a": "3.15",
+   "af": "0",
+   "d": "3.68",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "1.85",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "15:06:30"
   },
-  {
-    "num": "周四002",
-    "date": "2026-10-22",
-    "league": "欧罗巴",
-    "home": "波兹南",
-    "away": "桑德兰",
-    "homeRank": "[欧罗巴36]",
-    "awayRank": "[欧罗巴9]",
-    "time": "00:45:00",
-    "sp": {
-      "h": "4.50",
-      "d": "3.70",
-      "a": "1.57"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-23"
+ },
+ {
+  "num": "周四012",
+  "date": "2026-10-22",
+  "league": "欧协联",
+  "home": "摩纳哥",
+  "away": "弗赖堡",
+  "homeRank": "[欧协联9]",
+  "awayRank": "[欧协联7]",
+  "time": "03:00:00",
+  "sp": {
+   "a": "3.20",
+   "af": "1",
+   "d": "3.45",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "1.90",
+   "hf": "-1",
+   "updateDate": "2026-10-22",
+   "updateTime": "16:28:34"
   },
-  {
-    "num": "周四003",
-    "date": "2026-10-22",
-    "league": "欧罗巴",
-    "home": "萨迪纳摩",
-    "away": "奈梅亨",
-    "homeRank": "[欧罗巴14]",
-    "awayRank": "[欧罗巴27]",
-    "time": "00:45:00",
-    "sp": {
-      "h": "1.42",
-      "d": "4.22",
-      "a": "5.30"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-23"
+ },
+ {
+  "num": "周四013",
+  "date": "2026-10-22",
+  "league": "解放者杯",
+  "home": "弗拉门戈",
+  "away": "拉普大学",
+  "homeRank": "[解放者杯1]",
+  "awayRank": "[解放者杯2]",
+  "time": "08:30:00",
+  "sp": {
+   "a": "10.25",
+   "af": "0",
+   "d": "4.45",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "1.24",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "13:58:15"
   },
-  {
-    "num": "周四004",
-    "date": "2026-10-22",
-    "league": "欧罗巴",
-    "home": "尤文图斯",
-    "away": "雷恩",
-    "homeRank": "[欧罗巴1]",
-    "awayRank": "[欧罗巴13]",
-    "time": "00:45:00",
-    "sp": {
-      "h": "1.42",
-      "d": "4.15",
-      "a": "5.45"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-23"
+ },
+ {
+  "num": "周五001",
+  "date": "2026-10-23",
+  "league": "澳超",
+  "home": "布里斯班",
+  "away": "珀斯",
+  "homeRank": "[澳超9]",
+  "awayRank": "[澳超10]",
+  "time": "17:00:00",
+  "sp": {
+   "a": "3.20",
+   "af": "0",
+   "d": "3.25",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "1.97",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "13:24:24"
   },
-  {
-    "num": "周四006",
-    "date": "2026-10-22",
-    "league": "欧罗巴",
-    "home": "伯恩茅斯",
-    "away": "AC米兰",
-    "homeRank": "[欧罗巴5]",
-    "awayRank": "[欧罗巴16]",
-    "time": "03:00:00",
-    "sp": {
-      "h": "1.80",
-      "d": "3.55",
-      "a": "3.42"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-23"
+ },
+ {
+  "num": "周五002",
+  "date": "2026-10-23",
+  "league": "德乙",
+  "home": "波鸿",
+  "away": "沃夫斯堡",
+  "homeRank": "[德乙16]",
+  "awayRank": "[德乙3]",
+  "time": "00:30:00",
+  "sp": {
+   "a": "2.06",
+   "af": "0",
+   "d": "3.65",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "2.70",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "13:24:24"
   },
-  {
-    "num": "周四007",
-    "date": "2026-10-22",
-    "league": "欧罗巴",
-    "home": "凯尔特人",
-    "away": "塞尔塔",
-    "homeRank": "[欧罗巴34]",
-    "awayRank": "[欧罗巴29]",
-    "time": "03:00:00",
-    "sp": {
-      "h": "2.48",
-      "d": "3.25",
-      "a": "2.39"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-24"
+ },
+ {
+  "num": "周五003",
+  "date": "2026-10-23",
+  "league": "瑞超",
+  "home": "埃夫斯堡",
+  "away": "马尔默",
+  "homeRank": "[瑞超5]",
+  "awayRank": "[瑞超7]",
+  "time": "01:00:00",
+  "sp": {
+   "a": "3.15",
+   "af": "0",
+   "d": "3.50",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "1.90",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "13:24:24"
   },
-  {
-    "num": "周四008",
-    "date": "2026-10-22",
-    "league": "欧罗巴",
-    "home": "贝西克塔",
-    "away": "水晶宫",
-    "homeRank": "[欧罗巴4]",
-    "awayRank": "[欧罗巴15]",
-    "time": "03:00:00",
-    "sp": {
-      "h": "2.08",
-      "d": "3.43",
-      "a": "2.80"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-24"
+ },
+ {
+  "num": "周五004",
+  "date": "2026-10-23",
+  "league": "荷甲",
+  "home": "前进之鹰",
+  "away": "特尔斯达",
+  "homeRank": "[荷甲9]",
+  "awayRank": "[荷甲16]",
+  "time": "02:00:00",
+  "sp": {
+   "a": "5.50",
+   "af": "0",
+   "d": "4.38",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "1.39",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "13:24:24"
   },
-  {
-    "num": "周四009",
-    "date": "2026-10-22",
-    "league": "欧罗巴",
-    "home": "霍芬海姆",
-    "away": "里昂",
-    "homeRank": "[欧罗巴30]",
-    "awayRank": "[欧罗巴8]",
-    "time": "03:00:00",
-    "sp": {
-      "h": "1.80",
-      "d": "3.90",
-      "a": "3.15"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-24"
+ },
+ {
+  "num": "周五005",
+  "date": "2026-10-23",
+  "league": "荷乙",
+  "home": "布雷达",
+  "away": "赫拉克勒",
+  "homeRank": "[荷乙5]",
+  "awayRank": "[荷乙1]",
+  "time": "02:00:00",
+  "sp": {
+   "a": "2.40",
+   "af": "0",
+   "d": "3.60",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "2.30",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "13:24:24"
   },
-  {
-    "num": "周四010",
-    "date": "2026-10-22",
-    "league": "欧罗巴",
-    "home": "利勒斯特",
-    "away": "皇家社会",
-    "homeRank": "[欧罗巴22]",
-    "awayRank": "[欧罗巴23]",
-    "time": "03:00:00",
-    "sp": {
-      "h": "5.20",
-      "d": "4.30",
-      "a": "1.42"
-    }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-24"
+ },
+ {
+  "num": "周五006",
+  "date": "2026-10-23",
+  "league": "德甲",
+  "home": "斯图加特",
+  "away": "门兴",
+  "homeRank": "[德甲13]",
+  "awayRank": "[德甲18]",
+  "time": "02:30:00",
+  "sp": {
+   "a": "5.95",
+   "af": "0",
+   "d": "5.20",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "1.30",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "13:24:24"
   },
-  {
-    "num": "周四013",
-    "date": "2026-10-22",
-    "league": "解放者杯",
-    "home": "弗拉门戈",
-    "away": "拉普大学",
-    "homeRank": "[解放者杯1]",
-    "awayRank": "[解放者杯2]",
-    "time": "08:30:00",
-    "sp": {
-      "h": "1.26",
-      "d": "4.28",
-      "a": "9.75"
-    }
-  }
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-24"
+ },
+ {
+  "num": "周五007",
+  "date": "2026-10-23",
+  "league": "意甲",
+  "home": "都灵",
+  "away": "蒙扎",
+  "homeRank": "[意甲10]",
+  "awayRank": "[意甲14]",
+  "time": "02:45:00",
+  "sp": {
+   "a": "3.32",
+   "af": "0",
+   "d": "3.35",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "1.89",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "13:24:24"
+  },
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-24"
+ },
+ {
+  "num": "周五008",
+  "date": "2026-10-23",
+  "league": "法甲",
+  "home": "布雷斯特",
+  "away": "尼斯",
+  "homeRank": "[法甲10]",
+  "awayRank": "[法甲13]",
+  "time": "02:45:00",
+  "sp": {
+   "a": "2.82",
+   "af": "0",
+   "d": "3.35",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "2.10",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "13:24:24"
+  },
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-24"
+ },
+ {
+  "num": "周五009",
+  "date": "2026-10-23",
+  "league": "英超",
+  "home": "伊普斯",
+  "away": "诺丁汉",
+  "homeRank": "[英超10]",
+  "awayRank": "[英超19]",
+  "time": "03:00:00",
+  "sp": {
+   "a": "2.17",
+   "af": "0",
+   "d": "3.25",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "2.80",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "13:24:24"
+  },
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-24"
+ },
+ {
+  "num": "周五010",
+  "date": "2026-10-23",
+  "league": "英冠",
+  "home": "博尔顿",
+  "away": "米堡",
+  "homeRank": "[英冠15]",
+  "awayRank": "[英冠3]",
+  "time": "03:00:00",
+  "sp": {
+   "a": "1.44",
+   "af": "0",
+   "d": "4.30",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "4.95",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "13:24:24"
+  },
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-24"
+ },
+ {
+  "num": "周五011",
+  "date": "2026-10-23",
+  "league": "西甲",
+  "home": "阿拉维斯",
+  "away": "马拉加",
+  "homeRank": "[西甲7]",
+  "awayRank": "[西甲20]",
+  "time": "03:00:00",
+  "sp": {
+   "a": "4.68",
+   "af": "0",
+   "d": "3.45",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "1.60",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "13:24:24"
+  },
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-24"
+ },
+ {
+  "num": "周五012",
+  "date": "2026-10-23",
+  "league": "葡超",
+  "home": "吉马良斯",
+  "away": "马里迪莫",
+  "homeRank": "[葡超15]",
+  "awayRank": "[葡超12]",
+  "time": "03:45:00",
+  "sp": {
+   "a": "5.15",
+   "af": "0",
+   "d": "3.60",
+   "df": "0",
+   "goalLine": "",
+   "goalLineValue": "",
+   "h": "1.52",
+   "hf": "0",
+   "updateDate": "2026-10-22",
+   "updateTime": "13:24:24"
+  },
+  "matchStatus": "Selling",
+  "matchDate": "2026-10-24"
+ }
 ]

@@ -86,12 +86,18 @@ function loadSite() {
 }
 
 // ---- 两份数据: 原样 / 逐日删掉 basketball ----
-const stripped = JSON.parse(JSON.stringify(DAYS));
+// ★2026-09-29 修 **fixture 腐化**: renderApp 默认选中最新日, 而 9-24 起最新日已无 basketball 字段
+//   → 两版都渲空态, 对照失效(那次红不是污染, 是"目标日不在默认视图")。
+//   与 _smoke_basket_direction.js 同法: **从目标日截到尾**使 days[0]=目标日, 照常真跑。
+const bIdx = DAYS.findIndex((d) => d.basketball && (d.basketball.matches || []).length);
+assert(bIdx >= 0, 'predictions.js 里找不到带 basketball 场次的日 —— 对照实验会**空过**, 拒绝给绿');
+const VIEW = DAYS.slice(bIdx);
+const stripped = JSON.parse(JSON.stringify(VIEW));
 const nBasketDays = stripped.filter((d) => d.basketball).length;
 assert(nBasketDays > 0, 'predictions.js 里一天 basketball 都没有 —— 对照实验会**空过**, 拒绝给绿');
 stripped.forEach((d) => { delete d.basketball; });
 
-const A = loadSite(); A.sb.renderApp(DAYS);
+const A = loadSite(); A.sb.renderApp(VIEW);
 const B = loadSite(); B.sb.renderApp(stripped);
 
 // ---- 断言 1: 对照组必须真的生效 ----

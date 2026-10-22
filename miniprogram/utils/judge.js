@@ -2,7 +2,8 @@
  * 由 tools/gen_mini_judge.js 生成, 勿手改; 重新生成: node tools/gen_mini_judge.js
  * parseScore/judgeDirection/judgeOverUnder/judgeScore(含内部助手 parseOverUnder/judgeSegment)
  * 逐字抽取自站点 stats.js, 判定口径与站点一致;
- * judgeBd310(北单让球310)/judgeAh(亚盘)/ahFactor(亚盘折算) 为本模块新增。
+ * judgeBd310(北单让球310)/judgeAh(亚盘)/ahFactor(亚盘折算)/ahLineOf·ahTeamOf(亚盘盘口形态解析)
+ * 为本模块新增。
  */
 'use strict';
 
@@ -13,19 +14,28 @@ function parseScore(finalScore) {
     return { home: parseInt(m[1], 10), away: parseInt(m[2], 10) };
   }
 
-function judgeDirection(pred, finalScore) {
+function judgeDirection(pred, finalScore, handicap) {
     if (!pred || pred === '放弃') return null;
     const s = parseScore(finalScore);
     if (!s) return null;
-    const actual = s.home > s.away ? '主胜' : s.home < s.away ? '客胜' : '平';
-    return pred === actual ? 1 : 0;
+    const hc = String(pred).match(/^让球(胜|平|负)$/);
+    let home = s.home;
+    if (hc) {
+      const v = parseFloat(handicap);
+      if (isNaN(v)) return null;
+      home += v;
+    }
+    const actual = home > s.away ? '主胜' : home < s.away ? '客胜' : '平';
+    const want = hc ? { '胜': '主胜', '平': '平', '负': '客胜' }[hc[1]] : pred;
+    return want === actual ? 1 : 0;
   }
 
 function parseOverUnder(pred) {
     if (!pred) return null;
-    const m = String(pred).trim().match(/^([大小])\s*(\d+(?:\.\d+)?)$/);
+    const m = String(pred).trim().match(/^([大小])\s*(\d+(?:\.\d+)?)(?:\s*\/\s*(\d+(?:\.\d+)?))?$/);
     if (!m) return null;
-    return { side: m[1], line: parseFloat(m[2]) };
+    const a = parseFloat(m[2]);
+    return { side: m[1], line: m[3] != null ? (a + parseFloat(m[3])) / 2 : a };
   }
 
 function judgeSegment(side, line, goals) {
@@ -76,10 +86,46 @@ function judgeBd310(pick, handicap, finalScore, manualResult) {
   return 'miss';
 }
 
+// ---- 亚盘盘口形态解析(新增, 手写; judgeAh 与 settle.isAhPick/pickTeam 共用同一判据) ----
+// 返回 { h: 盘口数, team: 命名队 } 或 null(不是亚盘形态)。h 从命名队视角取值:
+//   负数 = 命名队让球(上盘), 正数 = 命名队受让(下盘)。
+// 三种形态:
+//   ① "美因茨-0.5"/"富勒姆+1.25"  带符号尾数 → 直接取值;
+//   ② "埃门平手"/"米堡平手"       含"平手" → h=0;
+//   ③ "斯托克城0"                 裸数字尾数(2026-09-19 复盘实测确认的新形态; 历史一律写作 "-0")
+//      → 补负号(裸 0 ≡ -0 ≡ 平手盘), 与 _review0920.js 的 normAh 同口径。
+// ★调用方必须共用本函数: 只认形态不判 / 只判不认形态, 会出现
+//   "认得出但判不出"(judgeAh 返 null → 腿永远挂在待结算) 或
+//   "判得出但认不出"(settleLeg 掉进竞彩方向分支 → 该腿**恒判 miss**)两种相反的坏法。
+function ahShapeOf(pick) {
+  const p = String(pick || '');
+  const m = p.match(/([+-]\d+(?:\.\d+)?)$/);
+  if (m) return { h: parseFloat(m[1]), team: p.slice(0, p.length - m[1].length).trim() };
+  if (p.indexOf('平手') !== -1) return { h: 0, team: p.replace(/平手/g, '').trim() }; // 平手盘: 无数字盘口, 按 0 处理
+  // ③ 裸数字尾数 —— 判据必须窄, 否则会把别的形态误吃进来:
+  //   · 含 '/'          → 不是亚盘(复式 310 码 "3/1"/"让-1 3/0" 的末段是纯码, 不是盘口数);
+  //   · 尾数字前是空格 → 不是亚盘("让-1 3"/"让+1 0" 的尾数字由 settle 的让球分支处理);
+  //   · 大/小开头        → 不是亚盘(大2.5/小3 是大小球形态, 走 judgeOverUnder);
+  //   · 前导零          → 队名里的号(沙尔克04);
+  //   · 超出 0~5 / 非 0.25 的整数倍 → 队名里的号(汉诺威96 / 沙特阿拉伯U23), 不是盘口线。
+  if (p.indexOf('/') !== -1) return null;
+  if (/^[大小]\d/.test(p)) return null;
+  const b = p.match(/([^\s\d])(\d{1,2}(?:\.\d+)?)$/);
+  if (!b || /^0\d/.test(b[2])) return null;
+  const v = parseFloat(b[2]);
+  if (!(v >= 0 && v <= 5) || Math.round(v * 100) % 25 !== 0) return null;
+  return { h: v === 0 ? 0 : -v, team: p.slice(0, p.length - b[2].length).trim() };
+}
+
+// 亚盘盘口数(不是亚盘形态 → null) / 命名队(非亚盘形态原样返回)
+function ahLineOf(pick) { const a = ahShapeOf(pick); return a ? a.h : null; }
+function ahTeamOf(pick) { const a = ahShapeOf(pick); return a ? a.team : String(pick || '').trim(); }
+
 // ---- 亚盘让球判定(新增, stats.js 无此函数) ----
-// pick 形态 "美因茨-0.5"/"巴竞技-0.25"/"富勒姆+1.25": 命名队 + 让球数
+// pick 形态 "美因茨-0.5"/"巴竞技-0.25"/"富勒姆+1.25"/"斯托克城0": 命名队 + 让球数
 //   负数 = 命名队让球(上盘), 正数 = 命名队受让(下盘); 判定立场 = 买命名队这一边。
-//   无正负数字但含"平手"二字(如 "埃门平手"/"米堡平手")按平手盘 h=0 处理(赢=win/平=push/负=lose)。
+//   无正负数字但含"平手"二字(如 "埃门平手"/"米堡平手")按平手盘 h=0 处理(赢=win/平=push/负=lose);
+//   裸数字尾数(漏写正负号, 如 "斯托克城0")同样按补负号处理 —— 形态识别统一走 ahShapeOf。
 // side(可选): 'home' | 'away', 命名队的主客场; 省略时默认 'home'
 //   (即"负=主队让/正=主队受让"; 命名队为客队时调用方必须显式传 'away')。
 //  quarter 档(.25/.75)拆两半: 如 -0.25 → 0 与 -0.5 两半, +1.25 → +1 与 +1.5 两半;
@@ -88,11 +134,9 @@ function judgeBd310(pick, handicap, finalScore, manualResult) {
 function judgeAh(pick, finalScore, side) {
   const s = parseScore(finalScore);
   if (!s) return null;
-  const m = String(pick || '').match(/([+-]\d+(?:\.\d+)?)$/);
-  let h;
-  if (m) h = parseFloat(m[1]);
-  else if (String(pick || '').indexOf('平手') !== -1) h = 0; // 平手盘: 无数字盘口, 按 0 处理
-  else return null;
+  const shape = ahShapeOf(pick);
+  if (!shape) return null;
+  const h = shape.h;
   const diff = side === 'away' ? s.away - s.home : s.home - s.away; // 命名队净胜球
   const quarter = Math.round(Math.abs(h) * 100) % 50 === 25;        // .25/.75 → 拆两半
   const lines = quarter ? [h - 0.25, h + 0.25] : [h];
@@ -117,5 +161,8 @@ function ahFactor(r) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { parseScore, judgeDirection, judgeOverUnder, judgeScore, judgeBd310, judgeAh, ahFactor };
+  module.exports = {
+    parseScore, judgeDirection, judgeOverUnder, judgeScore,
+    judgeBd310, judgeAh, ahFactor, ahLineOf, ahTeamOf,
+  };
 }

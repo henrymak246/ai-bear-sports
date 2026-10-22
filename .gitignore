@@ -11,3 +11,16 @@ miniprogram/cloudfunctions/*/config.js
 miniprogram/cloudfunctions/*/node_modules/
 miniprogram/project.private.config.json
 tools/_mini_shots/
+# 社媒观点采集(原文只留本地, 不进 git; 见 .claude/plans/jaunty-tumbling-planet.md)
+tools/.cookies/
+tools/_social_shots/
+tools/bili_*.json
+tools/bili_*.txt
+tools/weibo_*.json
+tools/weibo_*.txt
+tools/_social_digest_*.json
+tools/_social_[0-9]*.json
+tools/_social_in_*.txt
+tools/_hot_*.txt
+tools/*.err
+

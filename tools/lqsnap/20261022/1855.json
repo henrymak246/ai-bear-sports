@@ -1,0 +1,4010 @@
+{
+ "ts": "2026-10-22 18:55",
+ "day": "20261022",
+ "source": {
+  "official": "lq_1022.json",
+  "odds": "lqodds_1022.json"
+ },
+ "official": {
+  "hdc": [
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4301,
+    "matchNumStr": "周四301",
+    "matchDate": "2026-10-23",
+    "matchTime": "01:30:00",
+    "matchId": 2042148,
+    "matchStatus": "Selling",
+    "home": "埃菲斯",
+    "away": "贝西克塔",
+    "homeAll": "伊斯坦布尔埃菲斯",
+    "awayAll": "贝西克塔斯",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联13]",
+    "awayRank": "[欧篮联11]",
+    "updateDate": "2026-10-22",
+    "updateTime": "16:01:54",
+    "lineRaw": "-4.5",
+    "line": -4.5,
+    "lineFrom": "goalLine",
+    "homeOdds": 1.7,
+    "awayOdds": 1.7
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4302,
+    "matchNumStr": "周四302",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:00:00",
+    "matchId": 2042149,
+    "matchStatus": "Selling",
+    "home": "拜仁",
+    "away": "迪拜",
+    "homeAll": "拜仁慕尼黑",
+    "awayAll": "迪拜",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联15]",
+    "awayRank": "[欧篮联7]",
+    "updateDate": "2026-10-22",
+    "updateTime": "18:25:58",
+    "lineRaw": "+3.5",
+    "line": 3.5,
+    "lineFrom": "goalLine",
+    "homeOdds": 1.7,
+    "awayOdds": 1.7
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4303,
+    "matchNumStr": "周四303",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:15:00",
+    "matchId": 2042150,
+    "matchStatus": "Selling",
+    "home": "帕纳辛纳",
+    "away": "巴斯克",
+    "homeAll": "帕纳辛纳科斯",
+    "awayAll": "巴斯克尼亚",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联1]",
+    "awayRank": "[欧篮联20]",
+    "updateDate": "2026-10-22",
+    "updateTime": "18:24:42",
+    "lineRaw": "-17.5",
+    "line": -17.5,
+    "lineFrom": "goalLine",
+    "homeOdds": 1.6,
+    "awayOdds": 1.81
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4304,
+    "matchNumStr": "周四304",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:30:00",
+    "matchId": 2042151,
+    "matchStatus": "Selling",
+    "home": "米兰",
+    "away": "巴萨",
+    "homeAll": "米兰",
+    "awayAll": "巴塞罗那",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联19]",
+    "awayRank": "[欧篮联10]",
+    "updateDate": "2026-10-22",
+    "updateTime": "10:17:17",
+    "lineRaw": "-1.5",
+    "line": -1.5,
+    "lineFrom": "goalLine",
+    "homeOdds": 1.7,
+    "awayOdds": 1.7
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4305,
+    "matchNumStr": "周四305",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:45:00",
+    "matchId": 2042152,
+    "matchStatus": "Selling",
+    "home": "贝游击",
+    "away": "贝红星",
+    "homeAll": "贝尔格莱德游击",
+    "awayAll": "贝尔格莱德红星",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联12]",
+    "awayRank": "[欧篮联6]",
+    "updateDate": "2026-10-22",
+    "updateTime": "10:17:17",
+    "lineRaw": "+1.5",
+    "line": 1.5,
+    "lineFrom": "goalLine",
+    "homeOdds": 1.6,
+    "awayOdds": 1.81
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4306,
+    "matchNumStr": "周四306",
+    "matchDate": "2026-10-23",
+    "matchTime": "07:00:00",
+    "matchId": 2042153,
+    "matchStatus": "Selling",
+    "home": "76人",
+    "away": "骑士",
+    "homeAll": "费城76人",
+    "awayAll": "克利夫兰骑士",
+    "league": "美职篮",
+    "leagueCode": "NBA",
+    "homeRank": "[美职篮3]",
+    "awayRank": "[美职篮15]",
+    "updateDate": "2026-10-22",
+    "updateTime": "18:34:15",
+    "lineRaw": "-4.5",
+    "line": -4.5,
+    "lineFrom": "goalLine",
+    "homeOdds": 1.7,
+    "awayOdds": 1.7
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4307,
+    "matchNumStr": "周四307",
+    "matchDate": "2026-10-23",
+    "matchTime": "09:30:00",
+    "matchId": 2042154,
+    "matchStatus": "Selling",
+    "home": "雷霆",
+    "away": "掘金",
+    "homeAll": "俄克拉荷马城雷霆",
+    "awayAll": "丹佛掘金",
+    "league": "美职篮",
+    "leagueCode": "NBA",
+    "homeRank": "[美职篮6]",
+    "awayRank": "[美职篮15]",
+    "updateDate": "2026-10-22",
+    "updateTime": "16:57:57",
+    "lineRaw": "-8.5",
+    "line": -8.5,
+    "lineFrom": "goalLine",
+    "homeOdds": 1.65,
+    "awayOdds": 1.75
+   }
+  ],
+  "hilo": [
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4301,
+    "matchNumStr": "周四301",
+    "matchDate": "2026-10-23",
+    "matchTime": "01:30:00",
+    "matchId": 2042148,
+    "matchStatus": "Selling",
+    "home": "埃菲斯",
+    "away": "贝西克塔",
+    "homeAll": "伊斯坦布尔埃菲斯",
+    "awayAll": "贝西克塔斯",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联13]",
+    "awayRank": "[欧篮联11]",
+    "updateDate": "2026-10-22",
+    "updateTime": "17:15:48",
+    "lineRaw": "+173.5",
+    "line": 173.5,
+    "lineFrom": "goalLine",
+    "overOdds": 1.66,
+    "underOdds": 1.74
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4302,
+    "matchNumStr": "周四302",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:00:00",
+    "matchId": 2042149,
+    "matchStatus": "Selling",
+    "home": "拜仁",
+    "away": "迪拜",
+    "homeAll": "拜仁慕尼黑",
+    "awayAll": "迪拜",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联15]",
+    "awayRank": "[欧篮联7]",
+    "updateDate": "2026-10-22",
+    "updateTime": "18:35:44",
+    "lineRaw": "+174.5",
+    "line": 174.5,
+    "lineFrom": "goalLine",
+    "overOdds": 1.7,
+    "underOdds": 1.7
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4303,
+    "matchNumStr": "周四303",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:15:00",
+    "matchId": 2042150,
+    "matchStatus": "Selling",
+    "home": "帕纳辛纳",
+    "away": "巴斯克",
+    "homeAll": "帕纳辛纳科斯",
+    "awayAll": "巴斯克尼亚",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联1]",
+    "awayRank": "[欧篮联20]",
+    "updateDate": "2026-10-22",
+    "updateTime": "16:59:01",
+    "lineRaw": "+172.5",
+    "line": 172.5,
+    "lineFrom": "goalLine",
+    "overOdds": 1.66,
+    "underOdds": 1.74
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4304,
+    "matchNumStr": "周四304",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:30:00",
+    "matchId": 2042151,
+    "matchStatus": "Selling",
+    "home": "米兰",
+    "away": "巴萨",
+    "homeAll": "米兰",
+    "awayAll": "巴塞罗那",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联19]",
+    "awayRank": "[欧篮联10]",
+    "updateDate": "2026-10-22",
+    "updateTime": "18:18:18",
+    "lineRaw": "+177.5",
+    "line": 177.5,
+    "lineFrom": "goalLine",
+    "overOdds": 1.66,
+    "underOdds": 1.74
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4305,
+    "matchNumStr": "周四305",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:45:00",
+    "matchId": 2042152,
+    "matchStatus": "Selling",
+    "home": "贝游击",
+    "away": "贝红星",
+    "homeAll": "贝尔格莱德游击",
+    "awayAll": "贝尔格莱德红星",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联12]",
+    "awayRank": "[欧篮联6]",
+    "updateDate": "2026-10-22",
+    "updateTime": "10:17:17",
+    "lineRaw": "+163.5",
+    "line": 163.5,
+    "lineFrom": "goalLine",
+    "overOdds": 1.7,
+    "underOdds": 1.7
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4306,
+    "matchNumStr": "周四306",
+    "matchDate": "2026-10-23",
+    "matchTime": "07:00:00",
+    "matchId": 2042153,
+    "matchStatus": "Selling",
+    "home": "76人",
+    "away": "骑士",
+    "homeAll": "费城76人",
+    "awayAll": "克利夫兰骑士",
+    "league": "美职篮",
+    "leagueCode": "NBA",
+    "homeRank": "[美职篮3]",
+    "awayRank": "[美职篮15]",
+    "updateDate": "2026-10-22",
+    "updateTime": "16:06:29",
+    "lineRaw": "+235.5",
+    "line": 235.5,
+    "lineFrom": "goalLine",
+    "overOdds": 1.7,
+    "underOdds": 1.7
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4307,
+    "matchNumStr": "周四307",
+    "matchDate": "2026-10-23",
+    "matchTime": "09:30:00",
+    "matchId": 2042154,
+    "matchStatus": "Selling",
+    "home": "雷霆",
+    "away": "掘金",
+    "homeAll": "俄克拉荷马城雷霆",
+    "awayAll": "丹佛掘金",
+    "league": "美职篮",
+    "leagueCode": "NBA",
+    "homeRank": "[美职篮6]",
+    "awayRank": "[美职篮15]",
+    "updateDate": "2026-10-22",
+    "updateTime": "16:30:52",
+    "lineRaw": "+237.5",
+    "line": 237.5,
+    "lineFrom": "goalLine",
+    "overOdds": 1.66,
+    "underOdds": 1.74
+   }
+  ],
+  "mnl": [
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4301,
+    "matchNumStr": "周四301",
+    "matchDate": "2026-10-23",
+    "matchTime": "01:30:00",
+    "matchId": 2042148,
+    "matchStatus": "Selling",
+    "home": "埃菲斯",
+    "away": "贝西克塔",
+    "homeAll": "伊斯坦布尔埃菲斯",
+    "awayAll": "贝西克塔斯",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联13]",
+    "awayRank": "[欧篮联11]",
+    "updateDate": "2026-10-22",
+    "updateTime": "16:03:02",
+    "lineRaw": null,
+    "line": null,
+    "lineFrom": null,
+    "homeOdds": 1.37,
+    "awayOdds": 2.23,
+    "drawRaw": null
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4302,
+    "matchNumStr": "周四302",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:00:00",
+    "matchId": 2042149,
+    "matchStatus": "Selling",
+    "home": "拜仁",
+    "away": "迪拜",
+    "homeAll": "拜仁慕尼黑",
+    "awayAll": "迪拜",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联15]",
+    "awayRank": "[欧篮联7]",
+    "updateDate": "2026-10-22",
+    "updateTime": "18:19:17",
+    "lineRaw": null,
+    "line": null,
+    "lineFrom": null,
+    "homeOdds": 2.01,
+    "awayOdds": 1.47,
+    "drawRaw": null
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4304,
+    "matchNumStr": "周四304",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:30:00",
+    "matchId": 2042151,
+    "matchStatus": "Selling",
+    "home": "米兰",
+    "away": "巴萨",
+    "homeAll": "米兰",
+    "awayAll": "巴塞罗那",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联19]",
+    "awayRank": "[欧篮联10]",
+    "updateDate": "2026-10-22",
+    "updateTime": "10:17:17",
+    "lineRaw": null,
+    "line": null,
+    "lineFrom": null,
+    "homeOdds": 1.6,
+    "awayOdds": 1.81,
+    "drawRaw": null
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4305,
+    "matchNumStr": "周四305",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:45:00",
+    "matchId": 2042152,
+    "matchStatus": "Selling",
+    "home": "贝游击",
+    "away": "贝红星",
+    "homeAll": "贝尔格莱德游击",
+    "awayAll": "贝尔格莱德红星",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联12]",
+    "awayRank": "[欧篮联6]",
+    "updateDate": "2026-10-22",
+    "updateTime": "10:17:17",
+    "lineRaw": null,
+    "line": null,
+    "lineFrom": null,
+    "homeOdds": 1.7,
+    "awayOdds": 1.7,
+    "drawRaw": null
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4306,
+    "matchNumStr": "周四306",
+    "matchDate": "2026-10-23",
+    "matchTime": "07:00:00",
+    "matchId": 2042153,
+    "matchStatus": "Selling",
+    "home": "76人",
+    "away": "骑士",
+    "homeAll": "费城76人",
+    "awayAll": "克利夫兰骑士",
+    "league": "美职篮",
+    "leagueCode": "NBA",
+    "homeRank": "[美职篮3]",
+    "awayRank": "[美职篮15]",
+    "updateDate": "2026-10-22",
+    "updateTime": "16:12:26",
+    "lineRaw": null,
+    "line": null,
+    "lineFrom": null,
+    "homeOdds": 1.4,
+    "awayOdds": 2.15,
+    "drawRaw": null
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4307,
+    "matchNumStr": "周四307",
+    "matchDate": "2026-10-23",
+    "matchTime": "09:30:00",
+    "matchId": 2042154,
+    "matchStatus": "Selling",
+    "home": "雷霆",
+    "away": "掘金",
+    "homeAll": "俄克拉荷马城雷霆",
+    "awayAll": "丹佛掘金",
+    "league": "美职篮",
+    "leagueCode": "NBA",
+    "homeRank": "[美职篮6]",
+    "awayRank": "[美职篮15]",
+    "updateDate": "2026-10-22",
+    "updateTime": "10:17:17",
+    "lineRaw": null,
+    "line": null,
+    "lineFrom": null,
+    "homeOdds": 1.14,
+    "awayOdds": 3.32,
+    "drawRaw": null
+   }
+  ],
+  "wnm": [
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4301,
+    "matchNumStr": "周四301",
+    "matchDate": "2026-10-23",
+    "matchTime": "01:30:00",
+    "matchId": 2042148,
+    "matchStatus": "Selling",
+    "home": "埃菲斯",
+    "away": "贝西克塔",
+    "homeAll": "伊斯坦布尔埃菲斯",
+    "awayAll": "贝西克塔斯",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联13]",
+    "awayRank": "[欧篮联11]",
+    "updateDate": "2026-10-22",
+    "updateTime": "16:03:35",
+    "lineRaw": null,
+    "line": null,
+    "lineFrom": null,
+    "w": [
+     3.8,
+     3.85,
+     5.9,
+     9.7,
+     14,
+     17
+    ],
+    "l": [
+     5.5,
+     5.65,
+     10,
+     20,
+     29,
+     40
+    ]
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4302,
+    "matchNumStr": "周四302",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:00:00",
+    "matchId": 2042149,
+    "matchStatus": "Selling",
+    "home": "拜仁",
+    "away": "迪拜",
+    "homeAll": "拜仁慕尼黑",
+    "awayAll": "迪拜",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联15]",
+    "awayRank": "[欧篮联7]",
+    "updateDate": "2026-10-22",
+    "updateTime": "10:17:17",
+    "lineRaw": null,
+    "line": null,
+    "lineFrom": null,
+    "w": [
+     4.9,
+     5,
+     9,
+     18,
+     27,
+     36
+    ],
+    "l": [
+     3.95,
+     4,
+     6.3,
+     11,
+     18,
+     20
+    ]
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4303,
+    "matchNumStr": "周四303",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:15:00",
+    "matchId": 2042150,
+    "matchStatus": "Selling",
+    "home": "帕纳辛纳",
+    "away": "巴斯克",
+    "homeAll": "帕纳辛纳科斯",
+    "awayAll": "巴斯克尼亚",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联1]",
+    "awayRank": "[欧篮联20]",
+    "updateDate": "2026-10-22",
+    "updateTime": "15:23:15",
+    "lineRaw": null,
+    "line": null,
+    "lineFrom": null,
+    "w": [
+     8.9,
+     5,
+     4.25,
+     3.5,
+     4.5,
+     3.1
+    ],
+    "l": [
+     22,
+     36,
+     55,
+     90,
+     140,
+     190
+    ]
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4304,
+    "matchNumStr": "周四304",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:30:00",
+    "matchId": 2042151,
+    "matchStatus": "Selling",
+    "home": "米兰",
+    "away": "巴萨",
+    "homeAll": "米兰",
+    "awayAll": "巴塞罗那",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联19]",
+    "awayRank": "[欧篮联10]",
+    "updateDate": "2026-10-22",
+    "updateTime": "10:17:17",
+    "lineRaw": null,
+    "line": null,
+    "lineFrom": null,
+    "w": [
+     4.1,
+     4.2,
+     6.8,
+     12,
+     20,
+     24
+    ],
+    "l": [
+     4.55,
+     4.65,
+     8.2,
+     16,
+     25,
+     32
+    ]
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4305,
+    "matchNumStr": "周四305",
+    "matchDate": "2026-10-23",
+    "matchTime": "02:45:00",
+    "matchId": 2042152,
+    "matchStatus": "Selling",
+    "home": "贝游击",
+    "away": "贝红星",
+    "homeAll": "贝尔格莱德游击",
+    "awayAll": "贝尔格莱德红星",
+    "league": "欧篮联",
+    "leagueCode": "EBL",
+    "homeRank": "[欧篮联12]",
+    "awayRank": "[欧篮联6]",
+    "updateDate": "2026-10-22",
+    "updateTime": "10:17:17",
+    "lineRaw": null,
+    "line": null,
+    "lineFrom": null,
+    "w": [
+     4.25,
+     4.4,
+     7.5,
+     14,
+     23,
+     28
+    ],
+    "l": [
+     4.25,
+     4.4,
+     7.5,
+     14,
+     23,
+     28
+    ]
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4306,
+    "matchNumStr": "周四306",
+    "matchDate": "2026-10-23",
+    "matchTime": "07:00:00",
+    "matchId": 2042153,
+    "matchStatus": "Selling",
+    "home": "76人",
+    "away": "骑士",
+    "homeAll": "费城76人",
+    "awayAll": "克利夫兰骑士",
+    "league": "美职篮",
+    "leagueCode": "NBA",
+    "homeRank": "[美职篮3]",
+    "awayRank": "[美职篮15]",
+    "updateDate": "2026-10-22",
+    "updateTime": "17:39:31",
+    "lineRaw": null,
+    "line": null,
+    "lineFrom": null,
+    "w": [
+     4,
+     4.2,
+     6.3,
+     9,
+     13,
+     12
+    ],
+    "l": [
+     5.45,
+     5.7,
+     10.5,
+     18,
+     28,
+     33
+    ]
+   },
+   {
+    "businessDate": "2026-10-22",
+    "matchNum": 4307,
+    "matchNumStr": "周四307",
+    "matchDate": "2026-10-23",
+    "matchTime": "09:30:00",
+    "matchId": 2042154,
+    "matchStatus": "Selling",
+    "home": "雷霆",
+    "away": "掘金",
+    "homeAll": "俄克拉荷马城雷霆",
+    "awayAll": "丹佛掘金",
+    "league": "美职篮",
+    "leagueCode": "NBA",
+    "homeRank": "[美职篮6]",
+    "awayRank": "[美职篮15]",
+    "updateDate": "2026-10-22",
+    "updateTime": "13:11:06",
+    "lineRaw": null,
+    "line": null,
+    "lineFrom": null,
+    "w": [
+     5.2,
+     3.6,
+     4.2,
+     6.2,
+     8.9,
+     8.5
+    ],
+    "l": [
+     7.7,
+     8.2,
+     17,
+     24,
+     45,
+     50
+    ]
+   }
+  ]
+ },
+ "poolList": {
+  "4301": {
+   "HDC": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "-4.5",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "HDC",
+    "poolId": 2200357,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "HILO": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "+173.5",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "HILO",
+    "poolId": 2200353,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "MNL": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "MNL",
+    "poolId": 2200337,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "WNM": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 1,
+    "cbtAllUp": 1,
+    "cbtSingle": 1,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "WNM",
+    "poolId": 2200351,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 1,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   }
+  },
+  "4302": {
+   "HDC": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "+3.5",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "HDC",
+    "poolId": 2200336,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "HILO": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "+174.5",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "HILO",
+    "poolId": 2200349,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "MNL": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "MNL",
+    "poolId": 2200360,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "WNM": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 1,
+    "cbtAllUp": 1,
+    "cbtSingle": 1,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "WNM",
+    "poolId": 2200346,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 1,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   }
+  },
+  "4303": {
+   "HDC": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "-17.5",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "HDC",
+    "poolId": 2200343,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "HILO": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "+172.5",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "HILO",
+    "poolId": 2200356,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "WNM": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 1,
+    "cbtAllUp": 1,
+    "cbtSingle": 1,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "WNM",
+    "poolId": 2200341,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 1,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   }
+  },
+  "4304": {
+   "HDC": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "-1.5",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "HDC",
+    "poolId": 2200345,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "HILO": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "+177.5",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "HILO",
+    "poolId": 2200359,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "MNL": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "MNL",
+    "poolId": 2200347,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "WNM": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 1,
+    "cbtAllUp": 1,
+    "cbtSingle": 1,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "WNM",
+    "poolId": 2200362,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 1,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   }
+  },
+  "4305": {
+   "HDC": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "+1.5",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "HDC",
+    "poolId": 2200350,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "HILO": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "+163.5",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "HILO",
+    "poolId": 2200342,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "MNL": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "MNL",
+    "poolId": 2200355,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "WNM": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 1,
+    "cbtAllUp": 1,
+    "cbtSingle": 1,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "WNM",
+    "poolId": 2200338,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 1,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   }
+  },
+  "4306": {
+   "HDC": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "-4.5",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "HDC",
+    "poolId": 2200361,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "HILO": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "+235.5",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "HILO",
+    "poolId": 2200348,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "MNL": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "MNL",
+    "poolId": 2200358,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "WNM": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 1,
+    "cbtAllUp": 1,
+    "cbtSingle": 1,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "WNM",
+    "poolId": 2200344,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 1,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   }
+  },
+  "4307": {
+   "HDC": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "-8.5",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "HDC",
+    "poolId": 2200340,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "HILO": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "+237.5",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "HILO",
+    "poolId": 2200354,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "MNL": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 0,
+    "cbtAllUp": 1,
+    "cbtSingle": 0,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "MNL",
+    "poolId": 2200339,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 0,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   },
+   "WNM": {
+    "allUp": 1,
+    "bettingAllup": 1,
+    "bettingSingle": 1,
+    "cbtAllUp": 1,
+    "cbtSingle": 1,
+    "cbtValue": 1,
+    "fixedOddsgoalLine": "",
+    "intAllUp": 0,
+    "intSingle": 0,
+    "intValue": 2,
+    "matchId": 0,
+    "matchNum": 0,
+    "poolCloseDate": "",
+    "poolCloseTime": "",
+    "poolCode": "WNM",
+    "poolId": 2200352,
+    "poolOddsType": "F",
+    "poolStatus": "",
+    "sellInitialDate": "",
+    "sellInitialTime": "",
+    "single": 1,
+    "updateDate": "",
+    "updateTime": "",
+    "vbtAllUp": 0,
+    "vbtSingle": 0,
+    "vbtValue": 0
+   }
+  }
+ },
+ "odds": {
+  "14752768": {
+   "suppliers": [
+    {
+     "sup": 1,
+     "id": 31917149,
+     "gameflags": 8206,
+     "rank": 1,
+     "source": "10643453",
+     "flags": 784,
+     "ah": {
+      "handicap": 5.5,
+      "win": 0.92,
+      "lost": 0.88,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 172.5,
+      "over": 0.86,
+      "under": 0.9,
+      "flags": 272
+     },
+     "x12": null
+    },
+    {
+     "sup": 2,
+     "id": 31919851,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 528,
+     "ah": {
+      "handicap": 3.5,
+      "win": 0.9,
+      "lost": 0.74,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 87.5,
+      "over": 0.88,
+      "under": 0.76,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.37,
+      "draw": 0,
+      "lost": 2.46,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 4,
+     "id": 31877420,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 3,
+      "win": 0.93,
+      "lost": 0.87,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 87,
+      "over": 0.88,
+      "under": 0.86,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.51,
+      "draw": 0,
+      "lost": 2.4,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 5,
+     "id": 31892962,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 2.5,
+      "win": 0.74,
+      "lost": 0.95,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 87.5,
+      "over": 0.86,
+      "under": 0.8,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.5,
+      "draw": 0,
+      "lost": 2.55,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 6,
+     "id": 31919829,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 528,
+     "ah": {
+      "handicap": 3,
+      "win": 0.97,
+      "lost": 0.91,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 87,
+      "over": 0.95,
+      "under": 0.93,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.4,
+      "draw": 0,
+      "lost": 2.8,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 10,
+     "id": 31915403,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 3,
+      "win": 0.91,
+      "lost": 0.91,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 86.5,
+      "over": 0.92,
+      "under": 0.88,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.57,
+      "draw": 0,
+      "lost": 2.33,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 15,
+     "id": 31883622,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 3,
+      "win": 0.93,
+      "lost": 0.87,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 87,
+      "over": 0.88,
+      "under": 0.86,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.51,
+      "draw": 0,
+      "lost": 2.4,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 20,
+     "id": 31888803,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 6.5,
+      "win": 0.85,
+      "lost": 0.8,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 173.5,
+      "over": 0.85,
+      "under": 0.8,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.4,
+      "draw": 0,
+      "lost": 2.7,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 24,
+     "id": 31873654,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 5.5,
+      "win": 0.91,
+      "lost": 0.91,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 173.5,
+      "over": 1,
+      "under": 0.8,
+      "flags": 272
+     },
+     "x12": null
+    },
+    {
+     "sup": 26,
+     "id": 31909282,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 2.5,
+      "win": 0.83,
+      "lost": 0.85,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 86.5,
+      "over": 0.87,
+      "under": 0.8,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.53,
+      "draw": 0,
+      "lost": 2.37,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 30,
+     "id": 31873655,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 2.5,
+      "win": 0.85,
+      "lost": 0.85,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 86.5,
+      "over": 0.9,
+      "under": 0.8,
+      "flags": 273
+     },
+     "x12": null
+    },
+    {
+     "sup": 51,
+     "id": 31911213,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 4.5,
+      "win": 1.7,
+      "lost": 1.7,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 173.5,
+      "over": 1.66,
+      "under": 1.74,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.37,
+      "draw": 0,
+      "lost": 2.23,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 52,
+     "id": 31919909,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 528,
+     "ah": {
+      "handicap": 3,
+      "win": 0.95,
+      "lost": 0.9,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 87,
+      "over": 0.93,
+      "under": 0.9,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.51,
+      "draw": 0,
+      "lost": 2.64,
+      "flags": 529
+     }
+    },
+    {
+     "sup": 97,
+     "id": 31834162,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 2.5,
+      "win": 0.74,
+      "lost": 0.95,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 87.5,
+      "over": 0.87,
+      "under": 0.8,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.41,
+      "draw": 0,
+      "lost": 3.02,
+      "flags": 272
+     }
+    }
+   ]
+  },
+  "14752898": {
+   "suppliers": [
+    {
+     "sup": 1,
+     "id": 31917178,
+     "gameflags": 8206,
+     "rank": 1,
+     "source": "10643621",
+     "flags": 784,
+     "ah": {
+      "handicap": 1,
+      "win": 0.91,
+      "lost": 0.89,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 164,
+      "over": 0.86,
+      "under": 0.9,
+      "flags": 272
+     },
+     "x12": null
+    },
+    {
+     "sup": 2,
+     "id": 31919860,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 528,
+     "ah": {
+      "handicap": 0.5,
+      "win": 0.89,
+      "lost": 0.75,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 81.5,
+      "over": 0.79,
+      "under": 0.85,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.65,
+      "draw": 0,
+      "lost": 1.88,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 4,
+     "id": 31877419,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": -0.5,
+      "win": 0.83,
+      "lost": 0.91,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 81.5,
+      "over": 0.81,
+      "under": 0.87,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.89,
+      "draw": 0,
+      "lost": 1.85,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 5,
+     "id": 31892954,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 272,
+     "ah": {
+      "handicap": 0.5,
+      "win": 0.83,
+      "lost": 0.83,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 82.5,
+      "over": 0.83,
+      "under": 0.83,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.86,
+      "draw": 0,
+      "lost": 1.86,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 6,
+     "id": 31920029,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 528,
+     "ah": {
+      "handicap": 0.5,
+      "win": 0.96,
+      "lost": 0.85,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 82,
+      "over": 0.9,
+      "under": 0.96,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.9,
+      "draw": 0,
+      "lost": 1.91,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 10,
+     "id": 31915631,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 0.5,
+      "win": 0.97,
+      "lost": 0.85,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 82,
+      "over": 0.85,
+      "under": 0.95,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.91,
+      "draw": 0,
+      "lost": 1.91,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 15,
+     "id": 31883649,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": -0.5,
+      "win": 0.83,
+      "lost": 0.91,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 81.5,
+      "over": 0.81,
+      "under": 0.87,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.89,
+      "draw": 0,
+      "lost": 1.85,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 20,
+     "id": 31889269,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 272,
+     "ah": {
+      "handicap": 1.5,
+      "win": 0.91,
+      "lost": 0.75,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 164.5,
+      "over": 0.83,
+      "under": 0.83,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.48,
+      "draw": 0,
+      "lost": 2.4,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 24,
+     "id": 31888660,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 1.5,
+      "win": 1,
+      "lost": 0.8,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 164.5,
+      "over": 1,
+      "under": 0.8,
+      "flags": 272
+     },
+     "x12": null
+    },
+    {
+     "sup": 26,
+     "id": 31909284,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 0.5,
+      "win": 0.9,
+      "lost": 0.8,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 82.5,
+      "over": 0.9,
+      "under": 0.8,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.83,
+      "draw": 0,
+      "lost": 1.87,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 30,
+     "id": 31874640,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 0.5,
+      "win": 0.9,
+      "lost": 0.8,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 82.5,
+      "over": 0.9,
+      "under": 0.8,
+      "flags": 273
+     },
+     "x12": null
+    },
+    {
+     "sup": 51,
+     "id": 31911217,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": -1.5,
+      "win": 1.6,
+      "lost": 1.81,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 163.5,
+      "over": 1.7,
+      "under": 1.7,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.7,
+      "draw": 0,
+      "lost": 1.7,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 52,
+     "id": 31921305,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 528,
+     "ah": {
+      "handicap": 0.5,
+      "win": 1,
+      "lost": 0.85,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 81.5,
+      "over": 0.9,
+      "under": 0.95,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.88,
+      "draw": 0,
+      "lost": 1.97,
+      "flags": 529
+     }
+    },
+    {
+     "sup": 97,
+     "id": 31833688,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 0,
+      "win": 0.87,
+      "lost": 0.87,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 82.5,
+      "over": 0.83,
+      "under": 0.83,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.89,
+      "draw": 0,
+      "lost": 1.97,
+      "flags": 272
+     }
+    }
+   ]
+  },
+  "14752928": {
+   "suppliers": [
+    {
+     "sup": 1,
+     "id": 31917164,
+     "gameflags": 8206,
+     "rank": 1,
+     "source": "10643558",
+     "flags": 784,
+     "ah": {
+      "handicap": 16,
+      "win": 0.91,
+      "lost": 0.89,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 172.5,
+      "over": 0.83,
+      "under": 0.93,
+      "flags": 272
+     },
+     "x12": null
+    },
+    {
+     "sup": 2,
+     "id": 31919857,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 529,
+     "ah": {
+      "handicap": 9.5,
+      "win": 0.86,
+      "lost": 0.78,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 87.5,
+      "over": 0.82,
+      "under": 0.82,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.01,
+      "draw": 0,
+      "lost": 7,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 4,
+     "id": 31877421,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 9,
+      "win": 0.89,
+      "lost": 0.91,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 87.5,
+      "over": 0.87,
+      "under": 0.87,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.16,
+      "draw": 0,
+      "lost": 4.7,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 5,
+     "id": 31892960,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 272,
+     "ah": {
+      "handicap": 7.5,
+      "win": 0.83,
+      "lost": 0.83,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 86.5,
+      "over": 0.83,
+      "under": 0.83,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.2,
+      "draw": 0,
+      "lost": 4.5,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 6,
+     "id": 31920026,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 528,
+     "ah": {
+      "handicap": 9,
+      "win": 0.93,
+      "lost": 0.94,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 87.5,
+      "over": 0.94,
+      "under": 0.94,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.06,
+      "draw": 0,
+      "lost": 8.5,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 10,
+     "id": 31917342,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 9,
+      "win": 0.91,
+      "lost": 0.91,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 87,
+      "over": 0.82,
+      "under": 0.98,
+      "flags": 273
+     },
+     "x12": null
+    },
+    {
+     "sup": 15,
+     "id": 31883648,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 9.5,
+      "win": 0.97,
+      "lost": 0.83,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 87,
+      "over": 0.79,
+      "under": 0.95,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.16,
+      "draw": 0,
+      "lost": 4.7,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 20,
+     "id": 31889100,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 16.5,
+      "win": 0.83,
+      "lost": 0.83,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 171.5,
+      "over": 0.83,
+      "under": 0.83,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.08,
+      "draw": 0,
+      "lost": 6.5,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 24,
+     "id": 31874380,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 16.5,
+      "win": 1,
+      "lost": 0.8,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 171.5,
+      "over": 0.8,
+      "under": 1,
+      "flags": 272
+     },
+     "x12": null
+    },
+    {
+     "sup": 26,
+     "id": 31909283,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 8.5,
+      "win": 0.8,
+      "lost": 0.9,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 87.5,
+      "over": 0.9,
+      "under": 0.77,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.15,
+      "draw": 0,
+      "lost": 4.75,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 30,
+     "id": 31874381,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 8.5,
+      "win": 0.8,
+      "lost": 0.9,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 86.5,
+      "over": 0.8,
+      "under": 0.9,
+      "flags": 273
+     },
+     "x12": null
+    },
+    {
+     "sup": 51,
+     "id": 31911215,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 17.5,
+      "win": 1.6,
+      "lost": 1.81,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 172.5,
+      "over": 1.66,
+      "under": 1.74,
+      "flags": 272
+     },
+     "x12": null
+    },
+    {
+     "sup": 52,
+     "id": 31920087,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 529,
+     "ah": {
+      "handicap": 9,
+      "win": 0.9,
+      "lost": 0.93,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 87.5,
+      "over": 0.92,
+      "under": 0.91,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.13,
+      "draw": 0,
+      "lost": 6.36,
+      "flags": 529
+     }
+    },
+    {
+     "sup": 97,
+     "id": 31834095,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 8.5,
+      "win": 0.87,
+      "lost": 0.87,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 87,
+      "over": 0.89,
+      "under": 0.85,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.08,
+      "draw": 0,
+      "lost": 9,
+      "flags": 272
+     }
+    }
+   ]
+  },
+  "14753194": {
+   "suppliers": [
+    {
+     "sup": 1,
+     "id": 31917165,
+     "gameflags": 8206,
+     "rank": 1,
+     "source": "10643600",
+     "flags": 784,
+     "ah": {
+      "handicap": 2.5,
+      "win": 0.92,
+      "lost": 0.88,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 176,
+      "over": 0.89,
+      "under": 0.87,
+      "flags": 272
+     },
+     "x12": null
+    },
+    {
+     "sup": 2,
+     "id": 31919859,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 528,
+     "ah": {
+      "handicap": 1.5,
+      "win": 0.85,
+      "lost": 0.79,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 89.5,
+      "over": 0.91,
+      "under": 0.73,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.58,
+      "draw": 0,
+      "lost": 1.98,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 4,
+     "id": 31877601,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 1,
+      "win": 0.85,
+      "lost": 0.89,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 89,
+      "over": 0.88,
+      "under": 0.8,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.71,
+      "draw": 0,
+      "lost": 2.03,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 5,
+     "id": 31892961,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 272,
+     "ah": {
+      "handicap": 0.5,
+      "win": 0.8,
+      "lost": 0.86,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 88.5,
+      "over": 0.86,
+      "under": 0.8,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.76,
+      "draw": 0,
+      "lost": 2,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 6,
+     "id": 31919256,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 1,
+      "win": 0.94,
+      "lost": 0.93,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 88.5,
+      "over": 0.86,
+      "under": 0.94,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.69,
+      "draw": 0,
+      "lost": 2.15,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 10,
+     "id": 31915663,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 785,
+     "ah": {
+      "handicap": 1,
+      "win": 0.92,
+      "lost": 0.9,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 89,
+      "over": 0.95,
+      "under": 0.85,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.8,
+      "draw": 0,
+      "lost": 2.02,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 15,
+     "id": 31883799,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 1.5,
+      "win": 0.93,
+      "lost": 0.81,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 89,
+      "over": 0.88,
+      "under": 0.8,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.71,
+      "draw": 0,
+      "lost": 2.03,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 20,
+     "id": 31889238,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 2.5,
+      "win": 0.83,
+      "lost": 0.83,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 175.5,
+      "over": 0.83,
+      "under": 0.83,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.65,
+      "draw": 0,
+      "lost": 2.05,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 24,
+     "id": 31888561,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 2.5,
+      "win": 0.91,
+      "lost": 0.91,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 175.5,
+      "over": 0.91,
+      "under": 0.91,
+      "flags": 272
+     },
+     "x12": null
+    },
+    {
+     "sup": 26,
+     "id": 31909303,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 0.5,
+      "win": 0.8,
+      "lost": 0.9,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 88.5,
+      "over": 0.85,
+      "under": 0.85,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.72,
+      "draw": 0,
+      "lost": 1.97,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 30,
+     "id": 31874478,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 0.5,
+      "win": 0.8,
+      "lost": 0.9,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 88.5,
+      "over": 0.85,
+      "under": 0.85,
+      "flags": 273
+     },
+     "x12": null
+    },
+    {
+     "sup": 51,
+     "id": 31911216,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 1.5,
+      "win": 1.7,
+      "lost": 1.7,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 177.5,
+      "over": 1.66,
+      "under": 1.74,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.6,
+      "draw": 0,
+      "lost": 1.81,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 52,
+     "id": 31921406,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 528,
+     "ah": {
+      "handicap": 1,
+      "win": 0.9,
+      "lost": 0.94,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 89,
+      "over": 0.96,
+      "under": 0.89,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.75,
+      "draw": 0,
+      "lost": 2.13,
+      "flags": 529
+     }
+    },
+    {
+     "sup": 97,
+     "id": 31834079,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 0,
+      "win": 0.76,
+      "lost": 1,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 88.5,
+      "over": 0.87,
+      "under": 0.8,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.73,
+      "draw": 0,
+      "lost": 2.17,
+      "flags": 272
+     }
+    }
+   ]
+  },
+  "14753500": {
+   "suppliers": [
+    {
+     "sup": 1,
+     "id": 31917162,
+     "gameflags": 8206,
+     "rank": 1,
+     "source": "10643474",
+     "flags": 784,
+     "ah": {
+      "handicap": -2,
+      "win": 0.92,
+      "lost": 0.88,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 172.5,
+      "over": 0.85,
+      "under": 0.91,
+      "flags": 272
+     },
+     "x12": null
+    },
+    {
+     "sup": 2,
+     "id": 31919858,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 529,
+     "ah": {
+      "handicap": -1.5,
+      "win": 0.74,
+      "lost": 0.9,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 86.5,
+      "over": 0.81,
+      "under": 0.83,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.98,
+      "draw": 0,
+      "lost": 1.58,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 4,
+     "id": 31877422,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": -1,
+      "win": 0.84,
+      "lost": 0.9,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 86.5,
+      "over": 0.84,
+      "under": 0.84,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.97,
+      "draw": 0,
+      "lost": 1.77,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 5,
+     "id": 31892963,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 272,
+     "ah": {
+      "handicap": -0.5,
+      "win": 0.83,
+      "lost": 0.83,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 86.5,
+      "over": 0.86,
+      "under": 0.8,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.95,
+      "draw": 0,
+      "lost": 1.8,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 6,
+     "id": 31918673,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": -0.5,
+      "win": 0.96,
+      "lost": 0.85,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 87,
+      "over": 1.01,
+      "under": 0.88,
+      "flags": 529
+     },
+     "x12": {
+      "win": 2.09,
+      "draw": 0,
+      "lost": 1.73,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 10,
+     "id": 31915600,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 785,
+     "ah": {
+      "handicap": -1,
+      "win": 0.9,
+      "lost": 0.92,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 86.5,
+      "over": 0.9,
+      "under": 0.9,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.97,
+      "draw": 0,
+      "lost": 1.85,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 15,
+     "id": 31883788,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": -0.5,
+      "win": 0.92,
+      "lost": 0.82,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 87,
+      "over": 0.9,
+      "under": 0.78,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.97,
+      "draw": 0,
+      "lost": 1.77,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 20,
+     "id": 31888876,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": -2.5,
+      "win": 0.8,
+      "lost": 0.85,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 172.5,
+      "over": 0.83,
+      "under": 0.83,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.95,
+      "draw": 0,
+      "lost": 1.73,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 24,
+     "id": 31874113,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": -1.5,
+      "win": 0.91,
+      "lost": 0.91,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 172.5,
+      "over": 0.91,
+      "under": 0.91,
+      "flags": 272
+     },
+     "x12": null
+    },
+    {
+     "sup": 26,
+     "id": 31894835,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": -0.5,
+      "win": 0.85,
+      "lost": 0.83,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 86.5,
+      "over": 0.85,
+      "under": 0.85,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.92,
+      "draw": 0,
+      "lost": 1.77,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 30,
+     "id": 31874115,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": -0.5,
+      "win": 0.85,
+      "lost": 0.85,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 86.5,
+      "over": 0.85,
+      "under": 0.85,
+      "flags": 273
+     },
+     "x12": null
+    },
+    {
+     "sup": 51,
+     "id": 31911214,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": -3.5,
+      "win": 1.7,
+      "lost": 1.7,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 174.5,
+      "over": 1.7,
+      "under": 1.7,
+      "flags": 272
+     },
+     "x12": {
+      "win": 2.01,
+      "draw": 0,
+      "lost": 1.47,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 52,
+     "id": 31919754,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 528,
+     "ah": {
+      "handicap": -1,
+      "win": 0.9,
+      "lost": 0.95,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 86.5,
+      "over": 0.91,
+      "under": 0.93,
+      "flags": 529
+     },
+     "x12": {
+      "win": 2.07,
+      "draw": 0,
+      "lost": 1.8,
+      "flags": 529
+     }
+    },
+    {
+     "sup": 97,
+     "id": 31833689,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 0,
+      "win": 0.95,
+      "lost": 0.8,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 86.5,
+      "over": 0.87,
+      "under": 0.8,
+      "flags": 273
+     },
+     "x12": {
+      "win": 2.05,
+      "draw": 0,
+      "lost": 1.81,
+      "flags": 272
+     }
+    }
+   ]
+  },
+  "14787860": {
+   "suppliers": [
+    {
+     "sup": 1,
+     "id": 31919936,
+     "gameflags": 8207,
+     "rank": 1,
+     "source": "10635242",
+     "flags": 528,
+     "ah": {
+      "handicap": 3.5,
+      "win": 0.93,
+      "lost": 0.93,
+      "flags": 528
+     },
+     "ou": {
+      "handicap": 235.5,
+      "over": 0.85,
+      "under": 0.99,
+      "flags": 528
+     },
+     "x12": {
+      "win": 1.62,
+      "draw": 0,
+      "lost": 2.35,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 2,
+     "id": 31919868,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 528,
+     "ah": {
+      "handicap": 1.5,
+      "win": 0.86,
+      "lost": 0.84,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 114.5,
+      "over": 0.86,
+      "under": 0.84,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.6,
+      "draw": 0,
+      "lost": 2.25,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 4,
+     "id": 31911981,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 3.5,
+      "win": 0.92,
+      "lost": 0.9,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 236,
+      "over": 0.88,
+      "under": 0.92,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.65,
+      "draw": 0,
+      "lost": 2.25,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 5,
+     "id": 31193055,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 0.5,
+      "win": 0.86,
+      "lost": 0.96,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 114.5,
+      "over": 0.9,
+      "under": 0.9,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.79,
+      "draw": 0,
+      "lost": 2.06,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 6,
+     "id": 31919092,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 0.5,
+      "win": 0.89,
+      "lost": 0.99,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 114.5,
+      "over": 0.93,
+      "under": 0.93,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.65,
+      "draw": 0,
+      "lost": 2.27,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 10,
+     "id": 31204887,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 3.5,
+      "win": 0.96,
+      "lost": 0.9,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 236,
+      "over": 0.92,
+      "under": 0.92,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.65,
+      "draw": 0,
+      "lost": 2.26,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 15,
+     "id": 31911910,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 3.5,
+      "win": 0.88,
+      "lost": 0.94,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 236,
+      "over": 0.88,
+      "under": 0.92,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.65,
+      "draw": 0,
+      "lost": 2.25,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 20,
+     "id": 31876735,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 3.5,
+      "win": 0.91,
+      "lost": 0.85,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 235.5,
+      "over": 0.91,
+      "under": 0.91,
+      "flags": 272
+     },
+     "x12": null
+    },
+    {
+     "sup": 24,
+     "id": 31876736,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 3.5,
+      "win": 0.85,
+      "lost": 0.85,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 235.5,
+      "over": 0.85,
+      "under": 0.85,
+      "flags": 272
+     },
+     "x12": null
+    },
+    {
+     "sup": 26,
+     "id": 31670072,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 1.5,
+      "win": 0.9,
+      "lost": 0.9,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 114.5,
+      "over": 0.8,
+      "under": 0.8,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.67,
+      "draw": 0,
+      "lost": 2.15,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 30,
+     "id": 31876737,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 272,
+     "ah": {
+      "handicap": 1.5,
+      "win": 0.85,
+      "lost": 0.85,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 114.5,
+      "over": 0.85,
+      "under": 0.85,
+      "flags": 273
+     },
+     "x12": null
+    },
+    {
+     "sup": 51,
+     "id": 31911218,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 4.5,
+      "win": 1.7,
+      "lost": 1.7,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 235.5,
+      "over": 1.7,
+      "under": 1.7,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.4,
+      "draw": 0,
+      "lost": 2.15,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 52,
+     "id": 31919885,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 528,
+     "ah": {
+      "handicap": 3,
+      "win": 0.91,
+      "lost": 0.97,
+      "flags": 528
+     },
+     "ou": {
+      "handicap": 236,
+      "over": 0.9,
+      "under": 0.94,
+      "flags": 528
+     },
+     "x12": {
+      "win": 1.66,
+      "draw": 0,
+      "lost": 2.3,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 97,
+     "id": 31911364,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 0,
+      "win": 0.79,
+      "lost": 1.06,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 114.5,
+      "over": 0.9,
+      "under": 0.9,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.64,
+      "draw": 0,
+      "lost": 2.33,
+      "flags": 272
+     }
+    }
+   ]
+  },
+  "14787867": {
+   "suppliers": [
+    {
+     "sup": 1,
+     "id": 31919942,
+     "gameflags": 8207,
+     "rank": 1,
+     "source": "10635305",
+     "flags": 528,
+     "ah": {
+      "handicap": 9.5,
+      "win": 1.11,
+      "lost": 0.76,
+      "flags": 528
+     },
+     "ou": {
+      "handicap": 235.5,
+      "over": 0.86,
+      "under": 0.98,
+      "flags": 528
+     },
+     "x12": {
+      "win": 1.34,
+      "draw": 0,
+      "lost": 3.4,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 2,
+     "id": 31919869,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 528,
+     "ah": {
+      "handicap": 4.5,
+      "win": 0.88,
+      "lost": 0.82,
+      "flags": 529
+     },
+     "ou": {
+      "handicap": 115.5,
+      "over": 0.88,
+      "under": 0.82,
+      "flags": 529
+     },
+     "x12": {
+      "win": 1.34,
+      "draw": 0,
+      "lost": 3.1,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 4,
+     "id": 31911629,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 8.5,
+      "win": 0.9,
+      "lost": 0.92,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 236.5,
+      "over": 0.9,
+      "under": 0.9,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.33,
+      "draw": 0,
+      "lost": 3.38,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 5,
+     "id": 31192627,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 4.5,
+      "win": 0.92,
+      "lost": 0.89,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 114.5,
+      "over": 0.9,
+      "under": 0.9,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.47,
+      "draw": 0,
+      "lost": 2.75,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 6,
+     "id": 31919105,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 785,
+     "ah": {
+      "handicap": 4.5,
+      "win": 0.95,
+      "lost": 0.92,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 114.5,
+      "over": 0.93,
+      "under": 0.93,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.29,
+      "draw": 0,
+      "lost": 3.5,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 10,
+     "id": 31204889,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 8.5,
+      "win": 0.93,
+      "lost": 0.93,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 235.5,
+      "over": 0.8,
+      "under": 1.04,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.28,
+      "draw": 0,
+      "lost": 3.38,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 15,
+     "id": 31911900,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 8.5,
+      "win": 0.9,
+      "lost": 0.92,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 236.5,
+      "over": 0.9,
+      "under": 0.9,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.33,
+      "draw": 0,
+      "lost": 3.38,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 20,
+     "id": 31663271,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 8.5,
+      "win": 0.91,
+      "lost": 0.85,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 235.5,
+      "over": 0.91,
+      "under": 0.91,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.33,
+      "draw": 0,
+      "lost": 3.3,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 24,
+     "id": 31878429,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 8.5,
+      "win": 1,
+      "lost": 0.73,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 235.5,
+      "over": 0.85,
+      "under": 0.85,
+      "flags": 272
+     },
+     "x12": null
+    },
+    {
+     "sup": 26,
+     "id": 31670022,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 4.5,
+      "win": 0.9,
+      "lost": 0.9,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 114.5,
+      "over": 0.8,
+      "under": 0.8,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.44,
+      "draw": 0,
+      "lost": 2.75,
+      "flags": 273
+     }
+    },
+    {
+     "sup": 30,
+     "id": 31878430,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 4.5,
+      "win": 0.85,
+      "lost": 0.85,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 114.5,
+      "over": 0.85,
+      "under": 0.85,
+      "flags": 273
+     },
+     "x12": null
+    },
+    {
+     "sup": 51,
+     "id": 31911219,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 8.5,
+      "win": 1.65,
+      "lost": 1.75,
+      "flags": 272
+     },
+     "ou": {
+      "handicap": 237.5,
+      "over": 1.66,
+      "under": 1.74,
+      "flags": 272
+     },
+     "x12": {
+      "win": 1.14,
+      "draw": 0,
+      "lost": 3.32,
+      "flags": 272
+     }
+    },
+    {
+     "sup": 52,
+     "id": 31920081,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 528,
+     "ah": {
+      "handicap": 8.5,
+      "win": 0.92,
+      "lost": 0.94,
+      "flags": 528
+     },
+     "ou": {
+      "handicap": 236.5,
+      "over": 0.93,
+      "under": 0.93,
+      "flags": 528
+     },
+     "x12": {
+      "win": 1.31,
+      "draw": 0,
+      "lost": 3.65,
+      "flags": 528
+     }
+    },
+    {
+     "sup": 97,
+     "id": 31911387,
+     "gameflags": 8199,
+     "rank": 1,
+     "source": null,
+     "flags": 784,
+     "ah": {
+      "handicap": 4.5,
+      "win": 0.89,
+      "lost": 0.85,
+      "flags": 273
+     },
+     "ou": {
+      "handicap": 115,
+      "over": 0.89,
+      "under": 0.85,
+      "flags": 273
+     },
+     "x12": {
+      "win": 1.32,
+      "draw": 0,
+      "lost": 3.52,
+      "flags": 272
+     }
+    }
+   ]
+  }
+ }
+}

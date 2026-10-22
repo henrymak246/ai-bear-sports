@@ -8,6 +8,15 @@ assert.strictEqual(S.judgeDirection('平', '2-2'), 1);
 assert.strictEqual(S.judgeDirection('客胜', '0-2'), 1);
 assert.strictEqual(S.judgeDirection('放弃', '3-1'), null);
 assert.strictEqual(S.judgeDirection('主胜', null), null);
+// judgeDirection 让球口径(让球-only 场, 第三参=主队视角让球线, 负=主队让球)
+assert.strictEqual(S.judgeDirection('让球负', '7-2', -3), 0);  // 让-3后 4-2 主胜 → 让球负黑(9-16 013 实况)
+assert.strictEqual(S.judgeDirection('让球负', '1-0', -3), 1);  // 让-3后 -2-0 客胜 → 红
+assert.strictEqual(S.judgeDirection('让球胜', '2-0', -1), 1);  // 让-1后 1-0 主胜 → 红
+assert.strictEqual(S.judgeDirection('让球平', '1-0', -1), 1);  // 让-1后 0-0 平 → 红
+assert.strictEqual(S.judgeDirection('让球胜', '1-1', 1), 1);   // 让+1后 2-1 主胜 → 红
+assert.strictEqual(S.judgeDirection('让球负', '0-1', 1), 0);   // 让+1后 1-1 平 → 让球负黑
+assert.strictEqual(S.judgeDirection('让球胜', '2-0'), null);   // 缺让球线 → 不判, 不计入(绝不误判黑)
+assert.strictEqual(S.judgeDirection('主胜', '3-1', -1), 1);    // 310 方向不受第三参影响
 
 // judgeOverUnder（含 .25/.75 双段结算）
 assert.strictEqual(S.judgeOverUnder('大2.5', '2-1'), 1);    // 3球 > 2.5 全中

@@ -61,9 +61,23 @@ assert(neHtml.includes('展开更早'), '深夜快车应有折叠按钮(历史>3
 // 2026-09-12 起明细只显示当日(最新期次, 北单期次强相关), 历史期次腿不进明细; 理论全中彩金累计展示
 const bdHtml = boxes.beidanBody.innerHTML;
 assert(bdHtml.includes('北单310玩法'), '北单专栏应有310玩法说明卡');
-assert(bdHtml.includes('北单004') && bdHtml.includes('大田市民 vs 京都'), '最新期次(9-15)北单腿应在明细(只显示当日)');
-assert(bdHtml.includes('3/1[让-1]'), '明细应显示北单让球数(9-15=米堡/利物浦让-1)');
-assert(!bdHtml.includes('北单380') && !bdHtml.includes('北单386') && !bdHtml.includes('皇家社会') && !bdHtml.includes('莱红牛'), '历史期次腿不应在明细(只显示当日, 2026-09-12起)');
+// ★不写死日期: 北单每天换期次, 写死「北单004/大田市民」这类当日值会隔天必红一次。
+//   最新期次 = 倒序数组里第一个带北单腿的日; 上一期 = 紧随其后的那个。
+const bdDays = days.filter(d => d.beidan310 && (d.beidan310.legs || []).some(l => l && l.bdNum));
+const bdDay = bdDays[0], bdPrev = bdDays[1];
+const bdLegs = bdDay.beidan310.legs.filter(l => l && l.bdNum);
+const bdTeams = l => String(l.match || '').replace(/^\d+\s*/, '');
+const bdMiss = bdLegs.filter(l => !bdHtml.includes(bdTeams(l)));
+assert(bdMiss.length === 0, '最新期次(' + bdDay.date + ')北单腿应在明细(只显示当日), 缺: ' + bdMiss.map(l => l.bdNum).join(','));
+// ★2026-09-18 起 V3.5:北单310 改「全让0」策略(让-1/让-2 只在有明确边际时才用),
+//   故「最新期次至少一条让球腿」不再是稳定不变量 → 有让球腿就断言让球数渲染, 全让0 则断言不渲染任何 [让N]
+//   (stats.js:271 让0 不输出后缀), 两个分支都卡住「310 记法原样展示」这件事。
+const hcpLeg = bdLegs.find(l => String(l.handicap) !== '0');
+const hcpPickText = hcpLeg ? hcpLeg.pick + '[让' + hcpLeg.handicap + ']' : null;
+if (hcpPickText) assert(bdHtml.includes(hcpPickText), '明细应显示北单让球数(应为 ' + hcpLeg.bdNum + '=' + hcpPickText + ')');
+else assert(!/\[让-?\d+\]/.test(bdHtml), '全让0 期次(让0 不渲染后缀)不应出现任何 [让N] 标记');
+const bdPrevMiss = bdPrev.beidan310.legs.filter(l => l && l.bdNum && bdHtml.includes(bdTeams(l)));
+assert(bdPrevMiss.length === 0, '历史期次(' + bdPrev.date + ')腿不应在明细(只显示当日, 2026-09-12起), 混入: ' + bdPrevMiss.map(l => l.bdNum).join(','));
 assert(!bdHtml.includes('(SP2.07)'), '明细不显示SP(2026-09-09起),只显示310选择+让球');
 assert(bdHtml.includes('理论全中彩金'), '应展示历史登记的理论全中彩金累计');
 
@@ -90,7 +104,10 @@ assert(!offHtml.includes('主胜') && !offHtml.includes('客胜'),
 assert(/<td>(胜|平|负) \/ /.test(offHtml) || /<td>(胜|平|负)<\/td>/.test(offHtml),
   '方向列应写成官方的 胜/平/负, 实际(深夜快车首行): ' +
   ((boxes.neBody.innerHTML.match(/<td>[^<]*<\/td><td>[^<]*<\/td><td>[^<]*<\/td>/) || [''])[0]));
-assert(bdHtml.includes('3/1[让-1]'), '北单明细的 310 记法不得被方向词映射改掉(仍应是 3/1[让-1])');
+if (hcpPickText) assert(bdHtml.includes(hcpPickText), '北单明细的 310 记法不得被方向词映射改掉(仍应是 ' + hcpPickText + ')');
+const bdPickShown = bdLegs.every(l => bdHtml.includes(l.pick + (String(l.handicap) !== '0' ? '[让' + l.handicap + ']' : '')));
+assert(bdPickShown, '北单明细应逐腿原样展示 310 记法(3/1/0 与 [让N]), 缺失: ' +
+  bdLegs.filter(l => !bdHtml.includes(l.pick + (String(l.handicap) !== '0' ? '[让' + l.handicap + ']' : ''))).map(l => l.bdNum).join(','));
 console.log('渲染冒烟全绿 ✓  jk/beidan/epl/ne 四专栏 + 深夜快车断言全过');
 console.log('--- 深夜快车摘要行 ---');
 console.log(neHtml.match(/<div class="bd-sum">[\s\S]*?<\/div>/)[0]);

@@ -381,7 +381,9 @@ console.log('① 白名单/配置校验 ✓  (' + core.ALLOWED_FNS.length + ' �
       { id: '周二004', home: '柔佛', away: '布里兰', sp: [1.41, 4.25, 5.4], hhad: [2.42, 3.25, 2.45], spHandicap: -1 },
       { id: '周二001', home: '叻武里', away: '上海海港', sp: [2.6, 3.35, 2.24], hhad: [1.48, 4.15, 4.7], spHandicap: 1 },
     ];
-    const merged = jc.overlay(frozen, live, '2026-09-15');
+    // 日期闸按「北京时间今天」判定 → 这里必须用 todayBj() 而不是写死某天,
+    // 否则这组断言只在写下的那天成立(2026-09-16 实证: 硬编码 '2026-09-15' 隔日即假红)
+    const merged = jc.overlay(frozen, live, jc.todayBj());
     assert.deepStrictEqual(merged[0].sp, [1.35, 4.45, 6.1], 'overlay 应用实时值顶替构建时快照');
     assert.deepStrictEqual(merged[0].hhad, [2.22, 3.25, 2.7], 'overlay 应同时顶替让球');
     assert.strictEqual(merged[0].spHandicap, -1, 'overlay 应带上实时盘口');
@@ -390,9 +392,9 @@ console.log('① 白名单/配置校验 ✓  (' + core.ALLOWED_FNS.length + ' �
     assert.strictEqual(merged[1].oddsClosed, true, '★不在实时池里的场次应标 oddsClosed(页面据此禁投)');
     assert.deepStrictEqual(merged[1].sp, [2.6, 3.35, 2.24], '停售场次保留构建值供回看, 只是不可投注');
     assert.strictEqual(frozen[0].oddsLive, undefined, '★overlay 绝不能改入参(页面缓存/结算都读原对象)');
-    assert.strictEqual(jc.overlay(frozen, live, '2026-09-14')[0].oddsLive, undefined,
+    assert.strictEqual(jc.overlay(frozen, live, '2000-01-01')[0].oddsLive, undefined,
       '★日期闸: 回看历史某天时官方池里当然没有那些场次, 无条件叠加会把整页历史误标成"已停售"');
-    assert.strictEqual(jc.overlay(frozen, null, '2026-09-15')[0].oddsLive, undefined,
+    assert.strictEqual(jc.overlay(frozen, null, jc.todayBj())[0].oddsLive, undefined,
       '取数失败(live=null)时须原样返回 —— 网络问题绝不能让页面变白');
     console.log('⑯ 竞彩实时赔率 ✓  (两彩池合并/仅让球场次/下架缺场/白名单/归一化 ' +
       JSON.stringify(live).length + 'B/overlay 纯函数+日期闸+失败兜底)');

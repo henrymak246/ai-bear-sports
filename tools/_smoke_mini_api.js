@@ -83,7 +83,21 @@ console.log("DATES: " + ds.join(", ") + " ✓");
     // p_legs 传合法空数组而非 null: 0 行命中时列约束本不求值, 但没必要去赌求值顺序
     const ed = await api.editBet(NIL, { legs: [], stakes: 1, amount: 2, expect_payout: 3 });
     assert(noRow(ed), "editBet(nil) 应返回 0 行(全 null 对象), 实际: " + JSON.stringify(ed));
+    /* ★p_unit 尾参(2026-09-16 加)单独探一发: 线上库没重跑 SQL 时, 老 6 参函数会把带 p_unit
+        的调用判成 PGRST202 / 404 —— 表现是"修改模式的倍数在真机上存不进去"(单注金额那条路),
+        而普通改腿因为不送 unit 照常工作, 于是**本地全绿、真机半残**。2026-09-16 实测正是这个状态
+        (SQL 文件已改、Supabase 未重跑), 故加此闸: 失败信息直接指向要重跑的文件。
+        依旧无副作用: 同一个 nil uuid, 0 行命中。 */
+    let edUnit;
+    try {
+      edUnit = await api.editBet(NIL, { legs: [], stakes: 1, amount: 2, expect_payout: 3, unit: 2 });
+    } catch (e) {
+      throw new Error("mini_edit_bet 不接受 p_unit(线上还是 6 参版) → " +
+        "请在 Supabase SQL 编辑器整段重跑 supabase/mini_rpc.sql。原始错误: " + (e && e.message));
+    }
+    assert(noRow(edUnit), "editBet(nil, 带 unit) 应返回 0 行(全 null 对象), 实际: " + JSON.stringify(edUnit));
     console.log("mini_edit_bet / mini_delete_bet 探活 ✓  (nil uuid, 0 行受影响)");
+    console.log("mini_edit_bet p_unit 尾参探活 ✓  (倍数折进 unit 的路径在线)");
   }
   console.log("SMOKE_OK");
 })().catch(e => { console.error("SMOKE_FAIL: " + (e && e.message)); process.exit(1); });

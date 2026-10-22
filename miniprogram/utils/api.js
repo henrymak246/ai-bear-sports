@@ -146,19 +146,23 @@ async function updateBetLegs(id, legs, snapshot, opts) {
   }, opts);
 }
 
-/* 注单编辑(改腿的 310 选项): 改选项必然改注数与投入('3'→'3/1' 注数 1→2),
+/* 注单编辑(改腿的 310 选项 / 整单修改模式的删腿+倍数): 改选项必然改注数与投入('3'→'3/1' 注数 1→2),
    而 7 参的 mini_update_bet 只覆盖 status/actual_payout/profit/settled_at/legs、
    改不了 stakes/amount/expect_payout → 走独立的 mini_edit_bet。
-   SQL 侧会把整票重置为待结算并清空结算四列, 故这里不传 status 系列参数。 */
+   SQL 侧会把整票重置为待结算并清空结算四列, 故这里不传 status 系列参数。
+   ★p_unit 只在调用方给了才送: 该参数是 2026-09-16 新加的尾参(带默认值),
+     不送 → 库里 unit 原样保留, 与改造前的 6 参行为逐字节一致; 送 → 折叠倍数后的单注金额。 */
 async function editBet(id, patch, opts) {
   const p = patch || {};
-  return await rpc("mini_edit_bet", {
+  const args = {
     p_id: id,
     p_legs: p.legs,
     p_stakes: p.stakes,
     p_amount: p.amount,
     p_expect_payout: p.expect_payout,
-  }, opts);
+  };
+  if (p.unit !== undefined && p.unit !== null) args.p_unit = p.unit;
+  return await rpc("mini_edit_bet", args, opts);
 }
 
 /* 注单删除 → 被删的行(不存在则 null, 不报错) */

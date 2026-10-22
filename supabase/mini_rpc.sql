@@ -97,17 +97,45 @@ end $$;
 --    并把整票重置为"待结算"(改完重来), 清空结算四列。
 --    ★p_legs 刻意不 coalesce: 传 null 就撞 legs not null 报 400(响亮失败);
 --      静默保留旧 legs 会和新 stakes/amount 脱节。
+--    ★p_unit(2026-09-16 加, 尾参+默认值): 注单卡"修改模式"的倍数折进单注金额(unit = 单注 × 倍数)。
+--      unit 是**唯一**的金额杠杆 —— settle.js 结算走 acc = unit × ∏legSpFactor,
+--      只把倍数乘进 amount 会让中奖的票显示成巨亏, 所以倍数必须落在 unit 上。
+--      带默认值(null → 保留原 unit)是刻意的: PostgREST 允许省略带默认值的参数, 老调用(不送 p_unit)零感知。
+--      ⚠️**但"零感知"不等于"无重载"**(2026-09-17 实测推翻本条早先判断): `create or replace` 只按
+--      **签名**替换 —— 加了 p_unit 就是**新签名**, 于是旧 6 参版**原样留在库里**, 两个同名函数并存
+--      → PostgREST 命名参数调用选不出候选: 7 参调用 200 过, 而"改腿"(不送 p_unit)反而 **HTTP 300 PGRST203**。
+--      修法=下面的 DO 段删掉不带 p_unit 的旧重载(全文件可反复整段重跑, 已幂等)。
 create or replace function mini_edit_bet(p_token text, p_id uuid,
-  p_legs jsonb, p_stakes int, p_amount numeric, p_expect_payout numeric)
+  p_legs jsonb, p_stakes int, p_amount numeric, p_expect_payout numeric,
+  p_unit numeric default null)
 returns json language plpgsql security definer set search_path = public as $$
 declare r bets;
 begin
   perform mini_check_token(p_token);
   update bets set legs = p_legs, stakes = p_stakes, amount = p_amount,
     expect_payout = p_expect_payout,
+    unit = coalesce(p_unit, unit),
     status = 'pending', actual_payout = 0, profit = 0, settled_at = null
   where id = p_id returning * into r;
   return to_json(r);
+end $$;
+
+-- 8b) ★重载清理(2026-09-17): 删掉**不带 p_unit** 的 mini_edit_bet 旧重载。
+--     不加这段, 改过参数集的函数每次重跑都会多留一个旧签名, PostgREST 随即 PGRST203
+--     (症状极隐蔽: 新形态能过, 老形态反而全挂)。改动任何 mini_* 函数的参数集时都照抄此段。
+do $$
+declare r record;
+begin
+  perform set_config('search_path', 'public', true); -- regprocedure 打印的签名不带 schema, 靠这个解析
+  for r in
+    select p.oid::regprocedure as sig
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname = 'mini_edit_bet'
+      and not coalesce('p_unit' = any(p.proargnames), false)
+  loop
+    execute 'drop function ' || r.sig;
+    raise notice '已删除旧重载: %', r.sig;
+  end loop;
 end $$;
 
 -- 9) 投注登记删除(彻底删除, 不可恢复; 前端删前有确认弹窗)

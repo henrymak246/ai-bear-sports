@@ -19,6 +19,9 @@
  *   删除先确认且 _bets/bets/stats 同步。
  * ⑪ 并发闸门: 在飞的旧结算不得用旧 legs 覆盖编辑结果(_seq 双道守卫 + _autoQueued 补跑)。
  * ⑫ 竞彩腿取分键: legKey 兜底 leg.id(修前恒 '', 同轮腿间比分串味 + payload 回退失效)。
+ * ⑬ 亚盘「裸数字」盘口(2026-09-19 新形态): '斯托克城0' ≡ '斯托克城-0' —— judgeAh 与 isAhPick
+ *   同源识别(修前 judgeAh 返 null + isAhPick 判 false → 掉进竞彩方向分支**恒判 miss**, 会砸中奖票);
+ *   同时守住判据不过宽(310 记法 '让-1 3'/复式码 '3/1'/队名自带数字 '汉诺威96'·'沙尔克04' 都不是亚盘)。
  * 全绿输出 SMOKE_OK。
  * ★updateBet / updateBetLegs / editBet / deleteBet 必须打桩: 否则 Node 有全局 fetch 会真连 Supabase
  *   改库 —— 漏桩 deleteBet 就是**真删用户库里的票**。 */
@@ -614,6 +617,51 @@ const flush = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise((
   assert(rJc && rJc.status === 'hit', 'jc 票应按各自场次号取分判红(003 主胜✓/004 客胜✓)');
   assert.strictEqual(rJc.actual_payout, 3.11, 'jc 票奖金=1.12×1.39×2=3.11');
   assert.deepStrictEqual(rJc.legs.map((l) => l.finalScore), ['2-1', '0-2'], '两腿必须各取各的比分');
+
+  // ---- ⑬ 亚盘「裸数字」盘口(2026-09-19 实测确认的新形态): '斯托克城0' ≡ '斯托克城-0' ----
+  // 修前: judgeAh 的正则 /[+-]\d+(?:\.\d+)?$/ 要求带符号 → 裸 0 返 null, isAhPick 亦判 false →
+  //   settleLeg 该腿**不进亚盘分支**, 掉进竞彩方向分支(judgeDirection 拿"斯托克城0"当赛果比)→ 恒判 miss;
+  //   而 9-19 斯托克城 2-1 谢菲联 平手盘主队**全赢** —— 恒判 miss 就是砸中奖票。
+  const ahBare = { kind: 'ah', id: '周六006', home: '斯托克城', away: '谢菲联', league: '英冠', pick: '斯托克城0', odds: '2.10' };
+  assert.strictEqual(settle.isAhPick('斯托克城0'), true, '★裸 0 必须认作亚盘形态(否则该腿恒判 miss)');
+  assert.strictEqual(settle.settleLeg(ahBare, '2-1'), 'hit', '裸 0 平手盘 2-1 → 全赢(修前 miss)');
+  assert.strictEqual(settle.settleLeg(ahBare, '1-1'), 'push', '裸 0 平手盘打平 → 走水');
+  assert.strictEqual(settle.settleLeg(ahBare, '0-1'), 'miss', '裸 0 平手盘主队负 → 全输');
+  // 命名队为客队时 side 推导同样要吃裸数字(否则 win/lose 会判反)
+  const ahBareAway = Object.assign({}, ahBare, { pick: '谢菲联0' });
+  const ahBareAwayLeg = settle.judgeAhLeg(ahBareAway, '1-2');
+  assert.strictEqual(ahBareAwayLeg.side, 'away', '裸 0 命名队谢菲联=客队');
+  assert.strictEqual(ahBareAwayLeg.team, '谢菲联', '★命名队不得带进盘口 0(带进则别名容错失效→可能判反)');
+  assert.strictEqual(ahBareAwayLeg.result, 'win', '裸 0 客队净胜 1 → 全赢');
+  assert.strictEqual(settle.settleLeg(ahBareAway, '1-2'), 'hit', 'settleLeg 同判 hit');
+  // 奖金链: 亚盘全赢腿 = odds 全取(修前该腿 miss → 整票被砸, 奖金 0)
+  assert.strictEqual(settle.legSpFactor(ahBare, '2-1', 'hit'), 2.1, '裸 0 全赢腿 SP 取 odds 全值');
+  const rAhBare = settle.settleBet({ legs: [Object.assign({}, ahBare, { finalScore: '2-1' })], unit: 2, amount: 2 }, () => null);
+  assert.strictEqual(rAhBare.status, 'hit', '裸 0 亚盘腿整票应判红(修前 miss)');
+  assert.strictEqual(rAhBare.actual_payout, 4.2, '奖金=2.10×2=4.20');
+  // 半档: 裸 0.25 → -0.25 拆 0/-0.5(与 _review0920 normAh 的"补负号"口径一致)
+  assert.strictEqual(settle.settleLeg(Object.assign({}, ahBare, { pick: '斯托克城0.25' }), '1-1'), 'half', '裸 0.25 打平 → 输半');
+  assert.strictEqual(settle.legSpFactor(Object.assign({}, ahBare, { pick: '斯托克城0.25' }), '1-1', 'half'), 0.5, 'loseHalf 按 0.5 折算');
+  // 判据不得过宽(放宽会把 310 腿/竞彩腿推进亚盘分支)
+  assert.strictEqual(settle.isAhPick('3/1'), false, '★复式竞彩码不得认作亚盘');
+  assert.strictEqual(settle.isAhPick('让-1 3'), false, '★竞彩让球记法不得认作亚盘');
+  assert.strictEqual(settle.isAhPick('让-1 3/0'), false, '★复式让球腿不得认作亚盘');
+  assert.strictEqual(settle.isAhPick('汉诺威96'), false, '★队名自带 96 不得认作亚盘');
+  assert.strictEqual(settle.isAhPick('沙尔克04'), false, '★沙尔克04 前导零不得认作亚盘');
+  assert.strictEqual(settle.isAhPick('大2.5'), false, '★大小球形态不得认作亚盘(否则会被当让球判)');
+  assert.strictEqual(settle.isAhPick('小3'), false, '★大小球形态不得认作亚盘');
+  assert.strictEqual(settle.isAhPick('米堡平手'), true, '平手口径不变');
+  assert.strictEqual(settle.isAhPick('富勒姆+1.25'), true, '带符号口径不变');
+  assert.strictEqual(settle.isAhPick('3'), false, '单码 310 不得认作亚盘');
+  assert.strictEqual(settle.deriveAhSide('汉诺威96', '汉诺威96', '菲尔特').team, '汉诺威96', '★队名自带数字不得被截');
+  // 别名 + 裸 0: 修前 pickTeam 不截裸数字 → team='巴拉纳竞技0' 在别名表里查不到(别名是精确比对)→
+  //   side 猜成 home → 命名队实为客队时**判反**(本例: 修前 lose, 修后 win)
+  const ahAliasBare = { kind: 'ah', home: '科里蒂巴', away: '巴竞技', pick: '巴拉纳竞技0', odds: '1.88' };
+  const ahAliasLeg = settle.judgeAhLeg(ahAliasBare, '2-3');
+  assert.strictEqual(ahAliasLeg.team, '巴拉纳竞技', '★裸数字必须截掉, 否则命名队进不了别名表');
+  assert.strictEqual(ahAliasLeg.side, 'away', '别名容错后命名队=客队');
+  assert.strictEqual(ahAliasLeg.result, 'win', '平手盘客队净胜 1 → 全赢(修前 side 猜 home → lose, 判反)');
+  assert.strictEqual(settle.settleLeg(ahAliasBare, '2-3'), 'hit', 'settleLeg 同判 hit(修前 miss)');
 
   console.log('SMOKE_OK');
 })().catch((e) => { console.error(e); process.exit(1); });

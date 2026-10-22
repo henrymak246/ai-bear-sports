@@ -21,6 +21,7 @@
     </view>
   </view>
   <view class="stat-sub muted">共 {{stats.count}} 注单 · 已结算 {{stats.settled}} · 待结算 {{stats.pending}}</view>
+  <view class="stat-sub muted" wx:if="{{todayLine}}">{{todayLine}}</view>
 </view>
 
 <!-- 刷新比分 -->
@@ -37,6 +38,45 @@
     <text class="badge {{item.srcCls}}">{{item.srcLabel}}</text>
     <text class="cap {{item.capCls}}">{{item.capText}}</text>
   </view>
+  <!-- 修改模式(该卡在编辑中): 草稿腿 + 左滑删腿 + 倍数 + 金额 + 保存 -->
+  <block wx:if="{{item.id === slipEditId}}">
+    <!-- 左滑: .leg-del 绝对定位在右侧, .leg-row 用 transform 左移露出它(dx 由 touch 三件套驱动) -->
+    <view class="leg-swipe" wx:for="{{slipLegs}}" wx:for-item="leg" wx:for-index="legIndex" wx:key="index">
+      <view class="leg-del" data-li="{{legIndex}}" catchtap="delLegTap">删除</view>
+      <view
+        class="leg-row leg-drag {{leg.dragging ? '' : 'leg-anim'}}"
+        style="transform: translateX({{leg.dx}}rpx)"
+        data-li="{{legIndex}}"
+        bindtouchstart="legTouchStart"
+        bindtouchmove="legTouchMove"
+        bindtouchend="legTouchEnd"
+        bindtouchcancel="legTouchEnd"
+      >
+        <text class="judge {{leg.markCls}}">{{leg.mark}}</text>
+        <view class="leg-main">
+          <view class="leg-match">
+            {{leg.matchText}}<text class="leg-score" wx:if="{{leg.finalScore}}"> {{leg.finalScore}}</text>
+          </view>
+          <view class="leg-pick muted">{{leg.bdNumText}}{{leg.bdNumText ? ' · ' : ''}}{{leg.pickText}} @ {{leg.oddsText}}</view>
+        </view>
+      </view>
+    </view>
+    <view class="slip-hint muted">左滑一条腿可删单关 · 倍数改整单</view>
+    <view class="mult-row">
+      <text class="mult-label">倍数</text>
+      <view class="mult-btn" data-d="-1" catchtap="stepMult">−</view>
+      <text class="mult-val">{{slipMult}}</text>
+      <view class="mult-btn" data-d="1" catchtap="stepMult">＋</view>
+      <text class="slip-money">{{slipMoney}}</text>
+    </view>
+    <view class="sheet-foot">
+      <button class="btn-cancel" bindtap="cancelEdit" disabled="{{slipSaving}}">取消</button>
+      <button class="btn-save" bindtap="saveSlip" disabled="{{slipSaving}}">{{slipSaving ? '保存中…' : '保存'}}</button>
+    </view>
+  </block>
+
+  <!-- 常规: 只读腿行 + 金额行 + 按钮组 -->
+  <block wx:else>
   <!-- wx:for-index 必须显式声明: 否则内层 index 会遮蔽外层(下面 data-id 用的是外层 item.id) -->
   <view class="leg-row" wx:for="{{item.legRows}}" wx:for-item="leg" wx:for-index="legIndex" wx:key="index">
     <text class="judge {{leg.markCls}}">{{leg.mark}}</text>
@@ -52,13 +92,15 @@
     <text class="muted">{{item.stakes}}注 · 投入 {{item.amountText}}</text>
     <text wx:if="{{item.status !== 'pending'}}" class="profit {{item.profitCls}}">回收 {{item.payoutText}} · {{item.profitText}}</text>
     <text wx:else class="muted">预期 {{item.expectText || '--'}}</text>
-    <!-- 两个按钮包成单个 child: 原来 3 个 child 的 space-between 直接塞第 4 个, 窄屏会挤 -->
+    <!-- 按钮包成单个 child: 原来 3 个 child 的 space-between 直接塞第 4 个, 窄屏会挤 -->
     <view class="bet-actions">
+      <text class="slip-btn" data-id="{{item.id}}" catchtap="startEdit">✏ 修改</text>
       <text class="slip-btn" data-id="{{item.id}}" catchtap="previewSlip">🖼 投注图</text>
       <text class="del-btn" data-id="{{item.id}}" catchtap="removeBet">🗑 删除</text>
     </view>
   </view>
   <view class="bet-note muted" wx:if="{{item.note}}">{{item.note}}</view>
+  </block>
 </view>
 
 <view class="empty" wx:if="{{!loading && !errMsg && !bets.length}}">还没有登记, 去推荐页组一串🐾</view>

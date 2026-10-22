@@ -1,29 +1,5 @@
 [
  {
-  "num": "周三001",
-  "date": "2026-10-14",
-  "league": "亚冠乙",
-  "home": "墨胜利",
-  "away": "首尔FC",
-  "homeRank": "[Group E2]",
-  "awayRank": "[Group E4]",
-  "time": "15:45:00",
-  "sp": {
-   "a": "2.20",
-   "af": "1",
-   "d": "3.55",
-   "df": "0",
-   "goalLine": "-1",
-   "goalLineValue": "-1.00",
-   "h": "2.55",
-   "hf": "-1",
-   "updateDate": "2026-10-14",
-   "updateTime": "15:07:12"
-  },
-  "matchStatus": "Selling",
-  "matchDate": "2026-10-14"
- },
- {
   "num": "周三002",
   "date": "2026-10-14",
   "league": "亚冠精英",
@@ -33,16 +9,16 @@
   "awayRank": "[East8]",
   "time": "18:00:00",
   "sp": {
-   "a": "2.35",
-   "af": "0",
+   "a": "2.52",
+   "af": "-1",
    "d": "3.10",
    "df": "0",
    "goalLine": "-1",
    "goalLineValue": "-1.00",
-   "h": "2.62",
-   "hf": "0",
+   "h": "2.44",
+   "hf": "1",
    "updateDate": "2026-10-14",
-   "updateTime": "14:04:41"
+   "updateTime": "17:34:43"
   },
   "matchStatus": "Selling",
   "matchDate": "2026-10-14"
@@ -58,15 +34,15 @@
   "time": "18:00:00",
   "sp": {
    "a": "2.98",
-   "af": "1",
-   "d": "4.10",
-   "df": "0",
+   "af": "0",
+   "d": "4.30",
+   "df": "1",
    "goalLine": "-2",
    "goalLineValue": "-2.00",
-   "h": "1.82",
+   "h": "1.78",
    "hf": "-1",
    "updateDate": "2026-10-14",
-   "updateTime": "14:49:57"
+   "updateTime": "17:36:17"
   },
   "matchStatus": "Selling",
   "matchDate": "2026-10-14"
@@ -81,16 +57,16 @@
   "awayRank": "",
   "time": "18:00:00",
   "sp": {
-   "a": "1.75",
-   "af": "0",
-   "d": "3.45",
+   "a": "1.70",
+   "af": "-1",
+   "d": "3.40",
    "df": "0",
    "goalLine": "-1",
    "goalLineValue": "-1.00",
-   "h": "3.75",
-   "hf": "0",
+   "h": "4.05",
+   "hf": "1",
    "updateDate": "2026-10-14",
-   "updateTime": "13:03:34"
+   "updateTime": "16:58:02"
   },
   "matchStatus": "Selling",
   "matchDate": "2026-10-14"
@@ -105,16 +81,16 @@
   "awayRank": "[欧冠6]",
   "time": "00:45:00",
   "sp": {
-   "a": "3.10",
-   "af": "0",
-   "d": "3.95",
-   "df": "0",
+   "a": "3.25",
+   "af": "1",
+   "d": "4.00",
+   "df": "1",
    "goalLine": "+1",
    "goalLineValue": "+1.00",
-   "h": "1.81",
-   "hf": "0",
+   "h": "1.75",
+   "hf": "-1",
    "updateDate": "2026-10-14",
-   "updateTime": "13:49:10"
+   "updateTime": "16:52:27"
   },
   "matchStatus": "Selling",
   "matchDate": "2026-10-15"
@@ -129,16 +105,16 @@
   "awayRank": "[欧冠15]",
   "time": "00:45:00",
   "sp": {
-   "a": "1.73",
-   "af": "0",
-   "d": "4.00",
-   "df": "0",
+   "a": "1.80",
+   "af": "1",
+   "d": "3.90",
+   "df": "-1",
    "goalLine": "+1",
    "goalLineValue": "+1.00",
-   "h": "3.32",
-   "hf": "0",
+   "h": "3.15",
+   "hf": "-1",
    "updateDate": "2026-10-14",
-   "updateTime": "14:00:05"
+   "updateTime": "17:09:51"
   },
   "matchStatus": "Selling",
   "matchDate": "2026-10-15"
@@ -153,16 +129,16 @@
   "awayRank": "[英冠13]",
   "time": "02:45:00",
   "sp": {
-   "a": "1.48",
-   "af": "0",
-   "d": "4.40",
+   "a": "1.43",
+   "af": "-1",
+   "d": "4.50",
    "df": "0",
    "goalLine": "-1",
    "goalLineValue": "-1.00",
-   "h": "4.45",
-   "hf": "0",
+   "h": "4.80",
+   "hf": "1",
    "updateDate": "2026-10-14",
-   "updateTime": "13:54:20"
+   "updateTime": "17:18:50"
   },
   "matchStatus": "Selling",
   "matchDate": "2026-10-15"
@@ -177,16 +153,16 @@
   "awayRank": "[欧冠16]",
   "time": "03:00:00",
   "sp": {
-   "a": "3.00",
-   "af": "0",
-   "d": "4.00",
-   "df": "0",
+   "a": "2.96",
+   "af": "-1",
+   "d": "3.90",
+   "df": "-1",
    "goalLine": "+1",
    "goalLineValue": "+1.00",
-   "h": "1.83",
-   "hf": "0",
+   "h": "1.87",
+   "hf": "1",
    "updateDate": "2026-10-14",
-   "updateTime": "13:27:35"
+   "updateTime": "17:10:19"
   },
   "matchStatus": "Selling",
   "matchDate": "2026-10-15"
@@ -201,16 +177,16 @@
   "awayRank": "[欧冠14]",
   "time": "03:00:00",
   "sp": {
-   "a": "3.35",
-   "af": "0",
-   "d": "4.12",
-   "df": "0",
+   "a": "3.45",
+   "af": "1",
+   "d": "4.15",
+   "df": "1",
    "goalLine": "+1",
    "goalLineValue": "+1.00",
-   "h": "1.70",
-   "hf": "0",
+   "h": "1.67",
+   "hf": "-1",
    "updateDate": "2026-10-14",
-   "updateTime": "13:07:21"
+   "updateTime": "17:12:50"
   },
   "matchStatus": "Selling",
   "matchDate": "2026-10-15"
@@ -250,13 +226,13 @@
   "time": "03:00:00",
   "sp": {
    "a": "1.71",
-   "af": "1",
+   "af": "0",
    "d": "3.80",
-   "df": "-1",
+   "df": "0",
    "goalLine": "-1",
    "goalLineValue": "-1.00",
    "h": "3.55",
-   "hf": "-1",
+   "hf": "0",
    "updateDate": "2026-10-14",
    "updateTime": "14:16:14"
   },
@@ -274,13 +250,13 @@
   "time": "03:00:00",
   "sp": {
    "a": "2.20",
-   "af": "-1",
+   "af": "0",
    "d": "3.55",
-   "df": "1",
+   "df": "0",
    "goalLine": "-1",
    "goalLineValue": "-1.00",
    "h": "2.54",
-   "hf": "1",
+   "hf": "0",
    "updateDate": "2026-10-14",
    "updateTime": "15:05:46"
   },
@@ -297,16 +273,16 @@
   "awayRank": "[解放者杯2]",
   "time": "08:30:00",
   "sp": {
-   "a": "6.90",
-   "af": "0",
-   "d": "3.95",
-   "df": "0",
+   "a": "7.00",
+   "af": "1",
+   "d": "4.00",
+   "df": "1",
    "goalLine": "+1",
    "goalLineValue": "+1.00",
-   "h": "1.37",
-   "hf": "0",
-   "updateDate": "2026-10-13",
-   "updateTime": "09:41:36"
+   "h": "1.36",
+   "hf": "-1",
+   "updateDate": "2026-10-14",
+   "updateTime": "17:10:51"
   },
   "matchStatus": "Selling",
   "matchDate": "2026-10-15"
@@ -321,16 +297,16 @@
   "awayRank": "[美职1]",
   "time": "08:30:00",
   "sp": {
-   "a": "1.59",
-   "af": "0",
-   "d": "4.10",
-   "df": "0",
+   "a": "1.65",
+   "af": "1",
+   "d": "3.95",
+   "df": "-1",
    "goalLine": "-1",
    "goalLineValue": "-1.00",
-   "h": "3.90",
-   "hf": "0",
+   "h": "3.70",
+   "hf": "-1",
    "updateDate": "2026-10-14",
-   "updateTime": "13:20:41"
+   "updateTime": "17:17:12"
   },
   "matchStatus": "Selling",
   "matchDate": "2026-10-15"

@@ -13,20 +13,37 @@
     return { home: parseInt(m[1], 10), away: parseInt(m[2], 10) };
   }
 
-  // 方向命中：pred ∈ 主胜/平/客胜/放弃；返回 1/0/null(不计入)
-  function judgeDirection(pred, finalScore) {
+  // 方向命中：pred ∈ 主胜/平/客胜/放弃 + 让球胜/让球平/让球负(让球-only 场)；返回 1/0/null(不计入)
+  // 2026-09-17 补: 让球方向(9-15 让球-only 引入的 direction 形态)此前落进单值全等 ——
+  //   '让球负' 永远 ≠ '主胜/客胜/平' → **恒判黑**(9-16 013 巴萨 7-2 恰为黑故未暴露,
+  //   但如「让球胜」场让球后主胜会被误判黑)。现按让球口径判: 第三参 handicap 为主队视角
+  //   让球线(负=主队让球, 取自 m.spHandicap), 调整赛果后与 胜/平/负 对应项比对。
+  //   不传 handicap 时让球方向不判(null, 不计入), 绝不误判。
+  function judgeDirection(pred, finalScore, handicap) {
     if (!pred || pred === '放弃') return null;
     const s = parseScore(finalScore);
     if (!s) return null;
-    const actual = s.home > s.away ? '主胜' : s.home < s.away ? '客胜' : '平';
-    return pred === actual ? 1 : 0;
+    const hc = String(pred).match(/^让球(胜|平|负)$/);
+    let home = s.home;
+    if (hc) {
+      const v = parseFloat(handicap);
+      if (isNaN(v)) return null;
+      home += v;
+    }
+    const actual = home > s.away ? '主胜' : home < s.away ? '客胜' : '平';
+    const want = hc ? { '胜': '主胜', '平': '平', '负': '客胜' }[hc[1]] : pred;
+    return want === actual ? 1 : 0;
   }
 
+  // 2026-09-16 补: 旧口径只认单数字盘(「大2.5」), 斜杠盘「大2.5/3」整场漏出大小球 KPI
+  // (9-14/9-15 两天共 15 场未计入, 令页面口径与已发布复盘文字的数字打架)。
+  // 现多认一段斜杠: A/B 两段盘各半注 → 取中值(2.5/3→2.75), 再由 judgeOverUnder 按 0.25 拆两段判定。
   function parseOverUnder(pred) {
     if (!pred) return null;
-    const m = String(pred).trim().match(/^([大小])\s*(\d+(?:\.\d+)?)$/);
+    const m = String(pred).trim().match(/^([大小])\s*(\d+(?:\.\d+)?)(?:\s*\/\s*(\d+(?:\.\d+)?))?$/);
     if (!m) return null;
-    return { side: m[1], line: parseFloat(m[2]) };
+    const a = parseFloat(m[2]);
+    return { side: m[1], line: m[3] != null ? (a + parseFloat(m[3])) / 2 : a };
   }
 
   // 单段判定：1 中 / 0 不中 / null 走水
@@ -74,7 +91,7 @@
     };
     (day.matches || []).forEach(m => {
       if (!m.finalScore) { acc.pending += 1; return; }
-      const d = judgeDirection(m.direction, m.finalScore);
+      const d = judgeDirection(m.direction, m.finalScore, m.spHandicap);
       if (d !== null) { acc.direction.score += d; acc.direction.total += 1; }
       const o = judgeOverUnder(m.overUnder, m.finalScore);
       if (o !== null) { acc.overUnder.score += o; acc.overUnder.total += 1; }
@@ -102,7 +119,7 @@
       (day.matches || []).forEach(m => {
         const lg = m.league || '其他';
         if (!sum.byLeague[lg]) sum.byLeague[lg] = { score: 0, total: 0 };
-        const hit = judgeDirection(m.direction, m.finalScore);
+        const hit = judgeDirection(m.direction, m.finalScore, m.spHandicap);
         if (hit !== null) { sum.byLeague[lg].score += hit; sum.byLeague[lg].total += 1; }
       });
     });
@@ -213,7 +230,7 @@
       // 无 beidan310 顶层块的历史数据且未传 selDate 时保持旧行为(全显示)
       const showDay = selDate ? day.date === selDate : (latestBdDate === null || day.date === latestBdDate);
       (day.matches || []).forEach(m => {
-        const d = judgeDirection(m.direction, m.finalScore);
+        const d = judgeDirection(m.direction, m.finalScore, m.spHandicap);
         if (!isBeidan(m)) { if (!isJK(m) && d !== null) { jcDir.score += d; jcDir.total += 1; } return; }
         if (d !== null) { dir.score += d; dir.total += 1; }
         const o = judgeOverUnder(m.overUnder, m.finalScore);
@@ -301,7 +318,7 @@
     const list = [];
     (days || []).forEach(day => {
       (day.matches || []).forEach(m => {
-        const d = judgeDirection(m.direction, m.finalScore);
+        const d = judgeDirection(m.direction, m.finalScore, m.spHandicap);
         if (!isJK(m)) { if (!isBeidan(m) && d !== null) { jcDir.score += d; jcDir.total += 1; } return; }
         if (d !== null) { dir.score += d; dir.total += 1; }
         const o = judgeOverUnder(m.overUnder, m.finalScore);
@@ -340,7 +357,7 @@
     (days || []).forEach(day => {
       (day.matches || []).forEach(m => {
         if (!isEPL(m)) return;
-        const d = judgeDirection(m.direction, m.finalScore);
+        const d = judgeDirection(m.direction, m.finalScore, m.spHandicap);
         if (d !== null) { dir.score += d; dir.total += 1; }
         const o = judgeOverUnder(m.overUnder, m.finalScore);
         if (o !== null) { ou.score += o; ou.total += 1; }
@@ -373,7 +390,7 @@
     (days || []).forEach(day => {
       (day.matches || []).forEach(m => {
         if (!isNightExpress(m)) return;
-        const d = judgeDirection(m.direction, m.finalScore);
+        const d = judgeDirection(m.direction, m.finalScore, m.spHandicap);
         if (d !== null) { dir.score += d; dir.total += 1; }
         const o = judgeOverUnder(m.overUnder, m.finalScore);
         if (o !== null) { ou.score += o; ou.total += 1; }
