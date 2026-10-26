@@ -257,7 +257,11 @@
         var revMap = { '主胜': '3', '平': '1', '客胜': '0' };
         b310.legs.forEach(leg => {
           const num = String(leg.match || '').slice(0, 3);
-          const mm = (day.matches || []).find(x => x.id && String(x.id).slice(-3) === num);
+          // 同日双前缀(如周五002+周六002)按队名消歧; 单候选或队名不匹配时维持旧行为取首个
+          const cands = (day.matches || []).filter(x => x.id && String(x.id).slice(-3) === num);
+          const legTeams = String(leg.match || '').slice(4).split(' vs ');
+          const mm = cands.length <= 1 ? cands[0]
+            : (cands.find(x => x.home === legTeams[0] && x.away === legTeams[1]) || cands[0]);
           // 北单期次场(非竞彩场, 如 056 圣约翰斯通场): 无竞彩 match → 用 leg 自身 finalScore/home/away(2026-09-09 起)
           const lg = mm ? mm.league : (leg.league || '北单');
           const home = mm ? mm.home : String(leg.match || '').slice(4).split(' vs ')[0];

@@ -75,7 +75,7 @@
   .plan-block:hover { transform:translateY(-3px); box-shadow:0 8px 18px rgba(169,113,61,.16); }
   .plan-block .pb-head { font-size:12.5px; font-weight:700; color:var(--brown); }
   .plan-block .pb-pct { font-size:24px; font-weight:800; margin:2px 0 6px; }
-  .plan-block .pb-text { font-size:12px; color:var(--brown-soft); line-height:1.65; }
+  .plan-block .pb-text { font-size:12px; color:var(--brown-soft); line-height:1.65; white-space:pre-line; }
   .plan-block .pb-more { font-size:11px; color:var(--honey-dark); margin-top:8px; font-weight:700; }
   /* 口径说明(让球-only 提醒, 见 assets/live-odds.js noHadNote): 与正文区分开, 但不喧宾夺主 */
   .plan-block .pb-note { font-size:11px; color:#B45309; background:#FFFBEB; border:1px solid #FDE68A; border-radius:6px; padding:4px 7px; margin-top:6px; line-height:1.5; }
@@ -91,6 +91,13 @@
   .dpost-panel { border-top:4px solid #F25C5C; }
   .dpost-title { font-size:15px; font-weight:800; color:var(--brown); margin-bottom:10px; }
   .dpost-content { white-space:pre-wrap; font-size:13px; line-height:1.9; color:#4A3A28; background:#FFF8EC; border-radius:12px; padding:14px 16px; }
+  /* 📣 微博样稿预览卡(2026-10-26, 挂载于每日发布栏) */
+  .dpost-weibo { margin-top:12px; }
+  .dpost-weibo-head { font-size:13px; font-weight:800; color:var(--brown); margin-bottom:8px; }
+  .dpost-weibo-sub { font-size:11px; color:var(--muted); font-weight:400; margin-left:8px; }
+  .dpost-wcard { background:#FFF; border:1px solid #F3E3C3; border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+  .dpost-wlabel { font-size:12px; font-weight:700; color:var(--honey-dark); margin-bottom:6px; }
+  .dpost-wtext { white-space:pre-wrap; font-size:12.5px; line-height:1.85; color:#4A3A28; }
   .d7-table td { font-size:12.5px; vertical-align:top; }
   .d7-table td:first-child { width:30px; font-weight:800; color:var(--honey-dark); }
   .d7-league { font-weight:700; color:var(--brown); white-space:nowrap; }
@@ -1237,13 +1244,24 @@ function renderApp(days) {
   function renderDailyPost(days) {
     var box = document.getElementById('dailyPostBox');
     if (!box) return;
-    var day = pickDay(function (d) { return d.dailyPost && d.dailyPost.content; });
+    // 10-18 起建日脚本字段为 text, 早前为 content —— 两者兼容(2026-10-26 修, 此前栏目卡 10-17 陈旧 9 天)
+    var day = pickDay(function (d) { return d.dailyPost && (d.dailyPost.content || d.dailyPost.text); });
     if (!day) { box.innerHTML = ''; return; }
     var dp = day.dailyPost;
+    var wbHtml = '';
+    if (Array.isArray(day.weiboDrafts) && day.weiboDrafts.length) {
+      wbHtml = '<div class="dpost-weibo">' +
+        '<div class="dpost-weibo-head">📣 微博发布样稿预览<span class="dpost-weibo-sub">写法学习见 docs/weibo · 发前可改</span></div>' +
+        day.weiboDrafts.map(function (w) {
+          return '<div class="dpost-wcard"><div class="dpost-wlabel">' + esc(w.label || '') + '</div>' +
+            '<div class="dpost-wtext">' + esc(w.content || '') + '</div></div>';
+        }).join('') + '</div>';
+    }
     box.innerHTML =
       '<div class="panel dpost-panel"><h2>📮 每日发布<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 小熊特色社媒文案</span></h2>' +
       '<div class="dpost-title">' + esc(dp.title) + '</div>' +
-      '<div class="dpost-content">' + esc(dp.content) + '</div>' +
+      '<div class="dpost-content">' + esc(dp.content || dp.text) + '</div>' +
+      wbHtml +
       '</div>';
   }
 
@@ -2047,7 +2065,7 @@ function renderApp(days) {
         (m.note ? '<tr class="an-row" style="display:none"><td colspan="' + (day._showAhCol ? 8 : 7) + '">📋 ' + esc(m.note) + '</td></tr>' : '');
     }).join('');
     return '<table><tr><th></th><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th>' + (day._showAhCol ? '<th>🌏亚盘（让球/大小/盘口）</th>' : '') + '<th>🎫竞彩（方向/总进球/比分/SP）</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
-      '<div class="table-legend">「🌏亚盘」列在左、「🎫竞彩」列在右，两列独立并排、单元格内条目逐行对齐：亚盘列=亚洲盘口径（第1行让球观点+信心★ / 第2行大小球观点+信心★ / 第3行球探澳门盘临场盘口水位；<b>每场定位场必推</b>，信心★为1-5星：★1-2=低信心只展示、★3-4=可入 asian7/大小盘串关、★5=胆级）；竞彩列=竞彩口径（<b>方向一律官方口径词：胜/平/负，官方既不写"主胜/客胜"、让球盘写"让球胜/让球平/让球负"</b>；第1行方向+徽章+信心★(1-5星，★5=当日胆) / 第2行总进球 / 第3行比分 / 第4行「胜负」盘赔率 / 第5行「让球胜负(盘口)」盘赔率，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>，赛后让球标「结算:让胜/让平/让负」；官方只开让球没开胜平负的场，「胜负」行写「无(官方未开)」，方向改走让球口径并挂「让球」徽章）。两体系独立判断，允许表达不同（如诱盘场竞彩不反向、亚盘推下盘）。方向旁徽章=信心标签(单选>双选>入拖>弃选)；💡 合成观点在对阵列(仅 8-28 起新日期有)；9-5 及更早日期亚盘列只显盘口数据无观点，无盘口数据日期整列隐藏。判定列=竞彩口径方向/大小/比分；点 🔍 展开本场分析；对阵旁 <span style="background:#F5A623;color:#fff;border-radius:4px;padding:0 4px;font-weight:800">胆</span> = 当日综合过关胆拖的最有信心单选</div>';
+      '<div class="table-legend">「🌏亚盘」列在左、「🎫竞彩」列在右，两列独立并排、单元格内条目逐行对齐：亚盘列=亚洲盘口径（第1行让球观点+信心★ / 第2行大小球观点+信心★ / 第3行球探澳门盘临场盘口水位；<b>每场定位场必推</b>，信心★为1-5星：★1-2=低信心只展示、★3-4=可入 asian7/大小盘串关、★5=胆级；<b>无★=不推荐，仅为低水侧简易判断参考</b>）；竞彩列=竞彩口径（<b>方向一律官方口径词：胜/平/负，官方既不写"主胜/客胜"、让球盘写"让球胜/让球平/让球负"</b>；第1行方向+徽章+信心★(1-5星，★5=当日胆) / 第2行总进球 / 第3行比分 / 第4行「胜负」盘赔率 / 第5行「让球胜负(盘口)」盘赔率，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>，赛后让球标「结算:让胜/让平/让负」；官方只开让球没开胜平负的场，「胜负」行写「无(官方未开)」，方向改走让球口径并挂「让球」徽章）。两体系独立判断，允许表达不同（如诱盘场竞彩不反向、亚盘推下盘）。方向旁徽章=信心标签(单选>双选>入拖>弃选)；💡 合成观点在对阵列(仅 8-28 起新日期有)；9-5 及更早日期亚盘列只显盘口数据无观点，无盘口数据日期整列隐藏。判定列=竞彩口径方向/大小/比分；点 🔍 展开本场分析；对阵旁 <span style="background:#F5A623;color:#fff;border-radius:4px;padding:0 4px;font-weight:800">胆</span> = 当日综合过关胆拖的最有信心单选</div>';
   }
 }
 </script>
