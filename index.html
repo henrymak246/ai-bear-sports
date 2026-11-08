@@ -1085,7 +1085,7 @@ function renderApp(days) {
           '<td class="d7-odds">' + esc(leg.odds == null || leg.odds === '' ? '待补' : leg.odds) + '</td>' +
           '<td class="d7-reason">' + esc(leg.reason || '—') + '</td><td>' + badge(leg.result) + '</td></tr>';
       }).join('') || '<tr><td colspan="7">暂无可出票腿</td></tr>';
-      return '<div class="slot8-ticket"><h3>🌏 亚盘让球+大小球混编8拖</h3>' +
+      return '<div class="slot8-ticket"><h3>🌏 亚盘让球+大小球混编' + legs.length + (legs.length === 8 ? '拖' : '串') + '</h3>' +
         '<div class="slot8-meta">' + legs.length + '腿 · 成本' + esc(t.cost == null ? '—' : t.cost) + '元 · 总赔率' + esc(t.totalOdds || '待补') + ' · 结果' + badge(t.result) + '</div>' +
         '<table class="d7-table"><tr><th>关</th><th>玩法</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th><th>结果</th></tr>' + rows + '</table></div>';
     }
