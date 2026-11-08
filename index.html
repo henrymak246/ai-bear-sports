@@ -107,11 +107,11 @@
   .slot8-card { border-top:1px solid var(--line); padding-top:14px; margin-top:14px; }
   .slot8-card:first-of-type { border-top:0; padding-top:0; margin-top:0; }
   .slot8-time { font-size:12px; color:var(--brown-soft); font-weight:700; margin-bottom:9px; }
-  .slot8-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+  .slot8-grid { display:block; }
   .slot8-ticket { min-width:0; background:#FFF9EF; border:1px solid var(--line); border-radius:12px; padding:10px; overflow-x:auto; }
+  .slot8-ticket + .slot8-ticket { margin-top:12px; }
   .slot8-ticket h3 { font-size:13px; color:var(--brown); margin-bottom:6px; }
   .slot8-meta { font-size:11.5px; color:var(--brown-soft); line-height:1.7; margin-bottom:6px; }
-  @media (max-width:760px) { .slot8-grid { grid-template-columns:1fr; } }
 
   /* ---- 🪙 小熊摇卦栏目 ---- */
   .yaogua-panel { border-top:4px solid #B7791F; text-align:center; }
