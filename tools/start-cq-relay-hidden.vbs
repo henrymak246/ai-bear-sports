@@ -4,4 +4,4 @@ Dim fso, dir
 Set fso = CreateObject("Scripting.FileSystemObject")
 dir = fso.GetParentFolderName(WScript.ScriptFullName)
 CreateObject("Wscript.Shell").Run "cmd /c node """ & dir & "\_cq_relay.js"" >> """ & dir & "\_cq_relay.log"" 2>&1", 0, True
-CreateObject("Wscript.Shell").Run "cmd /c node """ & dir & "\_cq_odds_relay.js"" >> """ & dir & "\_cq_odds_relay.log"" 2>&1", 0, False
+CreateObject("Wscript.Shell").Run "cmd /c node """ & dir & "\_cq_odds_relay.js"" >> """ & dir & "\_cq_odds_relay.log"" 2>&1", 0, True
