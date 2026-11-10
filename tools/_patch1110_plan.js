@@ -38,12 +38,12 @@ ps.text = '比分只展示: 周二001 1:1(6.5)/0:1(11.5)/2:1(7.5); 周二002 0:2
 const { makeAsian, makeBeidan } = require('./_slot8.js');
 function legOf(id, play, pick, odds) {
   const m = day.matches.find(x => x.id === id);
-  return { id, match: id.slice(-3) + ' ' + m.home + ' vs ' + m.away, league: m.league, pick, play, odds, reason: m.synthesis.slice(0, 40), result: null };
+  return { id, match: id + ' ' + m.home + ' vs ' + m.away, league: m.league, pick, play, odds, reason: m.synthesis.slice(0, 40), result: null };
 }
 function bdLegOf(id, pick) {
   const m = day.matches.find(x => x.id === id);
   const b = day.beidan310.legs.find(l => l.match.indexOf(m.home) >= 0);
-  return { bdNum: b ? b.bdNum : id.slice(-3), match: id.slice(-3) + ' ' + m.home + ' vs ' + m.away, pick, handicap: m.spHandicap, note: m.direction + '·双选', result: null };
+  return { bdNum: b ? b.bdNum : id.slice(-3), match: id + ' ' + m.home + ' vs ' + m.away, pick, handicap: m.spHandicap, sp3: m.hhad, note: m.direction + '·双选', result: null };
 }
 day.slot8 = {
   early: {
