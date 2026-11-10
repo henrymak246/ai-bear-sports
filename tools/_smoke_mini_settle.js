@@ -10,7 +10,7 @@
  * ⑤ 页面端到端(mock api): 全腿完场整票回写 / 404 降级。
  * ⑥ 结算实时化: a)一腿 miss 立即整票判死; b)无 miss 部分完场仅腿级回写(快照 4 原值随腿上送);
  *   c)已判死票继续补腿且永不改 status/payout/profit/settled_at + 无变化轮次零写库。
- * ⑦ 自动轮询: 无 wx.request 不起表 / 间隔 300000 / 重复 onShow 不叠加 / onHide·onUnload 停表 /
+ * ⑦ 自动轮询: 无 wx.request 不起表 / 间隔 60000 / 重复 onShow 不叠加 / onHide·onUnload 停表 /
  *   无未完场腿 tick 零请求 / 有则真请求且静默轮不置 loading 不闪横幅。
  * ⑧ settle 判定修复: jcHhad 真让球(修前恒 miss) / 复式腿按**命中项**取 SP(修前恒取首段) /
  *   odds 段数不足回退首段而非 0。
@@ -190,7 +190,7 @@ const flush = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise((
   assert.strictEqual(ctx.data.stats.miss, 1);
   assert.strictEqual(settle.betNeedsPoll(betDead), true, '判死后仍有未完场腿 → 不得停轮询');
 
-  // ⑥b 无 miss 部分完场 → 仅腿级回写, 票仍"待结算"
+  // ⑥b 无 miss 部分完场 → 仅腿级回写, 票仍保持 pending 展示文案
   const betPartial = {
     id: 'b3', bet_date: DAY, source: 'jc', stakes: 1, unit: 2, amount: 2,
     status: 'pending', actual_payout: 0, profit: 0, settled_at: null,
@@ -212,7 +212,7 @@ const flush = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise((
     { status: 'pending', actual_payout: 0, profit: 0, settled_at: null },
     '快照 4 原值随腿上送(SQL 无条件赋值, 少传即写 NULL)'
   );
-  assert.strictEqual(ctx.data.bets[0].capText, '待结算', '无 miss 不得提前判死');
+  assert.strictEqual(ctx.data.bets[0].capText, '进行中·完赛后自动出结果', '无 miss 不得提前判死');
   assert.deepStrictEqual(ctx.data.bets[0].legRows.map((l) => l.mark), ['✓', '待']);
   assert.strictEqual(ctx.data.bets[0].legRows[0].finalScore, '1-3', '腿级比分应就地展示');
 
@@ -479,7 +479,7 @@ const flush = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise((
 
   // ---- ⑪ 并发闸门: 在飞的旧结算不得用旧 legs 覆盖编辑结果 ----
   // 复现路径: 轮询拿到旧 legs → 链子卡在取分 → 用户编辑保存(load 重拉, _seq+1) → 旧链子跑完。
-  // mini_update_bet 是无条件赋值、无 WHERE 保护, 旧链子一写就把编辑结果抹掉, 5 分钟后界面又跳回旧腿。
+  // mini_update_bet 是无条件赋值、无 WHERE 保护, 旧链子一写就把编辑结果抹掉, 下一轮轮询后界面又跳回旧腿。
   let serverLegs = [{
     kind: 'bd', match: '009 甲队 vs 乙队', home: '甲队', away: '乙队', league: '德甲',
     pick: '3', odds: '1.84', handicap: '0', sp3: ['1.84', '3.97', '3.79'], bdNum: '009',
@@ -551,7 +551,7 @@ const flush = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise((
   global.wx.request = function () {};
   ctx.onShow();
   assert.strictEqual(timers.length, 1, 'onShow 应起一张轮询表');
-  assert.strictEqual(timers[0].ms, 300000, '轮询间隔应为 5 分钟');
+  assert.strictEqual(timers[0].ms, 60000, '轮询间隔应为 60 秒');
   ctx.onShow();
   assert.strictEqual(timers.length, 1, '重复 onShow 不得叠加定时器');
   ctx.onHide();

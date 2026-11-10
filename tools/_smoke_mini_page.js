@@ -32,8 +32,9 @@ const pageMod = require('../miniprogram/pages/index/index.js');
 const jcMod = require('../miniprogram/utils/jc.js');
 
 assert(captured, 'index.js 未调用 Page()');
-const { buildGroups } = pageMod;
+const { buildGroups, buildSlot8Views } = pageMod;
 assert.strictEqual(typeof buildGroups, 'function', 'index.js 未导出 buildGroups');
+assert.strictEqual(typeof buildSlot8Views, 'function', 'index.js 未导出 buildSlot8Views');
 
 // ---- ① data 默认值 ----
 assert.strictEqual(captured.data.tab, 'jc');
@@ -54,6 +55,71 @@ assert.strictEqual(leg126.home, '美因茨', '126 腿主队切分应为 美因�
 assert.strictEqual(leg126.judge, 'miss', '126 美因茨场(完场 1-3, 让0 推荐3)应判 miss, 实际 ' + leg126.judge);
 console.log('OK 2/4 buildGroups: 竞彩=' + groups.jc.length + ' 北单=' + groups.bd.length +
   ' 亚盘=' + groups.ah.length + ' 北单126判定=miss');
+
+// ---- ②b slot8 三档内存 fixture: 真实数据尚未生成也能覆盖两类票 ----
+const slot8Payload = {
+  date: '2026-11-08',
+  matches: [],
+  plan: [],
+  slot8: {
+    early: {
+      asian: { cost: 16, totalOdds: '约8.8倍', result: null, legs: [
+        { id: '周六001', match: '001 甲队 vs 乙队', play: '亚盘', pick: '甲队-0.25', handicap: '-0.25', odds: 0.92, reason: '早场让球', result: null },
+        { id: '周六001', match: '001 甲队 vs 乙队', play: '大小球', pick: '大2.5', handicap: '2.5', odds: null, reason: '同场大小', result: null },
+      ] },
+      beidan: { issue: '26113', stakes: 32, cost: 64, result: null, legs: [
+        { bdNum: '101', match: '101 甲队 vs 乙队', pick: '3/1', handicap: 0, sp3: ['1.20', '3.80', '6.50'], note: '早场北单', result: null },
+      ] },
+    },
+    night: {
+      asian: { cost: 16, totalOdds: '', result: null, legs: [
+        { id: '周六011', match: '011 丙队 vs 丁队', play: '亚盘', pick: '丁队+0.5', handicap: '+0.5', odds: '0.88', reason: '夜场让球', result: null },
+      ] },
+      beidan: { issue: '26113', stakes: 16, cost: 32, result: null, legs: [
+        { bdNum: '111', match: '111 丙队 vs 丁队', pick: '1/0', handicap: -1, sp3: [], note: '夜场北单', result: null },
+      ] },
+    },
+    late: {
+      asian: { cost: 8, totalOdds: '约4.2倍', result: null, legs: [
+        { id: '周日021', match: '021 戊队 vs 己队', play: '大小球', pick: '小3', handicap: '3', odds: '0.95', reason: '深夜大小', result: null },
+      ] },
+      beidan: { issue: '26114', stakes: 8, cost: 16, result: null, legs: [
+        { bdNum: '121', match: '121 戊队 vs 己队', pick: '3', handicap: 1, sp3: ['2.10', '3.40', '2.90'], note: '深夜北单', result: null },
+      ] },
+    },
+  },
+};
+const slotViews = buildSlot8Views(slot8Payload);
+assert.deepStrictEqual(slotViews.map((s) => s.key), ['early', 'night', 'late']);
+assert.deepStrictEqual(slotViews.map((s) => s.label), ['早场', '夜场', '深夜']);
+slotViews.forEach((s) => {
+  assert(s.asian && s.asian.legs.length, s.label + '缺亚盘混编票');
+  assert(s.beidan && s.beidan.legs.length, s.label + '缺北单票');
+});
+assert.strictEqual(slotViews[0].asian.legs[0].oddsText, '0.92');
+assert.strictEqual(slotViews[0].asian.legs[1].oddsText, '待补', '缺失赔率必须显示待补');
+assert.strictEqual(slotViews[0].asian.legs[0].handicap, '-0.25');
+assert.strictEqual(slotViews[0].beidan.legs[0].handicap, '0', '让0 不得被空值判断吞掉');
+assert.strictEqual(slotViews[0].beidan.legs[0].sp3Text, '1.20/3.80/6.50');
+assert.strictEqual(slotViews[1].beidan.legs[0].sp3Text, '待补');
+assert.strictEqual(slotViews[2].beidan.stakes, 8);
+assert.strictEqual(slotViews[2].beidan.cost, 16);
+const oldSlotViews = buildSlot8Views(payload);
+assert(oldSlotViews.every((s) => !s.asian && !s.beidan), '旧数据无 slot8 时必须完全兼容');
+
+const slotPage = Object.create(captured);
+slotPage.data = JSON.parse(JSON.stringify(captured.data));
+slotPage.setData = function (patch) { Object.assign(this.data, patch); };
+slotPage.renderPayload(slot8Payload, '');
+assert.strictEqual(slotPage.data.slot8Bd.length, 3, '北单 Tab 应有早/夜/深夜三档视图');
+assert.strictEqual(slotPage.data.slot8Ah.length, 3, '亚盘 Tab 应有早/夜/深夜三档视图');
+assert.strictEqual(slotPage.data.bdDisabled, false, '只有 slot8 北单票时北单 Tab 也应可用');
+const miniWxml = fs.readFileSync(path.join(ROOT, 'miniprogram/pages/index/index.wxml'), 'utf8');
+assert(miniWxml.indexOf('wx:for="{{slot8Bd}}"') !== -1, '北单 Tab 未渲染 slot8Bd');
+assert(miniWxml.indexOf('wx:for="{{slot8Ah}}"') !== -1, '亚盘 Tab 未渲染 slot8Ah');
+assert(miniWxml.indexOf('wx:for="{{slot.beidan.legs}}"') !== -1, '北单票未逐腿渲染');
+assert(miniWxml.indexOf('wx:for="{{slot.asian.legs}}"') !== -1, '亚盘票未逐腿渲染');
+console.log('OK 2b/4 slot8: 三档北单+亚盘 / 让球与SP待补 / 注数成本 / 旧数据兼容');
 
 // ---- ③ onShow 端到端三态 ----
 function fakeRes(body) {

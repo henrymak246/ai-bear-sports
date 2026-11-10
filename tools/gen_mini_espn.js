@@ -6,12 +6,12 @@ const fs = require("fs");
 const path = require("path");
 
 const toolsDir = __dirname;
-// 合并最近两个 _live*.js(双前缀/跨日: 今日 23 场 + 明日池同入小程序映射, 2026-10-19 起)
+// 合并最近三个 _live*.js(三池并行: 昨日池凌晨场+今日池+明日池同入小程序映射, 2026-10-19 双前缀→2026-11-02 三池)
 const srcs = fs.readdirSync(toolsDir)
   .filter(f => /^_live\d+\.js$/.test(f))
   .sort()
   .reverse()
-  .slice(0, 2);
+  .slice(0, 3);
 if (!srcs.length) { console.error("未找到 tools/_live*.js"); process.exit(1); }
 const srcRel = srcs.map(s => "tools/" + s).join(" + ");
 

@@ -79,14 +79,21 @@ function main() {
   if (snaps.length < 2) { console.error(`快照不足 2 个(窗口内 ${snaps.length} 个), 先跑 _cq_odds_relay.js 积累时序`); process.exit(1); }
   console.log(`快照序列 ${snaps.length} 个: ${snaps.map(s => s.f.replace(/_cq_odds_(snap|raw)_/, '')).join(' → ')}`);
 
-  /* ② 当日场次 → eventId */
-  const cqFile = path.join(__dirname, 'cq_' + mmdd + '.json');
-  const cq = JSON.parse(fs.readFileSync(cqFile, 'utf8'));
+  /* ② 当日场次 → eventId
+     深夜快车预测日=实际开球日，但竞彩标签仍在开售日前一日快照(如 2026-10-24 的周五002-012 在 cq_1023.json)。
+     同时读前一日+当日，当日靠后覆盖同名标签，跨日场可回退命中前一日。 */
+  const prev = new Date(new Date(date + 'T12:00:00+08:00').getTime() - 24 * 3600 * 1000);
+  const prevMmdd = String(prev.getUTCMonth() + 1).padStart(2, '0') + String(prev.getUTCDate()).padStart(2, '0');
+  const cqFiles = [prevMmdd, mmdd].map((d) => path.join(__dirname, 'cq_' + d + '.json')).filter((f) => fs.existsSync(f));
+  if (!cqFiles.length) { console.error('出奇快照缺失: ' + prevMmdd + '/' + mmdd); process.exit(1); }
   const evOfLabel = {}, evOfBd = {}, evOfPair = {};
-  for (const m of cq.matches) {
-    if (m.lottery === '北单') evOfBd[Number(m.number)] = m.eventId;
-    if (m.lottery === '竞彩' && m.label) evOfLabel[m.label] = m.eventId;
-    evOfPair[m.home + '|' + m.away] = m.eventId;
+  for (const cqFile of cqFiles) {
+    const cq = JSON.parse(fs.readFileSync(cqFile, 'utf8'));
+    for (const m of cq.matches) {
+      if (m.lottery === '北单') evOfBd[Number(m.number)] = m.eventId;
+      if (m.lottery === '竞彩' && m.label) evOfLabel[m.label] = m.eventId;
+      evOfPair[m.home + '|' + m.away] = m.eventId;
+    }
   }
 
   const pjFile = path.join(__dirname, '..', 'data', 'predictions.js');

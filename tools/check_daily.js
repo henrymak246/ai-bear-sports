@@ -1,7 +1,7 @@
 /* 每日发布前自检(V3.2 ★4+ 硬门禁 + V3.3 胆/北单门禁 + V4.1 混选过关门禁):
    扫指定日(默认最新日)数据, 发现以下情形即报错(修正后再发):
      [★4+] ①反向/博冷标记: note/reason 含 诱|反向|魔咒|博冷|防冷|冲突|虚火 ②所选侧受让 ≥1.5 球
-     [胆]  combo7(新)/max7(历史) key 腿: 主场胆 SP>1.35 / 客场胆 SP>1.5 / 放弃清单联赛胆(沙职等)
+     [胆]  combo7(新)/max7(历史) key 腿: 主场胆 SP>1.5(V4.3 起, 原 1.35) / 客场胆 SP>1.5 / 放弃清单联赛胆(沙职等)
      [混选] combo7 腿型(play/pick 与盘口前缀) + 让球腿盘口 ≠ 官方让球线 + 一腿一场 + **上限 7 关(下限放开)**
             + 不让球腿不得落在让球-only 场(sp 缺失=官方没开这一盘, 投不了)
             + **每条腿赔率 ≥1.5 硬地板**(2026-09-21 用户拍板: 超深赔不再入串)
@@ -70,8 +70,8 @@ function checkAh(tag, pickText, conf, text) {
   if (isAway && odds > 1.5) {
     violations.push(`[胆] ${l.match} 客场胆 SP ${odds} >1.5(客场胆须 ≤1.5 且双证)`);
   }
-  if (isHome && odds > 1.35 && odds < 3) { // odds<3 排除解析异常
-    violations.push(`[胆] ${l.match} 主场胆 SP ${odds} >1.35(主场胆须 ≤1.35)`);
+  if (isHome && odds > 1.5 && odds < 3) { // odds<3 排除解析异常; V4.3(2026-10-30 用户拍板)主场胆线 1.35→1.5
+    violations.push(`[胆] ${l.match} 主场胆 SP ${odds} >1.5(主场胆须 ≤1.5, V4.3 起由 1.35 放宽)`);
   }
 });
 
@@ -175,6 +175,21 @@ if (day.date >= "2026-09-18") {
       violations.push(`[北单] ${l.match} 让球 ${l.handicap} ≤ -3(深度超两球剔除, 深盘下限=让-2)`);
     }
   });
+}
+
+// ---- 2026-11-08 页面重整: 新日取消综合过关; 比分3场×3项; 三时段8拖结构门禁 ----
+if (day.date >= "2026-11-08") {
+  if (day.combo7 || (day.plan || []).some(p => String(p.name || "").includes("综合过关"))) {
+    violations.push("[页面重整] 新日不得再出综合过关卡/ combo7 块");
+  }
+  if (day.score3) {
+    const legs = day.score3.legs || [];
+    if (legs.length !== 3 || legs.some(l => !Array.isArray(l.pick) || l.pick.length !== 3 || !Array.isArray(l.odds) || l.odds.length !== 3)) {
+      violations.push("[比分] 幸福比分必须恰好3场, 每场pick/odds各3项");
+    }
+  }
+  const slotErrors = require("./_slot8.js").validateSlot8(day);
+  slotErrors.forEach(e => violations.push("[三时段8拖] " + e));
 }
 
 if (violations.length === 0) {

@@ -27,6 +27,59 @@ function offDir(direction, hhadK) {
   }).join('/');
 }
 
+const SLOT8_SLOTS = [
+  { key: 'early', label: '早场', time: '06:00-17:59' },
+  { key: 'night', label: '夜场', time: '18:00-23:59' },
+  { key: 'late', label: '深夜', time: '次日00:00-05:59' },
+];
+
+function hasValue(v) {
+  return v !== undefined && v !== null && v !== '';
+}
+
+/* 三时段票 → WXML 视图; 旧数据没有 slot8 时只返回三个空档, 不影响旧票。 */
+function buildSlot8Views(payload) {
+  const root = (payload && payload.slot8) || {};
+  return SLOT8_SLOTS.map((slot) => {
+    const raw = root[slot.key] || {};
+    const a = raw.asian;
+    const b = raw.beidan;
+    const asian = a && Array.isArray(a.legs) && a.legs.length ? {
+      cost: a.cost,
+      totalOdds: a.totalOdds || '',
+      result: hasValue(a.result) ? a.result : null,
+      legs: a.legs.map((leg) => ({
+        id: leg.id || '',
+        match: leg.match || '',
+        play: leg.play || '亚盘',
+        pick: leg.pick || '',
+        handicap: hasValue(leg.handicap) ? String(leg.handicap) : '',
+        oddsText: hasValue(leg.odds) ? String(leg.odds) : '待补',
+        reason: leg.reason || '',
+        result: hasValue(leg.result) ? leg.result : null,
+      })),
+    } : null;
+    const beidan = b && Array.isArray(b.legs) && b.legs.length ? {
+      issue: b.issue || '',
+      stakes: b.stakes,
+      cost: b.cost,
+      result: hasValue(b.result) ? b.result : null,
+      legs: b.legs.map((leg) => ({
+        bdNum: hasValue(leg.bdNum) ? String(leg.bdNum) : '',
+        match: leg.match || '',
+        pick: leg.pick || '',
+        handicap: hasValue(leg.handicap) ? String(leg.handicap) : '',
+        sp3Text: Array.isArray(leg.sp3) && leg.sp3.length
+          ? leg.sp3.map((v) => hasValue(v) ? String(v) : '-').join('/')
+          : (hasValue(leg.odds) ? String(leg.odds) : '待补'),
+        note: leg.note || '',
+        result: hasValue(leg.result) ? leg.result : null,
+      })),
+    } : null;
+    return Object.assign({}, slot, { asian, beidan });
+  });
+}
+
 function nowText() {
   const d = new Date();
   const p = (n) => (n < 10 ? '0' : '') + n;
@@ -127,7 +180,7 @@ function buildGroups(payload, judgeLib) {
 
   // 🌏 亚盘组: 仅 ahPick 非空的场(V3.3 收紧口径, 无信号场不显示)
   groups.ah = matches
-    .filter((m) => m && m.ahPick)
+    .filter((m) => m && m.ahPick && m.ahConf)
     .map((m) => ({
       id: m.id || '',
       league: m.league || '',
@@ -161,6 +214,8 @@ Page({
     // 以下为渲染派生字段(renderPayload 时一并写入)
     planJc: [],
     planBd: [],
+    slot8Bd: [], // 早/夜/深夜北单票
+    slot8Ah: [], // 早/夜/深夜亚盘+大小混编票
     asian7View: null, // 🌏 亚盘推荐串(asian7 七腿)
     staleTip: '', // 数据新鲜度提示(最新预测日≠今天时显示)
     bdNote: '',
@@ -228,6 +283,8 @@ Page({
             groups: { jc: [], bd: [], ah: [] },
             planJc: [],
             planBd: [],
+            slot8Bd: [],
+            slot8Ah: [],
             asian7View: null,
             staleTip: '',
             bdNote: '',
@@ -244,13 +301,18 @@ Page({
     const plan = payload.plan || [];
     const bd = payload.beidan310;
     const a7 = payload.asian7;
+    const slot8Views = buildSlot8Views(payload);
+    const slot8Bd = slot8Views.filter((s) => s.beidan);
+    const slot8Ah = slot8Views.filter((s) => s.asian);
     this.setData({
       payload,
       groups: buildGroups(payload, judge),
       planJc: plan.filter((p) => p.market === 'jc'),
       planBd: plan.filter((p) => p.market === 'bd'),
+      slot8Bd,
+      slot8Ah,
       bdNote: (bd && bd.note) || '',
-      bdDisabled: !(bd && Array.isArray(bd.legs) && bd.legs.length),
+      bdDisabled: !(slot8Bd.length || (bd && Array.isArray(bd.legs) && bd.legs.length)),
       dailyTitle: (payload.dailyPost && payload.dailyPost.title) || '',
       // 🌏 亚盘推荐串(asian7): 七腿推荐+来源提示, 亚盘 Tab 顶部展示
       asian7View: (a7 && Array.isArray(a7.legs) && a7.legs.length) ? {
@@ -635,5 +697,5 @@ Page({
 });
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { buildGroups };
+  module.exports = { buildGroups, buildSlot8Views };
 }

@@ -210,16 +210,22 @@ const allMatches = pools.flatMap(p => p.matches.map(m => ({ ...m, _p: p })));
 // ============ [逐节] ============
 {
   const played = allMatches.filter(m => m.played);
-  const noQ = [], badSum = [];
+  const noQ = [], badSum = [], otOk = [];
   for (const m of played) {
     const q = m.quarters;
     if (!q) { noQ.push(m._p.period + " " + m.label); continue; }
-    const h = q.q1_hs + q.q2_hs + q.q3_hs + q.q4_hs, a = q.q1_as + q.q2_as + q.q3_as + q.q4_as;
-    if (h !== m.hs || a !== m.as) badSum.push(m._p.period + " " + m.label + " 逐节和 " + h + ":" + a + " ≠ 全场 " + m.hs + ":" + m.as);
+    // ot_hs/ot_as = 加时段(2026-10-28 起, 与 ESPN linescores 第 5 段同义; 出奇不带给不出)
+    const regH = q.q1_hs + q.q2_hs + q.q3_hs + q.q4_hs, regA = q.q1_as + q.q2_as + q.q3_as + q.q4_as;
+    const h = regH + (q.ot_hs || 0), a = regA + (q.ot_as || 0);
+    if (h === m.hs && a === m.as) continue;
+    // 加时容差: 四节和战平 ⇒ 必加时, 终场必然不等(出奇无加时段时属合法); 有 ot 字段则上面已严格判
+    if (regH === regA && (q.ot_hs == null && q.ot_as == null)) { otOk.push(m.label); continue; }
+    badSum.push(m._p.period + " " + m.label + " 逐节和 " + h + ":" + a + " ≠ 全场 " + m.hs + ":" + m.as);
   }
   if (badSum.length) bad("逐节", badSum.length + " 场逐节和 ≠ 全场: " + badSum.slice(0, 5).join("; "));
+  if (otOk.length) warn("逐节", otOk.length + " 场四节战平=加时赛(出奇无加时段, 容差放行): " + otOk.slice(0, 6).join(", "));
   if (noQ.length) warn("逐节", "完赛但无逐节 " + noQ.length + " 场(可能刚完赛还没出, 跑 _lq_score.js 补): " + noQ.slice(0, 6).join(", "));
-  if (!badSum.length) say("[逐节] ✓ 通过  完赛 " + played.length + " 场, 逐节和校验 " + (played.length - noQ.length) + " 场全部 == 全场");
+  if (!badSum.length) say("[逐节] ✓ 通过  完赛 " + played.length + " 场, 逐节和校验 " + (played.length - noQ.length - otOk.length) + " 场 == 全场" + (otOk.length ? " · 加时容差 " + otOk.length + " 场" : ""));
 }
 
 // ============ [字段] ============

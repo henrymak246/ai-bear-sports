@@ -401,4 +401,17 @@ assert.strictEqual(ne.matches[3].id, '周六029');
 assert.doesNotThrow(function () { S.computeNightExpress([]); });
 assert.doesNotThrow(function () { S.computeNightExpress([{ date: '2026-09-06' }]); });
 
+// ---- computeBeidan：同日双前缀(周五002+周六002)腿按队名消歧（2026-10-24 回归）----
+const bdDualPrefix = S.computeBeidan([
+  { date: '2026-10-24', matches: [
+    { id: '周五002', league: '德乙', home: '波鸿', away: '沃夫斯堡', direction: '客胜', finalScore: '1-1' },
+    { id: '周六002', league: '韩职', home: '仁川联', away: '济州SK', direction: '客胜', finalScore: null },
+  ], plan: [], beidan310: { legs: [
+    { play: '北单310', bdNum: '069', match: '002 仁川联 vs 济州SK', pick: '0/1', handicap: '0', result: null },
+  ], result: null } },
+], '2026-10-24');
+assert.strictEqual(bdDualPrefix.matches.length, 1);
+assert.strictEqual(bdDualPrefix.matches[0].home, '仁川联', '北单腿 002 必须映射周六002, 不能串到周五002');
+assert.strictEqual(bdDualPrefix.matches[0].away, '济州SK');
+
 console.log('stats.test.js 全部通过 ✓');

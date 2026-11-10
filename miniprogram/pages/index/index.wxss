@@ -46,7 +46,7 @@
   padding: 3rpx 14rpx;
   font-weight: 700;
 }
-.plan-text { margin-top: 8rpx; font-size: 24rpx; color: #B98A5E; line-height: 1.65; }
+.plan-text { margin-top: 8rpx; font-size: 24rpx; color: #B98A5E; line-height: 1.65; white-space: pre-line; }
 .plan-note-card { background: #FFF8EC; }
 
 /* 场次卡 */
@@ -287,3 +287,18 @@
 .m-cart-row { display: flex; align-items: center; gap: 10rpx; padding: 6rpx 0; }
 .m-cart-label { font-size: 24rpx; color: #374151; flex: 1; }
 .m-switch { font-size: 26rpx; color: #0284c7; padding: 2rpx 12rpx; border: 1rpx solid #0284c7; border-radius: 8rpx; }
+
+/* 三时段 8 拖: 每腿两行, 避免八腿长票占用过多屏高 */
+.slot8-card { border-left: 4rpx solid #D97706; padding: 18rpx 20rpx; }
+.slot8-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12rpx; }
+.slot8-title { color: #8B5A2B; font-size: 26rpx; font-weight: 800; }
+.slot8-cost { flex: none; color: #B45309; font-size: 23rpx; font-weight: 800; }
+.slot8-meta { margin-top: 5rpx; font-size: 21rpx; }
+.slot8-leg { padding: 9rpx 0; border-bottom: 1rpx dashed #F0E2CC; font-size: 23rpx; line-height: 1.45; }
+.slot8-leg:last-child { border-bottom: 0; padding-bottom: 0; }
+.slot8-match { color: #4A3A28; font-weight: 700; }
+.slot8-line { display: flex; align-items: center; flex-wrap: wrap; gap: 12rpx; margin-top: 3rpx; }
+.slot8-play { color: #0284C7; }
+.slot8-pick { color: #8B5A2B; font-weight: 800; }
+.slot8-handicap { color: #B98A5E; }
+.slot8-odds { margin-left: auto; color: #D97706; font-weight: 700; }

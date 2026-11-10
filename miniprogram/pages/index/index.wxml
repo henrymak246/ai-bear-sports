@@ -101,6 +101,23 @@
       <view class="plan-text">{{item.text}}</view>
     </view>
 
+    <!-- 三时段北单票: 新结构逐腿对象, 旧数据无 slot8 时整块不渲染 -->
+    <view class="card slot8-card" wx:for="{{slot8Bd}}" wx:for-item="slot" wx:key="key">
+      <view class="slot8-head">
+        <text class="slot8-title">{{slot.label}}北单票 · {{slot.time}}</text>
+        <text class="slot8-cost">{{slot.beidan.stakes}}注 · {{slot.beidan.cost}}元</text>
+      </view>
+      <view class="slot8-meta muted" wx:if="{{slot.beidan.issue}}">期号 {{slot.beidan.issue}} · 共{{slot.beidan.legs.length}}腿</view>
+      <view class="slot8-leg" wx:for="{{slot.beidan.legs}}" wx:for-item="leg" wx:key="bdNum">
+        <view class="slot8-match">{{leg.bdNum}} {{leg.match}}</view>
+        <view class="slot8-line">
+          <text class="slot8-pick">{{leg.pick}}</text>
+          <text class="slot8-handicap">让{{leg.handicap}}</text>
+          <text class="slot8-odds">SP {{leg.sp3Text}}</text>
+        </view>
+      </view>
+    </view>
+
     <view class="card leg-card" wx:for="{{groups.bd}}" wx:key="bdNum">
       <view class="m-head">
         <view class="m-teams">
@@ -130,6 +147,24 @@
 
   <!-- ============ 🌏 亚盘 Tab ============ -->
   <block wx:if="{{tab === 'ah' && payload}}">
+    <!-- 三时段让球/大小混编票; 下方原有 asian7 与单场观点保持不变 -->
+    <view class="card slot8-card" wx:for="{{slot8Ah}}" wx:for-item="slot" wx:key="key">
+      <view class="slot8-head">
+        <text class="slot8-title">{{slot.label}}混编票 · {{slot.time}}</text>
+        <text class="slot8-cost">{{slot.asian.cost}}元</text>
+      </view>
+      <view class="slot8-meta muted">让球/大小 · 共{{slot.asian.legs.length}}腿<text wx:if="{{slot.asian.totalOdds}}"> · {{slot.asian.totalOdds}}</text></view>
+      <view class="slot8-leg" wx:for="{{slot.asian.legs}}" wx:for-item="leg" wx:key="index">
+        <view class="slot8-match">{{leg.id}} {{leg.match}}</view>
+        <view class="slot8-line">
+          <text class="slot8-play">{{leg.play}}</text>
+          <text class="slot8-pick">{{leg.pick}}</text>
+          <text class="slot8-handicap" wx:if="{{leg.handicap}}">盘 {{leg.handicap}}</text>
+          <text class="slot8-odds">@{{leg.oddsText}}</text>
+        </view>
+      </view>
+    </view>
+
     <!-- 🌏 亚盘推荐串(asian7 七腿, 来自网站同源数据) -->
     <view class="card a7-card" wx:if="{{asian7View}}">
       <view class="a7-head"><text class="a7-title">🌏 今日亚盘推荐串(asian7)</text></view>
@@ -140,7 +175,7 @@
       </view>
       <view class="a7-note muted" wx:if="{{asian7View.note}}">{{asian7View.note}}</view>
     </view>
-    <view class="empty" wx:else>今日暂无亚盘推荐串🐾</view>
+    <view class="empty" wx:if="{{!slot8Ah.length && !asian7View}}">今日暂无亚盘推荐串🐾</view>
     <view class="card match-card" wx:for="{{groups.ah}}" wx:key="id">
       <view class="m-head">
         <view class="m-teams">

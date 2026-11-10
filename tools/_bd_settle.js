@@ -43,19 +43,10 @@ for (const l of legs) {
 }
 
 const cost = stakes * UNIT;
-// 复式全红时: 每注组合都中奖, 总奖金 = 2 × Π(各腿选中项 SP 之和); 有黑腿则串关断缆=0
-let comboS = 1;
-for (const l of legs) {
-  if (l.result === "push") continue;
-  const opts = String(l.pick || "").split("/").map(s => s.trim());
-  let s = 0;
-  for (const o of opts) {
-    const oi = o === "3" ? 0 : o === "1" ? 1 : 2;
-    if (Array.isArray(l.sp3) && !isNaN(parseFloat(l.sp3[oi]))) s += parseFloat(l.sp3[oi]);
-  }
-  comboS *= s;
-}
-const payout = (blacks === 0 && unknown === 0) ? UNIT * comboS : 0;
+// 实际中奖: 复式 N 注=各腿选项的全部组合, 只有每腿都选中赛果方向的那 1 注中奖
+// (2026-10-23 更正: 旧公式 2×Π(各腿选中项SP之和) 把 16 注当 16 注全中, 与北单规则及
+//  9-26 中2120.81/9-30 中110.35 的历史口径矛盾; 正确=全红时 2×命中方向SP连乘, 与理论全中同值)
+const payout = (blacks === 0 && unknown === 0) ? UNIT * hitSpProd : 0;
 const fullPayout = UNIT * fullSpProd;
 
 console.log("【北单310 " + dateArg + " 结算】(临场参考SP估算, 以官方开奖为准)");
