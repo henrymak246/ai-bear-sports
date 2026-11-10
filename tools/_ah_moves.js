@@ -46,15 +46,15 @@ function verdictOf(open, latest) {
   const dH = +(latest.h - open.h).toFixed(2);
   const dHome = +(latest.home - open.home).toFixed(2);
   const dAway = +(latest.away - open.away).toFixed(2);
-  if (dH > 0 && dHome <= -0.04) return { dH, dHome, dAway, verdict: `升盘降水(主让加深 ${lineName(open.h)}→${lineName(latest.h)}, 主水 ${open.home}→${latest.home})=真热上盘, 资金实入主队` };
-  if (dH > 0 && dHome >= 0.04) return { dH, dHome, dAway, verdict: `升盘升水(主让加深 ${lineName(open.h)}→${lineName(latest.h)}, 主水 ${open.home}→${latest.home})=诱上盘, 盘口虚抬水位不配合` };
-  if (dH < 0 && dHome >= 0.04) return { dH, dHome, dAway, verdict: `降盘升水(主让退 ${lineName(open.h)}→${lineName(latest.h)}, 主水 ${open.home}→${latest.home})=真冷, 上盘被资金抛弃` };
-  if (dH < 0 && dHome <= -0.04) return { dH, dHome, dAway, verdict: `降盘降水(主让退 ${lineName(open.h)}→${lineName(latest.h)}, 主水 ${open.home}→${latest.home})=资金反向下盘` };
-  if (dHome <= -0.05) return { dH, dHome, dAway, verdict: `盘稳主水降(${open.home}→${latest.home})=资金站主队` };
-  if (dAway <= -0.05) return { dH, dHome, dAway, verdict: `盘稳客水降(${open.away}→${latest.away})=资金站客队` };
-  if (dHome >= 0.05) return { dH, dHome, dAway, verdict: `盘稳主水升(${open.home}→${latest.home})=主队资金退场` };
-  if (dAway >= 0.05) return { dH, dHome, dAway, verdict: `盘稳客水升(${open.away}→${latest.away})=客队资金退场` };
-  return { dH, dHome, dAway, verdict: '无明显资金信号(全程变动<0.05)' };
+  if (dH > 0 && dHome <= -0.04) return { dH, dHome, dAway, verdict: `升盘降水(主让加深 ${lineName(open.h)}→${lineName(latest.h)}, 主水 ${open.home}→${latest.home})=真热上盘, 资金实入主队`, advice: '亚盘跟主让低水一侧; 深盘只小注, 防穿盘' };
+  if (dH > 0 && dHome >= 0.04) return { dH, dHome, dAway, verdict: `升盘升水(主让加深 ${lineName(open.h)}→${lineName(latest.h)}, 主水 ${open.home}→${latest.home})=诱上盘, 盘口虚抬水位不配合`, advice: '弃上盘, 不追让球胜; 改取受让方或放弃' };
+  if (dH < 0 && dHome >= 0.04) return { dH, dHome, dAway, verdict: `降盘升水(主让退 ${lineName(open.h)}→${lineName(latest.h)}, 主水 ${open.home}→${latest.home})=真冷, 上盘被资金抛弃`, advice: '弃上盘; 亚盘取客队/受让方' };
+  if (dH < 0 && dHome <= -0.04) return { dH, dHome, dAway, verdict: `降盘降水(主让退 ${lineName(open.h)}→${lineName(latest.h)}, 主水 ${open.home}→${latest.home})=资金反向下盘`, advice: '亚盘取下盘(受让方); 上盘让球胜不追' };
+  if (dHome <= -0.05) return { dH, dHome, dAway, verdict: `盘稳主水降(${open.home}→${latest.home})=资金站主队`, advice: '亚盘可取主队(让球方); 方向同向可维持' };
+  if (dAway <= -0.05) return { dH, dHome, dAway, verdict: `盘稳客水降(${open.away}→${latest.away})=资金站客队`, advice: '亚盘可取客队(受让方); 方向同向可维持' };
+  if (dHome >= 0.05) return { dH, dHome, dAway, verdict: `盘稳主水升(${open.home}→${latest.home})=主队资金退场`, advice: '上盘不追, 谨慎或放弃' };
+  if (dAway >= 0.05) return { dH, dHome, dAway, verdict: `盘稳客水升(${open.away}→${latest.away})=客队资金退场`, advice: '客队/受让方不追, 谨慎或放弃' };
+  return { dH, dHome, dAway, verdict: '无明显资金信号(全程变动<0.05)', advice: '' };
 }
 
 function main() {
@@ -113,7 +113,7 @@ function main() {
     for (const idx of idxCache) { const a = pickAh(idx, ev); if (a) { if (!open) open = a; latest = a; } }
     if (!open || open === latest) { missing.push(m.id + ' 有效盘口点<2'); continue; }
     const r = verdictOf(open, latest);
-    m.ahMoves = { open: { h: open.h, home: open.home, away: open.away }, latest: { h: latest.h, home: latest.home, away: latest.away }, dH: r.dH, dHome: r.dHome, dAway: r.dAway, verdict: r.verdict, snapshots: idxCache.length, analyzedAt: new Date().toISOString() };
+    m.ahMoves = { open: { h: open.h, home: open.home, away: open.away }, latest: { h: latest.h, home: latest.home, away: latest.away }, dH: r.dH, dHome: r.dHome, dAway: r.dAway, verdict: r.verdict, advice: r.advice, snapshots: idxCache.length, analyzedAt: new Date().toISOString() };
     analyzed++;
     console.log(`${m.id} ${m.home}vs${m.away}: ${lineName(open.h)} ${open.home}/${open.away} → ${lineName(latest.h)} ${latest.home}/${latest.away} | ${r.verdict}`);
   }

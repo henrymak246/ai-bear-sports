@@ -349,6 +349,29 @@
   .pred-ah { background:var(--honey); color:#fff; }
   .odds { font-size:10.5px; color:var(--muted); }
   .ahmv { font-size:10.5px; font-weight:700; color:#B25E09; background:#FFF3E0; border-radius:4px; padding:1px 5px; display:inline-block; margin-top:2px; }
+  .ahmv-adv { font-size:10.5px; font-weight:800; color:#1F7A4D; background:#E8F7EE; border-radius:4px; padding:1px 5px; display:inline-block; margin-top:2px; }
+  /* ---- 📡 盘口异动雷达 ---- */
+  .mv-panel { background:#FFFDF8; border:1px solid var(--line); border-top:4px solid #B25E09; border-radius:14px; padding:14px 16px; margin-top:14px; box-shadow:0 4px 14px rgba(169,113,61,.10); }
+  .mv-panel h2 { font-size:15px; color:var(--brown); margin-bottom:6px; }
+  .mv-panel .mv-sub { font-size:11.5px; color:var(--muted); margin-bottom:10px; }
+  .mv-scroll { overflow-x:auto; }
+  .mv-table { width:100%; min-width:640px; border-collapse:collapse; font-size:12px; }
+  .mv-table th { background:#FFF3E0; color:var(--brown); font-size:11.5px; padding:6px 7px; text-align:left; white-space:nowrap; border-bottom:1px solid var(--line); }
+  .mv-table td { padding:7px; border-bottom:1px dashed var(--line); vertical-align:top; line-height:1.6; color:var(--brown-soft); }
+  .mv-table td.mv-match { font-weight:800; color:var(--brown); }
+  .mv-table td.mv-advice { color:#1F7A4D; font-weight:700; }
+  .mv-table .mv-side { font-size:10.5px; color:var(--muted); font-weight:400; }
+  .mv-note { font-size:11.5px; color:var(--honey-dark); background:var(--amber-bg); border-radius:10px; padding:8px 11px; margin-top:10px; line-height:1.65; }
+  /* 窄屏(手机): 雷达表改为卡片式, 建议列不再被横向滚动藏住 */
+  @media (max-width:640px) {
+    .mv-scroll { overflow-x:visible; }
+    .mv-table { min-width:0; }
+    .mv-table tr:first-child { display:none; }
+    .mv-table tr { display:block; border-bottom:1px dashed var(--line); padding:8px 0; }
+    .mv-table tr:last-child { border-bottom:none; }
+    .mv-table td { display:block; border:none; padding:2px 0; }
+    .mv-table td::before { content:attr(data-label); display:inline-block; color:var(--muted); font-weight:700; font-size:10.5px; margin-right:6px; }
+  }
   .dtag { font-size:10px; font-weight:800; border-radius:4px; padding:0 4px; margin-left:3px; }
   .dtag-dan { background:var(--coral); color:#fff; }
   .dtag-shuang { background:#4A90D9; color:#fff; }
@@ -455,6 +478,7 @@
       </div>
       <div class="cards" id="statCards"></div>
       <div id="dailyPostBox"></div>
+      <div id="movesRadar"></div>
       <div class="panel" id="investPanel">
         <h2>💰 投资策略<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">三层仓位逻辑 · 入场与空仓条件 · 近7日方案明细</span></h2>
         <div id="investBody"></div>
@@ -1052,6 +1076,43 @@ function renderApp(days) {
   function hasLegs(k) { return function (d) { return d[k] && Array.isArray(d[k].legs) && d[k].legs.length > 0; }; }
   renderCal(); renderDetail();
 
+  // ---- 📡 盘口异动雷达：选中日所有「有资金信号」的场次 + 具体建议 ----
+  function renderMovesRadar(day) {
+    var box = document.getElementById('movesRadar');
+    if (!box) return;
+    if (!day) { box.innerHTML = ''; return; }
+    var rows = (day.matches || []).filter(function (m) {
+      return m.ahMoves && m.ahMoves.verdict && m.ahMoves.verdict.indexOf('无明显') !== 0;
+    });
+    if (!rows.length) { box.innerHTML = ''; return; }
+    function ahLine(h) {
+      var T = { 0: '平手', 0.25: '平/半', 0.5: '半球', 0.75: '半/一', 1: '一球', 1.25: '一/球半', 1.5: '球半', 1.75: '球半/两', 2: '两球', 2.25: '两/两半', 2.5: '两球半', 2.75: '两半/三', 3: '三球', 3.25: '三/三半', 3.5: '三球半', 3.75: '三半/四', 4: '四球' };
+      var n = T[Math.abs(h)] || (Math.abs(h) + '球');
+      return h === 0 ? '平手' : (h > 0 ? n : '受' + n);
+    }
+    var latestAt = '';
+    var html = rows.map(function (m) {
+      var mv = m.ahMoves;
+      if (mv.analyzedAt && mv.analyzedAt > latestAt) latestAt = mv.analyzedAt;
+      var move = ahLine(mv.open.h) + ' ' + mv.open.home + '/' + mv.open.away + ' → ' + ahLine(mv.latest.h) + ' ' + mv.latest.home + '/' + mv.latest.away;
+      var read = String(mv.verdict).split('=').pop();
+      return '<tr><td class="mv-match" data-label="场次">' + esc(m.id) + ' ' + esc(m.home) + ' vs ' + esc(m.away) +
+        '<div class="mv-side">' + esc(m.league) + ' ' + esc(m.time) + ' · 方向 ' + esc(m.direction || '—') + '</div></td>' +
+        '<td data-label="盘口 · 水位">' + esc(move) + '</td>' +
+        '<td data-label="判读">' + esc(read) + '</td>' +
+        '<td class="mv-advice" data-label="🎯 建议">' + esc(mv.advice || '赛前复核水位后再定') + '</td></tr>';
+    }).join('');
+    var t = '';
+    if (latestAt) {
+      try { t = new Date(latestAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Shanghai' }); } catch (e) { t = ''; }
+    }
+    box.innerHTML = '<div class="mv-panel"><h2>📡 盘口异动雷达<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' +
+      esc(day.date) + ' · ' + rows.length + ' 场有资金信号' + (t ? ' · 判读时点 ' + esc(t) : '') + '</span></h2>' +
+      '<div class="mv-sub">四象限判读：升盘降水=真热上盘 / 升盘升水=诱上盘 / 降盘升水=真冷 / 降盘降水=资金反向下盘；盘稳看水位站队。建议只作用于亚盘与让球盘，不改变方向层结论。</div>' +
+      '<div class="mv-scroll"><table class="mv-table"><tr><th>场次</th><th>盘口 · 水位（初 → 临）</th><th>判读</th><th>🎯 建议</th></tr>' + html + '</table></div>' +
+      '<div class="mv-note">⚠️ 盘路是资金痕迹，不是结果；临场最后一小时水位仍可能反转。反向信号只降信心/撤腿，不反向加注。</div></div>';
+  }
+
   // ---- 梦想7关板块：选中日期 dream7 字段的过关串（7 关，娱乐小注） ----
   function renderDream7(days) {
     var box = document.getElementById('dream7Blocks');
@@ -1122,8 +1183,15 @@ function renderApp(days) {
     ];
     var html = metas.map(function (meta) {
       var slot = day.slot8[meta.key] || {};
+      var aLegs = (slot.asian && Array.isArray(slot.asian.legs)) ? slot.asian.legs.length : 0;
+      var bLegs = (slot.beidan && Array.isArray(slot.beidan.legs)) ? slot.beidan.legs.length : 0;
+      // 空档不摆空表: 只留一行说明, 避免整页都是「暂无可出票腿」
+      if (!aLegs && !bLegs) {
+        return '<div class="slot8-card"><div class="slot8-time">' + meta.label + ' · ' + meta.time + '</div>' +
+          '<div class="plan-note">本档无赛事' + (slot.review ? '：' + esc(slot.review) : '，不硬凑票。') + '</div></div>';
+      }
       return '<div class="slot8-card"><div class="slot8-time">' + meta.label + ' · ' + meta.time + '</div>' +
-        '<div class="slot8-grid">' + asianTicket(slot.asian) + beidanTicket(slot.beidan) + '</div></div>';
+        '<div class="slot8-grid">' + (aLegs ? asianTicket(slot.asian) : '<div class="plan-note">亚盘：本档无赛事</div>') + (bLegs ? beidanTicket(slot.beidan) : '<div class="plan-note">北单：本档无赛事</div>') + '</div></div>';
     }).join('');
     box.innerHTML = '<div class="panel"><h2>🎯 三时段8拖<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 每档亚盘混编 + 北单</span></h2>' +
       html + '<div class="plan-note">⚠️ 信号不足则缩减，不硬凑；赔率待补时不虚构总倍数，北单浮动SP以出票为准。</div></div>';
@@ -1200,7 +1268,7 @@ function renderApp(days) {
         '<td>' + mark + '</td></tr>';
     }).join('');
     box.innerHTML =
-      '<div class="panel score3-panel"><h2>💚 幸福比分<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 3场各3个比分 · 全中约 ' + esc(s3.totalOdds || '—') + '</span></h2>' +
+      '<div class="panel score3-panel"><h2>💚 幸福比分<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · ' + (s3.totalOdds ? '3场各3个比分 · 全中约 ' + esc(s3.totalOdds) : esc(s3.legs.length) + '场比分复选 · 只展示不核算总倍数') + '</span></h2>' +
       '<table class="d7-table"><tr><th>关</th><th>联赛</th><th>场次</th><th>比分（3选）</th><th>对应SP</th><th>依据</th><th>红黑</th></tr>' + rows + '</table>' +
       (s3.note ? '<div class="plan-note">⚠️ ' + esc(s3.note) + '</div>' : '') +
       '</div>';
@@ -1213,6 +1281,9 @@ function renderApp(days) {
     var day = pickDay(function (d) { return d.zucai310 && Array.isArray(d.zucai310.legs) && d.zucai310.legs.length > 0; });
     if (!day) { box.innerHTML = ''; return; }
     var zc = day.zucai310;
+    var selDay = byDate[calState.sel];
+    var isFallback = !(selDay && selDay.zucai310 && Array.isArray(selDay.zucai310.legs) && selDay.zucai310.legs.length > 0);
+    var zcLabel = isFallback ? '最近一期 · ' : '';
     var rows = zc.legs.map(function (leg, i) {
       var mark = leg.result === 'hit' ? ' <span class="hit">红✅</span>' : leg.result === 'miss' ? ' <span class="miss">黑❌</span>' : '';
       return '<tr><td>' + (i + 1) + '</td>' +
@@ -1226,7 +1297,7 @@ function renderApp(days) {
         (r9.note ? '<br>' + esc(r9.note) : '') + '</div>'
       : '';
     box.innerHTML =
-      '<div class="panel zucai310-panel"><h2>🎫 足彩310（胜负彩14场）<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 3=主胜 1=平 0=客胜 · 复式注数=各场选择数乘积</span></h2>' +
+      '<div class="panel zucai310-panel"><h2>🎫 足彩310（胜负彩14场）<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + zcLabel + esc(day.date) + ' · 3=主胜 1=平 0=客胜 · 复式注数=各场选择数乘积</span></h2>' +
       '<table class="d7-table"><tr><th>关</th><th>场次</th><th>310选择</th></tr>' + rows + '</table>' +
       (zc.note ? '<div class="plan-note">⚠️ ' + esc(zc.note) + '</div>' : '') +
       r9html +
@@ -1933,7 +2004,7 @@ function renderApp(days) {
       ? dayDetail(day)
       : '<div class="panel wait">还没有记录，等小熊的第一场预测 🐻</div>';
     // 当日方案、三时段8拖与发布内容均跟随月历选中日期。
-    renderDream7(days); renderSlot8(days); renderHc7(days); renderAsian7(days); renderScore3(days); renderZucai310(days); renderDailyPost(days); renderPlanBlocks(days);
+    renderDream7(days); renderSlot8(days); renderHc7(days); renderAsian7(days); renderScore3(days); renderZucai310(days); renderDailyPost(days); renderPlanBlocks(days); renderMovesRadar(day);
   }
 
   function dayDetail(day) {
@@ -2088,7 +2159,9 @@ function renderApp(days) {
           var ahTxt = m.ahPick ? esc(m.ahPick) + (m.ahConf ? ' <span class="stars">' + '★'.repeat(m.ahConf) + '</span>' : '') : (m.dirTag === '弃选' ? '弃选' : '—');
           var ouTxt = m.ouPick ? esc(m.ouPick) + (m.ouConf ? ' <span class="stars">' + '★'.repeat(m.ouConf) + '</span>' : '') : '—';
           // 盘路时序变动(2026-10-20 _ah_moves.js): 有信号才显示(无信号=「无明显资金信号」不打扰)
-          var ahMvTxt = (m.ahMoves && m.ahMoves.verdict && m.ahMoves.verdict.indexOf('无明显') !== 0) ? '<div><span class="ahmv">📈 ' + esc(m.ahMoves.verdict) + '</span></div>' : '';
+          var ahMvTxt = (m.ahMoves && m.ahMoves.verdict && m.ahMoves.verdict.indexOf('无明显') !== 0)
+            ? '<div><span class="ahmv">📈 ' + esc(m.ahMoves.verdict) + '</span>' + (m.ahMoves.advice ? ' <span class="ahmv-adv">建议: ' + esc(m.ahMoves.advice) + '</span>' : '') + '</div>'
+            : '';
           ahCell = '<div><b>' + ahTxt + '</b></div><div><b>' + ouTxt + '</b></div>' + (ahOdds ? '<div>' + ahOdds + '</div>' : '') + ahMvTxt;
         } else {
           ahCell = ahOdds ? '<div>' + ahOdds + '</div>' : '<span class="wait">—</span>';
