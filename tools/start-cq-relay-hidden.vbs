@@ -1,7 +1,7 @@
-' 出奇快照中继隐藏启动器(计划任务 FootballCqRelay 用; Run 不经 shell, 重定向须 cmd /c 包装)
-' 2026-10-20 起加盘路中继: 比分快照(_cq_relay.js) + 盘口快照(_cq_odds_relay.js) 顺序跑, 各自独立日志, 互不影响
+' 出奇快照中继隐藏启动器(计划任务 FootballCqRelay 用)
+' 2026-10-20 起含盘路中继; 2026-11-10 改为单子进程串行(cq-relay-all.bat),
+' 原因: 双 Run 方案下第二个 Run 在任务实例结束后常不执行, 盘路快照 09:08 后断档。
 Dim fso, dir
 Set fso = CreateObject("Scripting.FileSystemObject")
 dir = fso.GetParentFolderName(WScript.ScriptFullName)
-CreateObject("Wscript.Shell").Run "cmd /c node """ & dir & "\_cq_relay.js"" >> """ & dir & "\_cq_relay.log"" 2>&1", 0, True
-CreateObject("Wscript.Shell").Run "cmd /c node """ & dir & "\_cq_odds_relay.js"" >> """ & dir & "\_cq_odds_relay.log"" 2>&1", 0, True
+CreateObject("Wscript.Shell").Run "cmd /c """ & dir & "\cq-relay-all.bat""", 0, True
