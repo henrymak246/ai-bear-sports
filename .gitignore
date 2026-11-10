@@ -24,3 +24,6 @@ tools/_social_in_*.txt
 tools/_hot_*.txt
 tools/*.err
 
+
+# 布局草图/子代理工作目录(2026-11-09)
+.superpowers/

@@ -77,14 +77,9 @@ const hasBlock = (d) => !!d && BLOCK_POOLS.some((b) => d[b[0]] && Array.isArray(
 const SRC_DAY = hasBlock(DAYS[0]) ? DAYS[0] : DAYS.find(hasBlock);
 assert(SRC_DAY, '今日与全部历史日都没有方案块(combo7/hc7/max7), ②③ 无从验起');
 const BORROW = SRC_DAY !== DAYS[0];
-/* ★混选面板(combo7)是合并后的**主面板**, 它的渲染路径必须每天都真跑一遍 ——
-   可它偏偏是"新日子"才有的块, 而需要借用旧日子的雨天(竞彩扁平日)恰好没有它。
-   于是借到的是 hc7+max7 旧日子时, 在副本里**合成**一块 combo7:
-     · 腿 = 该日 hc7 前 4 条 + max7 前 3 条(补上 play; 让球腿的 pick 按合并约定改写成盘口前缀式);
-     · 方案卡换成「💥 综合过关」且 pct 与该块 totalOdds **同源**(与构建脚本同一口径 ——
-       不同源的话 ④ 的"快照即 pct"与 ③ 的"叠加后必须改写"两条会互相打架)。
-   验的是"混选面板能渲染 / 两盘腿各取对彩池 / 旧面板让位", 与这几条腿本来属于哪天无关。
-   有真 combo7 的日子(以及将来真建了 combo7 的当天)走的是原样, 不合成。 */
+/* combo7 面板已取消，但它的历史数据仍参与实时方案卡叠加，所以保留这条兼容测试。
+   借到 hc7+max7 旧日子时在副本里合成 combo7：两盘腿分别取对彩池，方案卡 pct 与 totalOdds 同源。
+   这里只验实时叠加与「面板不渲染」，不再要求综合过关面板出内容。 */
 const SRC = (function () {
   if ((SRC_DAY.combo7 || {}).legs && SRC_DAY.combo7.legs.length) return SRC_DAY;
   const hc = ((SRC_DAY.hc7 || {}).legs) || [], mx = ((SRC_DAY.max7 || {}).legs) || [];
@@ -136,8 +131,24 @@ const LO = (function () {
 })();
 const NH_DONOR_SKIP = (d) => new Set([].concat(...BLOCKS.map((b) =>
   ((((d[b[0]] || {}).legs) || []).map((l) => String(l.match || '').slice(0, 3))))));
+/* 新面板用内存 fixture 覆盖借来的旧数据：11-08 尚未落 slot8 时也能真跑渲染路径。 */
+function decorateNewPanels(d) {
+  const aLeg = (id, play, odds) => ({ id, match: id + ' 主队 vs 客队', pick: play === '亚盘' ? '主 -0.25' : '大2.5', play, odds, reason: 'site fixture', result: null });
+  const bLeg = (n) => ({ bdNum: n, match: '北单' + n + ' 主队 vs 客队', pick: '3/1', handicap: 0, sp3: '2.35', note: 'site fixture', result: null });
+  d.slot8 = {
+    early: { asian: { legs: [aLeg('001', '亚盘', '1.86'), aLeg('002', '大小球', null)], totalOdds: '待补', cost: 2, result: null }, beidan: { issue: '26113', legs: [bLeg('101')], stakes: 32, cost: 64, result: null } },
+    night: { asian: { legs: [aLeg('003', '亚盘', '1.90')], totalOdds: '8.20倍', cost: 2, result: null }, beidan: { issue: '26113', legs: [bLeg('102')], stakes: 16, cost: 32, result: null } },
+    late: { asian: { legs: [aLeg('004', '大小球', '待补')], totalOdds: null, cost: 2, result: null }, beidan: { issue: '26114', legs: [bLeg('103')], stakes: 8, cost: 16, result: null } },
+  };
+  d.score3 = { totalOdds: '约1000倍', result: null, legs: [
+    { match: '001 甲 vs 乙', pick: ['1:0', '2:0', '2:1'], odds: ['6.5', '7.5', '8.0'], result: null },
+    { match: '002 丙 vs 丁', pick: ['0:1', '0:2', '1:2'], odds: ['7.0', '8.0', '9.0'], result: null },
+    { match: '003 戊 vs 己', pick: ['1:1', '2:2', '3:3'], odds: ['6.0', '11', '30'], result: null },
+  ] };
+  return d;
+}
 const todayDays = () => {
-  const d = JSON.parse(JSON.stringify(SRC));
+  const d = decorateNewPanels(JSON.parse(JSON.stringify(SRC)));
   d.date = TODAY_BJ;
   Object.keys(d).forEach((k) => {
     const b = d[k];
@@ -340,6 +351,20 @@ const realFetch = global.fetch; // ⑥ 要真打官方, 先留一份
   assert(htmlIn(sb, 'planBlocks').length > 0, '① planBlocks 应有内容');
   assert(htmlIn(sb, 'dailyList').length > 0, '① 应产出当日对阵表');
   assert(htmlIn(sb, 'planBlocks').indexOf(SNAP_PCT) !== -1, '① 首屏应是构建时快照(' + SNAP_PCT + ')');
+  // 新首页结构：三时段六票、幸福比分3×3、投资双表格；取消栏目不得再渲染。
+  const slotHtml = htmlIn(sb, 'slot8Blocks');
+  assert.strictEqual((slotHtml.match(/class="slot8-card/g) || []).length, 3, '① 应有早/夜/深夜三档');
+  assert.strictEqual((slotHtml.match(/class="slot8-ticket/g) || []).length, 6, '① 三档应各有亚盘+北单票');
+  assert(slotHtml.includes('32注') && slotHtml.includes('64元') && slotHtml.includes('待补'), '① 8拖应显示注数/成本/待补赔率');
+  const scoreHtml = htmlIn(sb, 'score3Blocks');
+  assert.strictEqual((scoreHtml.match(/<tr>/g) || []).length, 4, '① 幸福比分应恰好3场');
+  assert(scoreHtml.includes('1:0 / 2:0 / 2:1') && scoreHtml.includes('6.5 / 7.5 / 8.0'), '① 每场应显示3个比分及对应SP');
+  assert.strictEqual((htmlIn(sb, 'investBody').match(/<table/g) || []).length, 2, '① 投资策略应为两张表');
+  ['combo7Blocks', 'max7Blocks', 'neBody', 'xinshuiBody', 'beidanBody'].forEach((id) => {
+    assert.strictEqual(htmlIn(sb, id), '', '① 已取消栏目不得渲染: ' + id);
+  });
+  // 2026-11-09 起日韩专栏恢复主动渲染(与 _smoke_ne.js 的栏目归属断言配套)
+  assert(htmlIn(sb, 'jkBody').length > 0, '① 日韩专栏应恢复渲染');
 
   /* ---- ①b 让球-only: 官方只开让球、没开胜平负的场 ----
      用户 2026-09-15 的原话: "013皇马是-2球的盘, 没有开不让球的胜平负" ——
@@ -459,6 +484,10 @@ const realFetch = global.fetch; // ⑥ 要真打官方, 先留一份
   });
   exp.forEach((e) => {
     const html = htmlIn(sb2, BLK_PANEL[e.k]);
+    if (e.k === 'combo7' || e.k === 'max7') {
+      assert.strictEqual(html, '', '③ 综合过关面板已取消，实时叠加只能更新方案卡/历史兼容数据');
+      return;
+    }
     assert(html.length > 0, '③ ' + e.k + ' 面板没渲染出来');
     assert(html.indexOf(e.total) !== -1,
       '③ ' + e.k + ' 倍数未按口径重算: 期望含 «' + e.total + '», 实际 ' +
@@ -473,20 +502,12 @@ const realFetch = global.fetch; // ⑥ 要真打官方, 先留一份
   const tbl = htmlIn(sb2, 'dailyList');
   assert(tbl.indexOf(closedId) !== -1, '③ 对阵表里应有 ' + closedId + ' 那场');
   assert(/已停售/.test(tbl), '③ 对阵表里应出现"已停售"标记');
-  /* ★栏目合并的落点: combo7 当天**只出混选面板**, 两个旧面板必须让位(否则同一串挂三个面板)。
-     反过来说, 旧日子(hc7/max7)不得出现 combo7 面板 —— 两种日子各验各的。 */
+  /* 综合过关面板已取消；combo7 仍参与实时方案卡与历史数据兼容，但不再主动渲染。 */
+  assert.strictEqual(htmlIn(sb2, BLK_PANEL.combo7), '', '③ 综合过关面板不得渲染');
   if (BLOCKS.some((b) => b[0] === 'combo7')) {
     assert(htmlIn(sb2, BLK_PANEL.hc7) === '' && htmlIn(sb2, BLK_PANEL.max7) === '',
-      '③ 合并后当天只该出混选面板, 旧 hc7/max7 面板应让位(实际 hc7=' +
-      htmlIn(sb2, BLK_PANEL.hc7).length + ' 字节, max7=' + htmlIn(sb2, BLK_PANEL.max7).length + ' 字节)');
-    const c7 = htmlIn(sb2, BLK_PANEL.combo7);
-    assert(c7.indexOf('让球') !== -1 && c7.indexOf('不让球') !== -1,
-      '③ 混选面板该同时标出两盘的腿(让球/不让球徽章), 实际没看全');
-    console.log('  + 混选面板 ' + c7.length + ' 字节: ' + exp[0].legs.length + ' 腿(' +
-      exp[0].legs.filter((l) => String(l.play).indexOf('让') !== -1).length + ' 让球 / ' +
-      exp[0].legs.filter((l) => String(l.play).indexOf('让') === -1).length + ' 不让球), 旧面板已让位');
-  } else {
-    assert(htmlIn(sb2, BLK_PANEL.combo7) === '', '③ 该日没有 combo7, 不该渲染混选面板');
+      '③ combo7 日不应回退渲染旧 hc7/max7 面板');
+    console.log('  + 综合过关面板已取消；实时叠加仍覆盖方案卡，历史 combo7 数据保留');
   }
 
   // ③b 让球-only 以**官方池**为准(不是快照)

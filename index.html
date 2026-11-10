@@ -98,6 +98,10 @@
   .dpost-wcard { background:#FFF; border:1px solid #F3E3C3; border-radius:12px; padding:12px 14px; margin-bottom:10px; }
   .dpost-wlabel { font-size:12px; font-weight:700; color:var(--honey-dark); margin-bottom:6px; }
   .dpost-wtext { white-space:pre-wrap; font-size:12.5px; line-height:1.85; color:#4A3A28; }
+  /* 💰 投资策略三层导读(2026-11-09, 置于策略表之前) */
+  .invest-guide { background:#FFF8EC; border:1px solid #F3E3C3; border-radius:12px; padding:12px 14px; margin-bottom:10px; }
+  .invest-guide h3 { font-size:13px; color:var(--brown); margin:0 0 6px; }
+  .invest-guide p { font-size:12.5px; line-height:1.9; color:#4A3A28; margin:0; }
   .d7-table td { font-size:12.5px; vertical-align:top; }
   .d7-table td:first-child { width:30px; font-weight:800; color:var(--honey-dark); }
   .d7-league { font-weight:700; color:var(--brown); white-space:nowrap; }
@@ -414,6 +418,11 @@
   @media (max-width: 920px) {
     .layout { flex-direction:column; }
     aside { width:100%; position:static; }
+    /* flex 列方向 + align-items:flex-start 会让 main 按 max-content 撑宽, 长文/表格会把手机视口顶出屏幕 */
+    main { width:100%; min-width:0; }
+    .panel { overflow-x:auto; }
+    /* 投资策略四列表在窄屏被压成一字一行, 给最小宽度后在面板内横向滚动 */
+    #investPanel table { min-width:560px; }
   }
 </style>
 </head>
@@ -445,6 +454,11 @@
         <div class="poster-badges"><span>⚽ 竞彩方案</span><span>📊 标准盘</span><span>🐻 每日红黑</span></div>
       </div>
       <div class="cards" id="statCards"></div>
+      <div id="dailyPostBox"></div>
+      <div class="panel" id="investPanel">
+        <h2>💰 投资策略<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">三层仓位逻辑 · 入场与空仓条件 · 近7日方案明细</span></h2>
+        <div id="investBody"></div>
+      </div>
       <h2 class="sec-title">📊 每日预测总览</h2>
       <div id="dailyList"></div>
       <div id="planBlocks"></div>
@@ -454,7 +468,6 @@
       <div id="asian7Blocks"></div>
       <div id="score3Blocks"></div>
       <div id="zucai310Blocks"></div>
-      <div id="dailyPostBox"></div>
     </section>
 
     <section id="sec-history">
@@ -481,9 +494,9 @@
         <div id="eplInsight"></div>
       </div>
 
-      <div class="panel" id="investPanel">
-        <h2>💰 投资策略<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">三层仓位结构 · 近7日方案明细</span></h2>
-        <div id="investBody"></div>
+      <div class="panel" id="jkPanel">
+        <h2>🎌 日韩专栏<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">日韩场次单独累计 · 方向/大小/比分与方案复盘</span></h2>
+        <div id="jkBody"></div>
       </div>
     </section>
 
@@ -1282,10 +1295,17 @@ function renderApp(days) {
   function renderDailyPost(days) {
     var box = document.getElementById('dailyPostBox');
     if (!box) return;
-    // 10-18 起建日脚本字段为 text, 早前为 content —— 两者兼容(2026-10-26 修, 此前栏目卡 10-17 陈旧 9 天)
-    var day = pickDay(function (d) { return d.dailyPost && (d.dailyPost.content || d.dailyPost.text); });
+    // dailyPost 兼容字符串及对象 content/text 两种历史字段。
+    function dailyText(dp) {
+      return typeof dp === 'string' ? dp : dp && (dp.content || dp.text || '');
+    }
+    var day = pickDay(function (d) { return !!dailyText(d.dailyPost); });
     if (!day) { box.innerHTML = ''; return; }
-    var dp = day.dailyPost;
+    var raw = day.dailyPost;
+    var dp = typeof raw === 'string' ? { title: '小熊每日完整复盘', content: raw } : raw;
+    function rich(t) {
+      return esc(t || '').replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+    }
     var wbHtml = '';
     if (Array.isArray(day.weiboDrafts) && day.weiboDrafts.length) {
       wbHtml = '<div class="dpost-weibo">' +
@@ -1297,8 +1317,8 @@ function renderApp(days) {
     }
     box.innerHTML =
       '<div class="panel dpost-panel"><h2>📮 每日发布<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 小熊特色社媒文案</span></h2>' +
-      '<div class="dpost-title">' + esc(dp.title) + '</div>' +
-      '<div class="dpost-content">' + esc(dp.content || dp.text) + '</div>' +
+      '<div class="dpost-title">' + esc(dp.title || '小熊每日完整复盘') + '</div>' +
+      '<div class="dpost-content">' + rich(dp.content || dp.text) + '</div>' +
       wbHtml +
       '</div>';
   }
@@ -1569,7 +1589,7 @@ function renderApp(days) {
     body.innerHTML = html;
   }
 
-  // ---- 日韩历史统计兼容函数：保留，不再主动渲染 ----
+  // ---- 日韩专栏：历史统计 + 主动渲染 ----
   function renderJK(days) {
     if (typeof StatsLib.computeJK !== 'function') return;
     var jk = StatsLib.computeJK(days);
@@ -1793,6 +1813,7 @@ function renderApp(days) {
     '⚠️ <b>落魄豪门</b>：曼联（揭幕0-2负升班马赫尔城）、热刺（揭幕0-3负布伦特）<br>' +
     '🆕 <b>升班马</b>：赫尔城（揭幕2-0斩曼联）、考文垂（0-3负阿森纳）<br>' +
     '📌 <b>心得</b>：①班霸让球穿盘难——曼联1.22让1.25爆冷、热刺0-3崩盘，深赔班霸忌日只做双选/受让；②升班马主场有爆发力，别拿历史身价压；③化忌日客场名门防翻车。</div>';
+  renderJK(days);
   renderEPL(days);
   function renderEPL(days) {
     if (typeof StatsLib.computeEPL !== 'function') return;
@@ -1837,7 +1858,15 @@ function renderApp(days) {
       ['🎲 增强层', '亚盘/大小球小串，仅作娱乐练手', '每日2元；不追加、不补损', '历史ROI接近打平，控制仓位'],
       ['🎫 彩票层', '北单小复式等波动方案', '≤128元、每周≤2次，只用累计盈利', '收益由少数大中贡献，回撤可能超本金']
     ];
-    var html = '<table><tr><th>层级</th><th>方案</th><th>金额与纪律</th><th>回测结论</th></tr>' + layers.map(function (r) {
+    var guide = [
+      ['🛡 稳定层', '入场条件：胆必须同时满足 SP、基本面、盘口与信息面的约束，缺一项就不进稳定层。仓位依据：只用固定小额，不因为连红加仓，单笔金额在建日就写死。何时不做：没有合规胆、SP 超过 1.5、或者忌日与信息面冲突时直接空仓，空仓不是失败。风险控制：胆仓与其余仓位分开记账，避免用一次大注追回前一天的亏损。复盘口径：胆与单选分开统计，不用双选的高命中率掩盖单选的波动。'],
+      ['🎲 增强层', '入场条件：亚盘与大小球必须同时有球队结构依据和盘口依据，单证不出手。仓位依据：只投娱乐小注，串关会成倍放大单腿错误，关数越多越要减额。何时不做：当天没有双证场次、或者建日拿不到真实赔率时不做，宁可空一天。风险控制：半红、走水按真实结算口径记录，不追损、不补单。复盘口径：赛前必须留存每条腿的赔率和水位，没留档的只记命中率，不虚构回收金额。'],
+      ['🎫 彩票层', '入场条件：北单、足彩和任九只使用预算内的资金，不挪用稳定层和增强层的额度。仓位依据：北单做小复式，足彩与任九按当期预算固定注数，超预算的票只展示、不实际投入。何时不做：需要滚存、或者想靠加注补前一日亏损时停手；每周不超过两次。风险控制：彩票层的回撤可能超过本金，接受这一点再入场。复盘口径：北单浮动 SP 只作名义口径，官方 SP 出来后重算；展示票不计实际投入。']
+    ];
+    var guideHtml = guide.map(function (r) {
+      return '<div class="invest-guide"><h3>' + esc(r[0]) + '</h3><p>' + esc(r[1]) + '</p></div>';
+    }).join('');
+    var html = guideHtml + '<table><tr><th>层级</th><th>方案</th><th>金额与纪律</th><th>回测结论</th></tr>' + layers.map(function (r) {
       return '<tr><td><b>' + esc(r[0]) + '</b></td><td>' + esc(r[1]) + '</td><td>' + esc(r[2]) + '</td><td>' + esc(r[3]) + '</td></tr>';
     }).join('') + '</table>';
     var cards = [];
