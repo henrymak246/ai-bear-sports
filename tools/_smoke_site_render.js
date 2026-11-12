@@ -359,7 +359,7 @@ const realFetch = global.fetch; // ⑥ 要真打官方, 先留一份
   const scoreHtml = htmlIn(sb, 'score3Blocks');
   assert.strictEqual((scoreHtml.match(/<tr>/g) || []).length, 4, '① 幸福比分应恰好3场');
   assert(scoreHtml.includes('1:0 / 2:0 / 2:1') && scoreHtml.includes('6.5 / 7.5 / 8.0'), '① 每场应显示3个比分及对应SP');
-  assert.strictEqual((htmlIn(sb, 'investBody').match(/<table/g) || []).length, 2, '① 投资策略应为两张表');
+  assert((htmlIn(sb, 'investBody').match(/<table/g) || []).length <= 1, '① 投资策略最多一张方案分配表(今日策略/每日盈亏表已取消)');
   ['combo7Blocks', 'max7Blocks', 'neBody', 'xinshuiBody', 'beidanBody'].forEach((id) => {
     assert.strictEqual(htmlIn(sb, id), '', '① 已取消栏目不得渲染: ' + id);
   });

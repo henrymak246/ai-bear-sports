@@ -1941,13 +1941,18 @@ function renderApp(days) {
     asc.forEach(function (d) { if (d.bank && d.bank.net != null) acc += d.bank.net; accMap[d.date] = acc; });
     var counted = asc.filter(function (d) { return d.bank && d.bank.net != null; }).length;
 
+    // 35 天里单日最高盈利（只作展示色块，不再列每日明细表）
+    var best = null;
+    asc.forEach(function (d) { if (d.bank && d.bank.net != null && (!best || d.bank.net > best.net)) best = { net: d.bank.net, date: d.date }; });
+
     var html = '<div class="inv-cards">' +
       '<div class="inv-card"><div class="n">' + (tb.stake == null ? '—' : tb.stake + ' 元') + '</div><div class="t">今日投入' + (today ? ' · ' + esc(today.date) : '') + '</div></div>' +
       '<div class="inv-card"><div class="n' + cls(tb.net) + '">' + (tb.net == null ? '待赛' : money(tb.net)) + '</div><div class="t">今日盈亏' + (tb.ret != null ? ' · 回收 ' + tb.ret + ' 元' : '') + '</div></div>' +
       '<div class="inv-card"><div class="n' + cls(acc) + '">' + money(acc) + '</div><div class="t">累计盈亏 · 可核算 ' + counted + ' 天</div></div>' +
+      '<div class="inv-card"><div class="n pos">' + (best ? money(best.net) : '—') + '</div><div class="t">最高单日盈利' + (best ? ' · ' + esc(best.date) : '') + '</div></div>' +
       '</div>';
 
-    /* ① 方案分配：今天这 66 元怎么分、各买什么、全中多少 —— 用户拍板要表格不要一段话 */
+    /* 方案分配：今天这笔预算怎么分、各买什么、全中多少 */
     var bp = today && today.betPlan;
     if (bp && Array.isArray(bp.rows) && bp.rows.length) {
       var bpRows = bp.rows.map(function (r) {
@@ -1959,34 +1964,6 @@ function renderApp(days) {
         '<tr class="inv-total"><td colspan="3"><b>合计</b></td><td class="num"><b>' + esc(bp.total) + '</b></td><td></td><td></td></tr></table>' +
         (bp.note ? '<div class="inv-note">' + esc(bp.note) + '</div>' : '');
     }
-
-    /* ① 今日策略 = 一张场次表（不在页面上铺方案长文，详解仍走各自方案卡/弹层） */
-    if (today && (today.matches || []).length) {
-      var rows = today.matches.map(function (m) {
-        var res = m.finalScore
-          ? '<span class="final">' + esc(m.finalScore) + '</span> ' + mark(StatsLib.judgeDirection(m.direction, m.finalScore, m.spHandicap))
-          : '<span class="wait">待赛</span>';
-        return '<tr><td>' + esc(m.id) + '</td><td>' + esc(m.league) + '<br><span class="wait">' + esc(m.time) + '</span></td>' +
-          '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
-          '<td>' + (m.direction === '放弃' ? '<span class="wait">—</span>' : esc(m.direction || '—')) + dtagHtml(m.dirTag) + '</td>' +
-          '<td>' + esc(m.ahPick || '—') + '</td><td>' + esc(m.ouPick || '—') + '</td>' +
-          '<td>' + res + '</td></tr>';
-      }).join('');
-      html += '<div class="inv-h3">📋 今日策略 · ' + esc(today.date) + ' · ' + today.matches.length + ' 场</div>' +
-        '<table class="inv-table"><tr><th>编号</th><th>联赛/时间</th><th>对阵</th><th>方向</th><th>亚盘</th><th>大小</th><th>结果</th></tr>' + rows + '</table>';
-    }
-
-    /* ② 每日盈亏 = 只列数字（最近 14 天），累计列按时间正序累计 */
-    var recent = list.slice(0, 14);
-    var dRows = recent.map(function (d) {
-      var b = d.bank || {};
-      return '<tr><td>' + esc(d.date) + '</td><td class="num">' + (b.stake == null ? '—' : b.stake) + '</td>' +
-        '<td class="num">' + (b.ret == null ? '—' : b.ret) + '</td>' +
-        '<td class="num' + cls(b.net) + '">' + money(b.net) + '</td>' +
-        '<td class="num' + cls(accMap[d.date]) + '">' + money(accMap[d.date]) + '</td></tr>';
-    }).join('') || '<tr><td colspan="5">暂无记录</td></tr>';
-    html += '<div class="inv-h3">📅 每日盈亏 · 累计 ' + money(acc) + '（可核算 ' + counted + ' 天）</div>' +
-      '<table class="inv-table"><tr><th>日期</th><th>投入(元)</th><th>回收(元)</th><th>盈亏(元)</th><th>累计(元)</th></tr>' + dRows + '</table>';
 
     html += '<div style="font-size:11px;color:var(--muted);margin-top:10px">⚠️ 投入/回收按建日方案与赛后记录；未留赔率的票只记命中、不虚构回收。仅供研究参考，不构成投注建议。</div>';
     box.innerHTML = html;
