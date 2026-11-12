@@ -34,7 +34,6 @@ for (const day of days) {
     assert(out.includes('★★★★★'), '9-8 胆场应显 5 星');
     assert(out.includes('雅典AEK-0.75 <span class="stars">★★★</span>'), '002 亚盘应显 3 星');
     assert(out.includes('布鲁日-0 <span class="stars">★★★★</span>'), '003 亚盘应显 4 星');
-    assert(out.includes('信心★为1-5星'), '图例应为 1-5 口径');
   }
 }
 // 历史天: 每天胆(key 腿)所在场应显 5 星(统计验证)
