@@ -200,10 +200,13 @@ const mkBd = (legs, unit) => {
   return { issue: '26114', legs, stakes: 2 ** dbl, unit: u, cost: 2 ** dbl * u, result: null };
 };
 const lateAsianLegs = [
+  { id: '周四001', pick: '土耳其+0.75', odds: '1.80', reason: '受半/一主水 1.80 低, 资金侧。' },
+  { id: '周四002', pick: '塞浦路斯+0.25', odds: '1.79', reason: '客水 1.79 低, 争头名动力。' },
+  { id: '周四003', pick: '芬兰+0.5', odds: '1.86', reason: '客水 1.86 低, 资金侧。' },
   { id: '周四004', pick: '黑山-1.5', odds: '1.92', reason: '赢球锁头名, 球半平水。' },
+  { id: '周四005', pick: '英格兰-1.75', odds: '1.90', reason: '主水 1.90 低, 赢球锁前二。' },
   { id: '周四006', pick: '捷克+2', odds: '1.86', reason: '西班牙让两球且亚马尔缺阵。' },
-  { id: '北单026', pick: '白俄罗斯-2', odds: '1.84', reason: '客水 1.84 低, 实力差。' },
-  { id: '周四002', pick: '塞浦路斯+0.25', odds: '1.79', reason: '客水 1.79 低, 争头名动力。' }
+  { id: '北单026', pick: '白俄罗斯-2', odds: '1.84', reason: '客水 1.84 低, 实力差。' }
 ];
 const earlyAsianLegs = [
   { id: '北单028', pick: '庞特普雷塔+1', odds: '1.79', reason: '受一球主水低, 资金侧。' },
@@ -231,7 +234,7 @@ const toBd = legs => legs.map(l => ({
 const slot8 = {
   early: { asian: mkAsian(toAsian(earlyAsianLegs), 32), beidan: mkBd(toBd(earlyBdLegs), 6), review: '早场(06:00-17:59)=巴西乙末轮 2 场 + 阿根廷超级杯 + CNL 八强首回合(06:00-08:30), 亚盘 4 腿 32 元 + 北单 2 关 4 注 24 元。' },
   night: { asian: mkAsian([]), beidan: mkBd([]), review: '夜场(18:00-23:59)本日无赛事: 欧国联与南美场次全部在次日凌晨/上午。' },
-  late: { asian: mkAsian(toAsian(lateAsianLegs), 40), beidan: mkBd(toBd(lateBdLegs), 6), review: '深夜(次日00:00-05:59)=欧国联第 5 轮 7 场(01:00-03:45), 亚盘 4 腿 40 元 + 北单 3 关 8 注 48 元。' }
+  late: { asian: mkAsian(toAsian(lateAsianLegs), 40), beidan: mkBd(toBd(lateBdLegs), 6), review: '深夜(次日00:00-05:59)=欧国联第 5 轮 7 场(01:00-03:45), 亚盘 7 腿 40 元(场次只够 7 腿, 不足 8 拖不硬凑) + 北单 3 关 8 注 48 元。' }
 };
 
 const plan = [
@@ -271,7 +274,7 @@ const betPlan = {
     { tier: '增强', name: 'asian7 4 关', detail: '黑山-1.5 / 捷克+2 / 门多萨独立+0.25 / 库拉索+0.25', stake: 40, odds: ahOdds.toFixed(1), payout: (40 * ahOdds).toFixed(1) },
     { tier: '增强', name: '大小 2 串', detail: '006 大 3.25 / 031 小 2.25', stake: 20, odds: ouOdds.toFixed(1), payout: (20 * ouOdds).toFixed(1) },
     { tier: '北单', name: '4 关 16 注', detail: '022 1/0 · 026 0/1 · 029 1/0 · 031 3/1（每注 6 元）', stake: 96, odds: '浮动 SP', payout: '以官方为准' },
-    { tier: '深夜', name: '亚盘 4 腿', detail: '土耳其+0.75 / 黑山-1.5 / 捷克+2 / 白俄罗斯-2', stake: 40, odds: lateAhOdds.toFixed(1), payout: (40 * lateAhOdds).toFixed(1) },
+    { tier: '深夜', name: '亚盘 7 腿', detail: '土耳其+0.75 / 塞浦路斯+0.25 / 芬兰+0.5 / 黑山-1.5 / 英格兰-1.75 / 捷克+2 / 白俄罗斯-2', stake: 40, odds: lateAhOdds.toFixed(1), payout: (40 * lateAhOdds).toFixed(1) },
     { tier: '深夜', name: '北单 3 关', detail: '022 1/0 · 026 0/1 · 027 3/1（8 注×6 元）', stake: 48, odds: '浮动 SP', payout: '以官方为准' },
     { tier: '早场', name: '亚盘 4 腿', detail: '庞特普雷塔+1 / 门多萨独立+0.25 / 巴西竞技+0.5 / 库拉索+0.25', stake: 32, odds: earlyAhOdds.toFixed(1), payout: (32 * earlyAhOdds).toFixed(1) },
     { tier: '早场', name: '北单 2 关', detail: '029 1/0 · 031 3/1（4 注×6 元）', stake: 24, odds: '浮动 SP', payout: '以官方为准' }
