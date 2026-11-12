@@ -111,6 +111,15 @@
   .inv-note { font-size:11px; color:var(--muted); margin-top:6px; }
   /* 方案卡正文只留两行, 全文进「详解」弹层 —— 页面不再被长句淹没 */
   .pb-text { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  /* 🀄 北单卡里的腿池表(2026-11-12 起): 按信心从高到低排名, 表是卡片的一部分, 不折叠 */
+  .pb-pool-h3 { font-size:12px; font-weight:800; color:var(--honey-dark); margin:10px 0 6px; }
+  .pl-table { width:100%; border-collapse:collapse; }
+  .pl-table th { font-size:11px; color:var(--muted); font-weight:800; text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  .pl-table td { font-size:12px; padding:5px 6px; border-bottom:1px dashed var(--line); vertical-align:top; }
+  .pl-table td.num { font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .pl-hc { font-size:11px; color:var(--muted); margin-left:3px; white-space:nowrap; }
+  .pl-stars { color:var(--honey-dark); font-weight:800; white-space:nowrap; }
+  .pl-why { color:var(--brown-soft); font-size:11.5px; line-height:1.55; }
   .d7-table td { font-size:12.5px; vertical-align:top; }
   .d7-table td:first-child { width:30px; font-weight:800; color:var(--honey-dark); }
   .d7-league { font-weight:700; color:var(--brown); white-space:nowrap; }
@@ -1444,10 +1453,31 @@ function renderApp(days) {
       html += '<div class="plan-group-title">' + g.title + '<span class="pg-tag">' + g.tag + '</span></div>' +
         '<div class="plan-blocks">' + tiers.map(function (x) {
           var c = TIER_COLORS[x.i % TIER_COLORS.length];
+          /* 🀄 北单卡: 腿池表(2026-11-12 用户拍板「总览按信心排行, 从高到低我自己选择」)——
+             腿池 = day.beidan310.legs, 带 rank(1=最强)/conf(★)/note(依据) 才出表, 按 rank 升序;
+             老日子没有 rank → 不出表, 卡片只有正文, 与以前完全一致 */
+          var poolHtml = '';
+          var bdLegs = (g.key === 'bd' && day.beidan310 && Array.isArray(day.beidan310.legs)) ? day.beidan310.legs : [];
+          if (bdLegs.length && bdLegs.every(function (l) { return l && l.rank != null; })) {
+            var pool = bdLegs.slice().sort(function (a, b) { return Number(a.rank) - Number(b.rank); });
+            var prows = pool.map(function (l) {
+              var hc = Number(l.handicap);
+              var hcTxt = '让' + (hc > 0 ? '+' + hc : hc);
+              return '<tr><td class="num">' + esc(l.rank) + '</td>' +
+                '<td>' + esc(l.match) + '</td>' +
+                '<td><b>' + esc(l.pick) + '</b><span class="pl-hc">[' + esc(hcTxt) + ']</span></td>' +
+                '<td class="num">' + esc((l.sp3 || []).join('/')) + '</td>' +
+                '<td class="pl-stars">' + '★'.repeat(Number(l.conf) || 0) + '</td>' +
+                '<td class="pl-why">' + esc(l.note || '') + '</td></tr>';
+            }).join('');
+            poolHtml = '<div class="pb-pool-h3">🀄 腿池总览 · 按信心从高到低(自己挑腿组票)</div>' +
+              '<table class="d7-table pl-table"><tr><th>#</th><th>场次</th><th>选择</th><th>参考SP</th><th>信心</th><th>依据</th></tr>' + prows + '</table>';
+          }
           return '<a class="plan-block" href="#!" data-modal="tier" data-date="' + esc(day.date) + '" data-idx="' + x.i + '" style="border-top-color:' + c + '">' +
             '<div class="pb-head">' + esc(x.t.name) + planBadge(x.t) + '</div>' +
             '<div class="pb-pct" style="color:' + c + '">' + esc(x.t.pct) + '</div>' +
             '<div class="pb-text">' + esc(x.t.text) + '</div>' +
+            poolHtml +
             // 卡片正文里把让球-only 的场当胜平负写了 → 挂一句口径说明(见 assets/live-odds.js noHadNote);
             // 正文一个字都不动, 只在下面加这一行算出来的提醒
             (x.t.noHadNote ? '<div class="pb-note">' + esc(x.t.noHadNote) + '</div>' : '') +
