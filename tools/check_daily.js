@@ -153,6 +153,70 @@ if (c7legs.length) {
   }
 });
 
+// ---- V4.7 胆专项纪律(2026-11-11, 用户「以后重点保证胆的命中率」) ----
+//   回测(tools/_research_banker1111.js, 95 天): 胆 23/26=88.5%, 单选 14/36=38.9%;
+//   3 个黑胆全部落在区间外: 主 1.12(超深赔)、客 1.26(客场超深)、客 1.56(客场浅赔)。
+//   区间内 20/20 全红 ⇒ 机器可校验的三条: ①每日 ≤2 胆 ②胆不做平 ③主场胆 SP 1.20-1.50 / 客场胆 1.30-1.50
+//   ④盘路 verdict 出现「诱上盘/资金反向下盘/真冷」的场不作胆(人工可覆盖: ALLOW_BANKER_CONTRA=1)
+if (day.date >= "2026-11-12") {
+  const bankers = (day.matches || []).filter(m => /胆/.test(String(m.dirTag || "")));
+  if (bankers.length > 2) violations.push(`[胆] 当日 ${bankers.length} 个胆场: V4.7 上限 2`);
+  bankers.forEach(m => {
+    const isHome = m.direction === "主胜";
+    if (m.direction === "平") violations.push(`[胆] ${m.id} 胆不得做平局`);
+    const sp = Array.isArray(m.sp) ? Number(m.sp[m.direction === "主胜" ? 0 : m.direction === "客胜" ? 2 : 1]) : null;
+    if (sp != null) {
+      const lo = isHome ? 1.2 : 1.3, hi = 1.5;
+      if (sp < lo || sp > hi) violations.push(`[胆] ${m.id} ${m.direction} SP ${sp} 不在${isHome ? "主场 1.20-1.50" : "客场 1.30-1.50"} 胆区间`);
+    }
+    if (process.env.ALLOW_BANKER_CONTRA !== "1" && m.ahMoves && /诱上盘|资金反向下盘|真冷/.test(String(m.ahMoves.verdict || ""))) {
+      violations.push(`[胆] ${m.id} 胆场盘路与方向相反(${m.ahMoves.verdict})`);
+    }
+  });
+}
+
+// ---- V4.8 方向层不得逆资金(2026-11-12, 用户拍板「按新规则重新输出」) ----
+//   动因=11-11 北单017 阿蒂斯: note 写「资金站受让方主队」, 方向仍推客胜 1/0, 结果 2-1 主胜 ——
+//   同一场两套口径同时出票, 方向与北单双黑、只有亚盘红。
+//   资金侧 = 澳彩让球盘(ah)水位低的一侧; 水位差 <0.05 视为平水不判(噪声)。
+//   规则: 方向与资金侧相反 ⇒ 必须改跟资金, 或 dirTag='弃选' 且 direction='放弃';
+//         弃选场不得进 beidan310 / dream7 / slot8 北单。
+if (day.date >= "2026-11-12") {
+  const moneySideOf = (m) => {
+    const h = Number(m.ah && m.ah.home), a = Number(m.ah && m.ah.away);
+    if (!isFinite(h) || !isFinite(a) || Math.abs(h - a) < 0.05) return null;
+    return h < a ? "主胜" : "客胜";
+  };
+  (day.matches || []).forEach(m => {
+    const side = moneySideOf(m);
+    if (!side) return;
+    const pick = String(m.direction || "");
+    if (pick !== "主胜" && pick !== "客胜") return;
+    if (pick === side) return;
+    if (m.dirTag === "弃选" || pick === "放弃") return;
+    violations.push(`[资金] ${m.id} ${m.home}vs${m.away} 方向 ${pick} 与澳彩资金侧(${side}, ${m.ah.home}/${m.ah.away})相反: 改跟资金或 dirTag=弃选/direction=放弃`);
+  });
+  const ditched = (day.matches || []).filter(m => m.dirTag === "弃选");
+  if (ditched.length) {
+    const hitDitch = (l) => {
+      const t = String(l.match || "");
+      return ditched.some(m => t.indexOf(m.home) !== -1 && t.indexOf(m.away) !== -1);
+    };
+    ((day.beidan310 && day.beidan310.legs) || []).filter(hitDitch)
+      .forEach(l => violations.push(`[资金] 弃选场 ${l.match} 不得进北单310`));
+    ((day.dream7 && day.dream7.legs) || []).filter(hitDitch)
+      .forEach(l => violations.push(`[资金] 弃选场 ${l.match} 不得进梦想7关`));
+    ["early", "night", "late"].forEach(s => {
+      const b = day.slot8 && day.slot8[s];
+      ((b && b.beidan && b.beidan.legs) || []).filter(hitDitch)
+        .forEach(l => violations.push(`[资金] 弃选场 ${l.match} 不得进${s}北单`));
+    });
+    if (ditched.some(m => String(m.direction || "") !== "放弃")) {
+      violations.push(`[资金] 弃选场 direction 必须写「放弃」(否则仍计入方向层统计)`);
+    }
+  }
+}
+
 // ---- 场次下限(2026-09-18 立, **2026-09-21 修订: 薄日按实际出**) ----
 //   原规则「每日 ≥15 场」= 竞彩全盘 + 北单补足。9-21 是它第一次真的卡住: 全球赛程就那么多
 //   (竞彩在售仅 1 场 + 北单窗口 11 场, 去重后 11 场, 一支五大联赛球队都没有), 硬卡会把整天挡死。

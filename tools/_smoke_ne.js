@@ -81,7 +81,7 @@ const harness = [
   'var calState = { sel: "2026-11-08" };',
   'var byDate = {}; var days = [];',
   'function pickDay(pred) { var sel = byDate[calState.sel]; return (sel && pred(sel)) ? sel : days.find(pred); }',
-  grabFn('esc'), grabFn('renderSlot8'), grabFn('renderScore3'), grabFn('renderDailyPost'), grabFn('renderInvest')
+  grabFn('esc'), grabFn('dtagHtml'), grabFn('mark'), grabFn('renderSlot8'), grabFn('renderScore3'), grabFn('renderDailyPost'), grabFn('renderInvest')
 ];
 const boxes = {};
 const sandbox = {
@@ -128,19 +128,24 @@ assert(boxes.dailyPostBox.innerHTML.includes('完整复盘正文'), '字符串da
 
 const investDays = Array.from({ length: 8 }, (_, i) => ({
   date: '2026-11-' + String(8 - i).padStart(2, '0'),
+  bank: { stake: 100 + i, ret: 130 + i, net: i % 2 ? -20 : 30 },
+  matches: i === 0 ? [{
+    id: '周四001', league: '欧国联', time: '01:00', home: '土耳其', away: '比利时',
+    direction: '客胜', dirTag: '双选', ahPick: '土耳其+0.75', ouPick: '小3.25'
+  }] : [],
   plan: [{ name: '💰 投注建议', pct: '方案' + (100 + i) + '元', result: i % 2 ? 'miss' : 'hit', text: '第' + (i + 1) + '天方案明细' }]
 }));
 sandbox.days = investDays;
 vm.runInContext('renderInvest(days)', sandbox);
 const investHtml = boxes.investBody.innerHTML;
-assert.strictEqual((investHtml.match(/<table/g) || []).length, 2, '投资策略应为三层策略表+每日方案表');
-['层级', '稳定层', '增强层', '彩票层', '日期', '方案金额', '结果', '方案明细', '第7天方案明细'].forEach(text => {
-  assert(investHtml.includes(text), '投资策略表格应包含「' + text + '」');
+assert.strictEqual((investHtml.match(/<table/g) || []).length, 2, '投资策略应为「今日策略表 + 每日盈亏表」两张表');
+['今日投入', '今日盈亏', '累计盈亏', '今日策略', '每日盈亏', '投入(元)', '回收(元)', '盈亏(元)', '累计(元)', '土耳其'].forEach(text => {
+  assert(investHtml.includes(text), '投资策略应包含「' + text + '」');
 });
-['入场条件', '仓位依据', '风险控制', '复盘口径', '何时不做'].forEach(text => {
-  assert(investHtml.includes(text), '投资策略必须详述「' + text + '」');
+['入场条件', '仓位依据', '风险控制', '复盘口径', '何时不做', '第1天方案明细', '方案金额', '方案明细'].forEach(text => {
+  assert(!investHtml.includes(text), '投资策略不应再出现长文/旧列「' + text + '」');
 });
-assert(!investHtml.includes('第8天方案明细'), '每日方案只展示近7日');
+assert(investHtml.includes('可核算 8 天'), '累计盈亏应标注可核算天数');
 assert(!investHtml.includes('已证伪砍掉') && !investHtml.includes('比分已砍'), '应删除过期砍板块文案');
 
-console.log('SMOKE OK — 五栏目取消、slot8三档六票、score3 3×3及旧单值、投资双表格全过');
+console.log('SMOKE OK — 五栏目取消、slot8三档六票、score3 3×3及旧单值、投资=今日策略表+每日盈亏表全过');

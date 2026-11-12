@@ -98,10 +98,17 @@
   .dpost-wcard { background:#FFF; border:1px solid #F3E3C3; border-radius:12px; padding:12px 14px; margin-bottom:10px; }
   .dpost-wlabel { font-size:12px; font-weight:700; color:var(--honey-dark); margin-bottom:6px; }
   .dpost-wtext { white-space:pre-wrap; font-size:12.5px; line-height:1.85; color:#4A3A28; }
-  /* 💰 投资策略三层导读(2026-11-09, 置于策略表之前) */
-  .invest-guide { background:#FFF8EC; border:1px solid #F3E3C3; border-radius:12px; padding:12px 14px; margin-bottom:10px; }
-  .invest-guide h3 { font-size:13px; color:var(--brown); margin:0 0 6px; }
-  .invest-guide p { font-size:12.5px; line-height:1.9; color:#4A3A28; margin:0; }
+  /* 💰 投资策略(2026-11-12 用户拍板: 去掉三层长文, 只要数字+两张表) */
+  .inv-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin:4px 0 14px; }
+  .inv-card { background:#FFF8EC; border:1px solid #F3E3C3; border-radius:12px; padding:12px 14px; }
+  .inv-card .n { font-size:22px; font-weight:800; color:var(--brown); font-variant-numeric:tabular-nums; }
+  .inv-card .n.pos { color:var(--green); } .inv-card .n.neg { color:var(--coral); }
+  .inv-card .t { font-size:11.5px; color:var(--muted); margin-top:3px; }
+  .inv-h3 { font-size:13px; color:var(--brown); margin:16px 0 6px; font-weight:800; }
+  .inv-table th, .inv-table td { font-size:12px; }
+  .inv-table td.num { font-variant-numeric:tabular-nums; white-space:nowrap; }
+  /* 方案卡正文只留两行, 全文进「详解」弹层 —— 页面不再被长句淹没 */
+  .pb-text { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .d7-table td { font-size:12.5px; vertical-align:top; }
   .d7-table td:first-child { width:30px; font-weight:800; color:var(--honey-dark); }
   .d7-league { font-weight:700; color:var(--brown); white-space:nowrap; }
@@ -373,7 +380,9 @@
     .mv-table td::before { content:attr(data-label); display:inline-block; color:var(--muted); font-weight:700; font-size:10.5px; margin-right:6px; }
   }
   .dtag { font-size:10px; font-weight:800; border-radius:4px; padding:0 4px; margin-left:3px; }
-  .dtag-dan { background:var(--coral); color:#fff; }
+  /* 胆=金色(与对阵旁「胆」徽章同色, 只给当日重仓胆场); 单选=红, 双选=蓝 —— 三者必须一眼分开 */
+  .dtag-dan { background:#F5A623; color:#fff; }
+  .dtag-danxuan { background:var(--coral); color:#fff; }
   .dtag-shuang { background:#4A90D9; color:#fff; }
   .dtag-tuo { background:var(--muted); color:#fff; }
   .dtag-qi { background:#E3E3E3; color:#999; }
@@ -480,7 +489,7 @@
       <div id="dailyPostBox"></div>
       <div id="movesRadar"></div>
       <div class="panel" id="investPanel">
-        <h2>💰 投资策略<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">三层仓位逻辑 · 入场与空仓条件 · 近7日方案明细</span></h2>
+        <h2>💰 投资策略<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">今日投入 · 每日盈亏 · 累计盈亏</span></h2>
         <div id="investBody"></div>
       </div>
       <h2 class="sec-title">📊 每日预测总览</h2>
@@ -1917,40 +1926,57 @@ function renderApp(days) {
     renderColumnPanel('neBody', ne, '还没有深夜/白天场次记录，小熊等补充场 🐾', sum, true);
   }
 
-  // ---- 💰 投资策略：三层策略表 + 近7日每日方案表 ----
+  // ---- 💰 投资策略（2026-11-12 用户拍板：去掉三层长文，只要 今日/累计盈亏 + 两张表） ----
   renderInvest(days);
   function renderInvest(days) {
     var box = document.getElementById('investBody');
     if (!box) return;
-    function rich(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>'); }
-    function resultTxt(r) { return ({ hit: '🔴 红', miss: '⚫ 黑', half: '🌗 半红', push: '➖ 走水' })[r] || '待赛'; }
-    var layers = [
-      ['🛡 稳定层', '胆 SP≤1.5；无胆、SP超限或忌日则空仓', '每日10元；空仓优先于强行出手', '低SP胆历史回测为正期望'],
-      ['🎲 增强层', '亚盘/大小球小串，仅作娱乐练手', '每日2元；不追加、不补损', '历史ROI接近打平，控制仓位'],
-      ['🎫 彩票层', '北单小复式等波动方案', '≤128元、每周≤2次，只用累计盈利', '收益由少数大中贡献，回撤可能超本金']
-    ];
-    var guide = [
-      ['🛡 稳定层', '入场条件：胆必须同时满足 SP、基本面、盘口与信息面的约束，缺一项就不进稳定层。仓位依据：只用固定小额，不因为连红加仓，单笔金额在建日就写死。何时不做：没有合规胆、SP 超过 1.5、或者忌日与信息面冲突时直接空仓，空仓不是失败。风险控制：胆仓与其余仓位分开记账，避免用一次大注追回前一天的亏损。复盘口径：胆与单选分开统计，不用双选的高命中率掩盖单选的波动。'],
-      ['🎲 增强层', '入场条件：亚盘与大小球必须同时有球队结构依据和盘口依据，单证不出手。仓位依据：只投娱乐小注，串关会成倍放大单腿错误，关数越多越要减额。何时不做：当天没有双证场次、或者建日拿不到真实赔率时不做，宁可空一天。风险控制：半红、走水按真实结算口径记录，不追损、不补单。复盘口径：赛前必须留存每条腿的赔率和水位，没留档的只记命中率，不虚构回收金额。'],
-      ['🎫 彩票层', '入场条件：北单、足彩和任九只使用预算内的资金，不挪用稳定层和增强层的额度。仓位依据：北单做小复式，足彩与任九按当期预算固定注数，超预算的票只展示、不实际投入。何时不做：需要滚存、或者想靠加注补前一日亏损时停手；每周不超过两次。风险控制：彩票层的回撤可能超过本金，接受这一点再入场。复盘口径：北单浮动 SP 只作名义口径，官方 SP 出来后重算；展示票不计实际投入。']
-    ];
-    var guideHtml = guide.map(function (r) {
-      return '<div class="invest-guide"><h3>' + esc(r[0]) + '</h3><p>' + esc(r[1]) + '</p></div>';
-    }).join('');
-    var html = guideHtml + '<table><tr><th>层级</th><th>方案</th><th>金额与纪律</th><th>回测结论</th></tr>' + layers.map(function (r) {
-      return '<tr><td><b>' + esc(r[0]) + '</b></td><td>' + esc(r[1]) + '</td><td>' + esc(r[2]) + '</td><td>' + esc(r[3]) + '</td></tr>';
-    }).join('') + '</table>';
-    var cards = [];
-    (days || []).forEach(function (d) {
-      var c = (d.plan || []).find(function (p) { return p.name === '💰 投注建议'; });
-      if (c) cards.push({ date: d.date, pct: c.pct || '—', result: c.result, text: c.text || '' });
-    });
-    var dailyRows = cards.slice(0, 7).map(function (c) {
-      return '<tr><td>' + esc(c.date) + '</td><td>' + esc(c.pct) + '</td><td>' + resultTxt(c.result) + '</td><td>' + rich(c.text) + '</td></tr>';
-    }).join('') || '<tr><td colspan="4">暂无每日方案记录</td></tr>';
-    html += '<h3 style="font-size:13px;color:var(--brown);margin:16px 0 6px">🗓 近7日每日方案</h3>' +
-      '<table><tr><th>日期</th><th>方案金额</th><th>结果</th><th>方案明细</th></tr>' + dailyRows + '</table>';
-    html += '<div style="font-size:11px;color:var(--muted);margin-top:10px">⚠️ 仅供研究参考，不构成投注建议；历史回测不代表未来收益；绝不滚存加注，休市期停手。请遵守所在地法律法规，理性购彩。</div>';
+    function money(v) { return v == null ? '—' : (v > 0 ? '+' : '') + Number(v).toFixed(2); }
+    function cls(v) { return v == null ? '' : v > 0 ? ' pos' : v < 0 ? ' neg' : ''; }
+
+    var list = (days || []).slice();
+    var today = list[0] || null;
+    var tb = (today && today.bank) || {};
+    // 累计口径：只累加有净值的日子（复盘里写不出金额的不臆造）
+    var asc = list.slice().reverse(), acc = 0, accMap = {};
+    asc.forEach(function (d) { if (d.bank && d.bank.net != null) acc += d.bank.net; accMap[d.date] = acc; });
+    var counted = asc.filter(function (d) { return d.bank && d.bank.net != null; }).length;
+
+    var html = '<div class="inv-cards">' +
+      '<div class="inv-card"><div class="n">' + (tb.stake == null ? '—' : tb.stake + ' 元') + '</div><div class="t">今日投入' + (today ? ' · ' + esc(today.date) : '') + '</div></div>' +
+      '<div class="inv-card"><div class="n' + cls(tb.net) + '">' + (tb.net == null ? '待赛' : money(tb.net)) + '</div><div class="t">今日盈亏' + (tb.ret != null ? ' · 回收 ' + tb.ret + ' 元' : '') + '</div></div>' +
+      '<div class="inv-card"><div class="n' + cls(acc) + '">' + money(acc) + '</div><div class="t">累计盈亏 · 可核算 ' + counted + ' 天</div></div>' +
+      '</div>';
+
+    /* ① 今日策略 = 一张场次表（不在页面上铺方案长文，详解仍走各自方案卡/弹层） */
+    if (today && (today.matches || []).length) {
+      var rows = today.matches.map(function (m) {
+        var res = m.finalScore
+          ? '<span class="final">' + esc(m.finalScore) + '</span> ' + mark(StatsLib.judgeDirection(m.direction, m.finalScore, m.spHandicap))
+          : '<span class="wait">待赛</span>';
+        return '<tr><td>' + esc(m.id) + '</td><td>' + esc(m.league) + '<br><span class="wait">' + esc(m.time) + '</span></td>' +
+          '<td>' + esc(m.home) + ' vs ' + esc(m.away) + '</td>' +
+          '<td>' + (m.direction === '放弃' ? '<span class="wait">—</span>' : esc(m.direction || '—')) + dtagHtml(m.dirTag) + '</td>' +
+          '<td>' + esc(m.ahPick || '—') + '</td><td>' + esc(m.ouPick || '—') + '</td>' +
+          '<td>' + res + '</td></tr>';
+      }).join('');
+      html += '<div class="inv-h3">📋 今日策略 · ' + esc(today.date) + ' · ' + today.matches.length + ' 场</div>' +
+        '<table class="inv-table"><tr><th>编号</th><th>联赛/时间</th><th>对阵</th><th>方向</th><th>亚盘</th><th>大小</th><th>结果</th></tr>' + rows + '</table>';
+    }
+
+    /* ② 每日盈亏 = 只列数字（最近 14 天），累计列按时间正序累计 */
+    var recent = list.slice(0, 14);
+    var dRows = recent.map(function (d) {
+      var b = d.bank || {};
+      return '<tr><td>' + esc(d.date) + '</td><td class="num">' + (b.stake == null ? '—' : b.stake) + '</td>' +
+        '<td class="num">' + (b.ret == null ? '—' : b.ret) + '</td>' +
+        '<td class="num' + cls(b.net) + '">' + money(b.net) + '</td>' +
+        '<td class="num' + cls(accMap[d.date]) + '">' + money(accMap[d.date]) + '</td></tr>';
+    }).join('') || '<tr><td colspan="5">暂无记录</td></tr>';
+    html += '<div class="inv-h3">📅 每日盈亏 · 累计 ' + money(acc) + '（可核算 ' + counted + ' 天）</div>' +
+      '<table class="inv-table"><tr><th>日期</th><th>投入(元)</th><th>回收(元)</th><th>盈亏(元)</th><th>累计(元)</th></tr>' + dRows + '</table>';
+
+    html += '<div style="font-size:11px;color:var(--muted);margin-top:10px">⚠️ 投入/回收按建日方案与赛后记录；未留赔率的票只记命中、不虚构回收。仅供研究参考，不构成投注建议。</div>';
     box.innerHTML = html;
   }
 
@@ -2062,7 +2088,9 @@ function renderApp(days) {
   }
 
   function dtagHtml(tag) {
-    var map = { '单选': 'dtag-dan', '双选': 'dtag-shuang', '入拖': 'dtag-tuo', '弃选': 'dtag-qi', '让球': 'dtag-rang' };
+    /* 2026-11-12 用户拍板「胆要单独标记」: 胆=金/单选=红/双选=蓝, 三者一眼分开;
+       此前「单选」误用 dtag-dan(珊瑚红)样式, 视觉上被当成胆 */
+    var map = { '胆': 'dtag-dan', '单选': 'dtag-danxuan', '双选': 'dtag-shuang', '入拖': 'dtag-tuo', '弃选': 'dtag-qi', '让球': 'dtag-rang' };
     return tag && map[tag] ? ' <span class="dtag ' + map[tag] + '">' + esc(tag) + '</span>' : '';
   }
 
@@ -2082,10 +2110,11 @@ function renderApp(days) {
   }
 
   function matchTable(day) {
-    // 胆标记：过关串 key=true 的腿对应的对阵，在「对阵」列加胆徽章（combo7 优先, 老日子回退 max7）
+    // 胆标记：三源合一 —— ①matches[].dirTag==='胆'(2026-11-12 起建池直接标) ②combo7 key 腿 ③老日子 max7 key 腿
     var danBlk = day.combo7 || day.max7;
     var keyLegs = (danBlk && Array.isArray(danBlk.legs) ? danBlk.legs : []).filter(function (l) { return l && l.key; });
     function isKeyMatch(m) {
+      if (m.dirTag === '胆') return true;
       return keyLegs.some(function (l) {
         var t = String(l.match || '');
         return t.indexOf(m.home) !== -1 && t.indexOf(m.away) !== -1;
@@ -2194,7 +2223,7 @@ function renderApp(days) {
         (m.note ? '<tr class="an-row" style="display:none"><td colspan="' + (day._showAhCol ? 8 : 7) + '">📋 ' + esc(m.note) + '</td></tr>' : '');
     }).join('');
     return '<table><tr><th></th><th>编号</th><th>联赛/时间</th><th>对阵</th><th>赛果</th>' + (day._showAhCol ? '<th>🌏亚盘（让球/大小/盘口）</th>' : '') + '<th>🎫竞彩（方向/总进球/比分/SP）</th><th>判定（方向/大小/比分）</th></tr>' + rows + '</table>' +
-      '<div class="table-legend">「🌏亚盘」列在左、「🎫竞彩」列在右，两列独立并排、单元格内条目逐行对齐：亚盘列=亚洲盘口径（第1行让球观点+信心★ / 第2行大小球观点+信心★ / 第3行球探澳门盘临场盘口水位；<b>每场定位场必推</b>，信心★为1-5星：★1-2=低信心只展示、★3-4=可入 asian7/大小盘串关、★5=胆级；<b>无★=不推荐，仅为低水侧简易判断参考</b>）；竞彩列=竞彩口径（<b>方向一律官方口径词：胜/平/负，官方既不写"主胜/客胜"、让球盘写"让球胜/让球平/让球负"</b>；第1行方向+徽章+信心★(1-5星，★5=当日胆) / 第2行总进球 / 第3行比分 / 第4行「胜负」盘赔率 / 第5行「让球胜负(盘口)」盘赔率，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>，赛后让球标「结算:让胜/让平/让负」；官方只开让球没开胜平负的场，「胜负」行写「无(官方未开)」，方向改走让球口径并挂「让球」徽章）。两体系独立判断，允许表达不同（如诱盘场竞彩不反向、亚盘推下盘）。方向旁徽章=信心标签(单选>双选>入拖>弃选)；💡 合成观点在对阵列(仅 8-28 起新日期有)；9-5 及更早日期亚盘列只显盘口数据无观点，无盘口数据日期整列隐藏。判定列=竞彩口径方向/大小/比分；点 🔍 展开本场分析；对阵旁 <span style="background:#F5A623;color:#fff;border-radius:4px;padding:0 4px;font-weight:800">胆</span> = 当日综合过关胆拖的最有信心单选</div>';
+      '<div class="table-legend">「🌏亚盘」列在左、「🎫竞彩」列在右，两列独立并排、单元格内条目逐行对齐：亚盘列=亚洲盘口径（第1行让球观点+信心★ / 第2行大小球观点+信心★ / 第3行球探澳门盘临场盘口水位；<b>每场定位场必推</b>，信心★为1-5星：★1-2=低信心只展示、★3-4=可入 asian7/大小盘串关、★5=胆级；<b>无★=不推荐，仅为低水侧简易判断参考</b>）；竞彩列=竞彩口径（<b>方向一律官方口径词：胜/平/负，官方既不写"主胜/客胜"、让球盘写"让球胜/让球平/让球负"</b>；第1行方向+徽章+信心★(1-5星，★5=当日胆) / 第2行总进球 / 第3行比分 / 第4行「胜负」盘赔率 / 第5行「让球胜负(盘口)」盘赔率，<b class="sp-hot">橙=预测方向</b>　<b class="sp-win">绿=实际打出</b>，赛后让球标「结算:让胜/让平/让负」；官方只开让球没开胜平负的场，「胜负」行写「无(官方未开)」，方向改走让球口径并挂「让球」徽章）。两体系独立判断，允许表达不同（如诱盘场竞彩不反向、亚盘推下盘）。方向旁徽章：<b style="color:#F5A623">金「胆」=当日重仓胆场</b>／<b style="color:#E8543F">红「单选」=单点单选</b>／<b style="color:#4A90D9">蓝「双选」</b>／灰「入拖」「弃选」（2026-11-12 起胆场 dirTag 直接写「胆」, 三者颜色分开）；💡 合成观点在对阵列(仅 8-28 起新日期有)；9-5 及更早日期亚盘列只显盘口数据无观点，无盘口数据日期整列隐藏。判定列=竞彩口径方向/大小/比分；点 🔍 展开本场分析；对阵旁 <span style="background:#F5A623;color:#fff;border-radius:4px;padding:0 4px;font-weight:800">胆</span> = 当日重仓胆场（matches.dirTag=「胆」 或历史过关串 key 腿）</div>';
   }
 }
 </script>
