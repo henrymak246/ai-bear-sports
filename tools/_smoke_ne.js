@@ -129,6 +129,10 @@ assert(boxes.dailyPostBox.innerHTML.includes('完整复盘正文'), '字符串da
 const investDays = Array.from({ length: 8 }, (_, i) => ({
   date: '2026-11-' + String(8 - i).padStart(2, '0'),
   bank: { stake: 100 + i, ret: 130 + i, net: i % 2 ? -20 : 30 },
+  betPlan: i === 0 ? { total: 66, note: '北单浮动 SP', rows: [
+    { tier: '稳定', name: '单选', detail: '黑山 主胜 1.20', stake: 2, odds: '1.20', payout: '2.40' },
+    { tier: '增强', name: 'asian7 4 关', detail: '四腿内容', stake: 2, odds: '11.5', payout: '23.0' }
+  ] } : null,
   matches: i === 0 ? [{
     id: '周四001', league: '欧国联', time: '01:00', home: '土耳其', away: '比利时',
     direction: '客胜', dirTag: '双选', ahPick: '土耳其+0.75', ouPick: '小3.25'
@@ -138,8 +142,8 @@ const investDays = Array.from({ length: 8 }, (_, i) => ({
 sandbox.days = investDays;
 vm.runInContext('renderInvest(days)', sandbox);
 const investHtml = boxes.investBody.innerHTML;
-assert.strictEqual((investHtml.match(/<table/g) || []).length, 2, '投资策略应为「今日策略表 + 每日盈亏表」两张表');
-['今日投入', '今日盈亏', '累计盈亏', '今日策略', '每日盈亏', '投入(元)', '回收(元)', '盈亏(元)', '累计(元)', '土耳其'].forEach(text => {
+assert.strictEqual((investHtml.match(/<table/g) || []).length, 3, '投资策略应为「方案分配表 + 今日策略表 + 每日盈亏表」三张表');
+['今日投入', '今日盈亏', '累计盈亏', '方案分配', '今日策略', '每日盈亏', '投入(元)', '回收(元)', '盈亏(元)', '累计(元)', '土耳其', '全中回报'].forEach(text => {
   assert(investHtml.includes(text), '投资策略应包含「' + text + '」');
 });
 ['入场条件', '仓位依据', '风险控制', '复盘口径', '何时不做', '第1天方案明细', '方案金额', '方案明细'].forEach(text => {
@@ -148,4 +152,4 @@ assert.strictEqual((investHtml.match(/<table/g) || []).length, 2, '投资策略�
 assert(investHtml.includes('可核算 8 天'), '累计盈亏应标注可核算天数');
 assert(!investHtml.includes('已证伪砍掉') && !investHtml.includes('比分已砍'), '应删除过期砍板块文案');
 
-console.log('SMOKE OK — 五栏目取消、slot8三档六票、score3 3×3及旧单值、投资=今日策略表+每日盈亏表全过');
+console.log('SMOKE OK — 五栏目取消、slot8三档六票、score3 3×3及旧单值、投资=方案分配表+今日策略表+每日盈亏表全过');
