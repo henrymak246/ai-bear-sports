@@ -55,14 +55,11 @@
         <text class="m-dir">{{item.direction}}</text>
         <text class="star" wx:if="{{item.stars}}">{{item.stars}}</text>
       </view>
-      <!-- 官方只开让球、没开胜平负(让球-only, 见 utils/jc.js noHadOf): 方向不可投, 整串文案在 index.js 拼好 -->
-      <view class="m-line nohad-tip" wx:if="{{item.noHadTip}}">
-        <text>{{item.noHadTip}}</text>
-      </view>
       <!-- 两个盘各一行(2026-09-15 用户拍板, 照体彩计算器): 「胜负」盘 / 「让球胜负(盘口)」盘 ——
-           原来挤成一行靠 SP / 让球SP 前缀分隔, 看不出哪个数属于哪个盘、也说不清哪个盘没开 -->
+           原来挤成一行靠 SP / 让球SP 前缀分隔, 看不出哪个数属于哪个盘、也说不清哪个盘没开。
+           官方只开让球、没开胜平负的场(让球-only, 见 utils/jc.js noHadOf): spLine 为空, 只显让球那行 -->
       <view class="m-line muted" wx:if="{{item.spLine || item.hhadLine}}">
-        <text class="mkt-row {{item.spBlank ? 'od-nohad' : ''}}">{{item.spLine}}</text>
+        <text class="mkt-row {{item.spBlank ? 'od-nohad' : ''}}" wx:if="{{item.spLine}}">{{item.spLine}}</text>
         <text class="mkt-row" wx:if="{{item.hhadLine}}">{{item.hhadLine}}</text>
       </view>
       <!-- 独立成行: SP 两个都空的场也必须看得见"已停售" -->

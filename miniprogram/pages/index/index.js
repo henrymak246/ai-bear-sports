@@ -106,7 +106,8 @@ function buildGroups(payload, judgeLib) {
     const hcapText = '让' + (hcap > 0 ? '+' + hcap : hcap);
     /* 官方只开了让球、没开胜平负(见 utils/jc.js noHadOf): 卡片上原本顶着一个**投不了的**
        胜平负方向(2026-09-15 用户拿 013 埃尔切vs皇马 指出)。改成让球口径: 徽章换「让球」,
-       方向前缀让球线 + 官方口径词 —— '让+2 让球负'。 */
+       方向前缀让球线 + 官方口径词 —— '让+2 让球负'。
+       ★2026-11-12 用户拍板: 这种场"就按让球写", 不再单列「胜负 无(官方未开)」也不挂提醒。 */
     const noHad = jc.noHadOf(m);
     const dir = m.direction || '';
     const playable = hhadText; // 有让球SP 才谈得上"可投的是让球"
@@ -124,16 +125,12 @@ function buildGroups(payload, judgeLib) {
       direction: dir ? (hhadDir ? hcapText + ' ' + offDir(dir, true) : offDir(dir, false)) : dir,
       dirTag: badge,
       badgeClass: BADGE_CLASS[badge] || 'badge-gray',
-      // 让球-only 才有的一句提醒; WXML 只做插值(本文件既有约定), 整串文案在这里拼好
-      //   (用户截图里 013 选的正是"让球负" —— 上面那个方向本身就是可投的那一注, 不是"投不了")
-      noHadTip: noHad && playable
-        ? '※ 官方未开胜平负: 可投的就是「' + (offDir(dir, true) || '让球') + '」(下行让球胜负)'
-        : '',
       stars: fmt.fmtStars(m.confidence),
       // 两个盘各写一行(2026-09-15 用户拍板, 照体彩计算器的两行盘口): 胜负 / 让球胜负(盘口)
+      //   让球-only 场没有胜平负盘 ⇒ 这一行留空, 只显让球那行(2026-11-12 用户拍板)
       spText: spTxt,
-      spLine: '胜负 ' + (spTxt || (noHad && playable ? '无(官方未开)' : '未开售')),
-      spBlank: !spTxt, // WXML 用它把"无/未开售"挂成灰字(od-nohad), 有赔率时不挂
+      spLine: spTxt ? '胜负 ' + spTxt : (noHad && playable ? '' : '胜负 未开售'),
+      spBlank: !spTxt, // WXML 用它把"未开售"挂成灰字(od-nohad), 有赔率时不挂
       hhadText,
       hhadLine: hhadText ? '让球胜负(' + hcapText + ') ' + hhadText : '',
       overUnder: m.overUnder || '',

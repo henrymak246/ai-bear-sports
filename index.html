@@ -310,11 +310,9 @@
   .sp-toggle:hover { background:var(--amber-bg); }
   .sp-win { color:var(--green); font-weight:800; }
   .od-closed { display:inline-block; margin-left:4px; color:#B91C1C; font-weight:800; background:#FEF2F2; border:1px solid #FECACA; border-radius:6px; padding:0 5px; font-size:11px; }
-  /* 官方只开了让球、没开胜平负(让球-only): 这场的 SP 那格不是"还没开售", 是压根没有这个盘 */
-  .od-nohad { display:inline-block; color:#B45309; font-weight:800; }
+  /* 官方只开了让球、没开胜平负(让球-only) 的场不再单列「胜负」行, 2026-11-12 起只按让球口径写 */
   /* 两个盘各挂各的名(2026-09-15 起): 「胜负」/「让球胜负(让-1)」, 与官方足球计算器的两行盘口对应 */
   .mkt { color:var(--muted); font-weight:800; font-size:11px; margin-right:2px; }
-  .nohad-tip { color:#B45309; background:#FFFBEB; border:1px solid #FDE68A; border-radius:6px; padding:0 6px; font-size:11px; }
   .final { font-weight:800; color:var(--brown); white-space:nowrap; }
   .an-btn { border:1px solid var(--line); background:var(--card); border-radius:8px; padding:0 6px; font-size:12px; line-height:20px; cursor:pointer; color:var(--brown); font-family:inherit; }
   .an-btn:hover { background:var(--amber-bg); }
@@ -2129,11 +2127,14 @@ function renderApp(days) {
       // ★官方只开了让球、没开胜平负(让球-only, 见 assets/live-odds.js noHadOf)。
       //   卡片上原本顶着一个**投不了的**胜平负方向(2026-09-15 用户拿 013 埃尔切vs皇马 指出),
       //   现在改成让球口径: 徽章换「让球」、方向前缀让球线 + 官方口径词 —— '让+2 让球负' 才是那一注(见 offDir)。
+      //   ★2026-11-12 用户拍板(026 圣马力诺vs白俄罗斯 让+2 那场): 这种场**就按让球写** ——
+      //   没开的那个盘不再单独占一行, 也不写「无(官方未开)」, 可投的让球行直接当这一注的口径。
       var noHad = typeof LiveOdds !== 'undefined' && LiveOdds.noHadOf(m);
       var hcapTxt = '让' + (Number(m.spHandicap) > 0 ? '+' + m.spHandicap : m.spHandicap);
       var hasHhad = Array.isArray(m.hhad) && m.hhad.length === 3;
       // 两个盘各写一行(2026-09-15 用户拍板, 照体彩计算器的两行盘口): 「胜负」=胜平负盘 / 「让球胜负」=让球盘。
       //   原来挤成一行靠 `SP` / `让-1` 前缀区分, 看不出哪个数属于哪个盘, 也让"哪个盘没开"说不清。
+      //   让球-only 场只有一个盘可投 ⇒ 只留让球那一行(spRow 置空, 见下)。
       var spRow, hhadRow;
       if (Array.isArray(m.sp) && m.sp.length === 3) {
         var spTxt = m.sp.map(function (v, i) {
@@ -2144,8 +2145,8 @@ function renderApp(days) {
         }).join('/');
         spRow = '<span class="mkt">胜负</span> <span class="odds">' + spTxt + '</span>';
       } else if (noHad && hasHhad) {
-        // 不是"还没开售", 是压根没有这个盘
-        spRow = '<span class="mkt">胜负</span> <span class="od-nohad">无(官方未开)</span>';
+        // 没有胜平负盘就不单列这一行: 这一场可投的就是下面那行让球胜负, 别再挂一句"无(官方未开)"
+        spRow = '';
       } else {
         spRow = '<span class="mkt">胜负</span> <span class="wait">未开售</span>';
       }
@@ -2163,7 +2164,11 @@ function renderApp(days) {
           + (hcpRes ? '(结算:<b class="sp-win">' + hcpRes + '</b>)' : '') + '</span>';
       }
       // 官方已过销售截止并下架(实时池里没有该场) → 快照 SP 还在, 但这一场买不到, 必须显式标出来
-      if (m.oddsClosed) spRow += ' <span class="od-closed">已停售</span>';
+      //   (让球-only 场没有「胜负」行, 就标在让球那行上)
+      if (m.oddsClosed) {
+        if (spRow) spRow += ' <span class="od-closed">已停售</span>';
+        else if (hhadRow) hhadRow += ' <span class="od-closed">已停售</span>';
+      }
       // 亚盘指数(内联亚盘行): 让球盘口水位 + 大小球盘口水位
       var ahOdds = '';
       if (m.ah && m.ah.name) ahOdds += ' <span class="odds">' + esc(m.ah.name) + ' ' + esc(m.ah.home) + '/' + esc(m.ah.away) + '</span>';
@@ -2192,14 +2197,9 @@ function renderApp(days) {
       var dirTxt = m.direction ? (noHadBadge ? hcapTxt + ' ' + offDir(m.direction, true) : offDir(m.direction, false)) : '';
       var jcLines = ['<div>' + esc(dirTxt) + dtagHtml(noHadBadge ? '让球' : m.dirTag) + ' <span class="stars">' + '★'.repeat(m.confidence || 0) + '</span></div>',
         '<div>' + esc(m.overUnder) + '</div>'];
-      // 让球-only 的提醒: 这场的胜平负盘官方没开, 上面那个方向本身就是让球口径那一注
-      //   (用户 9-15 的截图里 013 选的正是"让球负" —— 说的就是同一个东西, 不是"投不了")
-      if (noHadBadge) {
-        jcLines.push('<div><span class="nohad-tip">※ 官方未开胜平负: 可投的就是「'
-          + esc(offDir(m.direction, true) || '让球') + '」(下行让球胜负)</span></div>');
-      }
       if (scoreTxt) jcLines.push('<div>' + scoreTxt + '</div>');
-      jcLines.push('<div>' + spRow + '</div>');
+      // 让球-only 场: 方向行已经写 '让+2 让球负'、下面还有让球胜负那行 ⇒ 不再解释"官方没开胜平负"
+      if (spRow) jcLines.push('<div>' + spRow + '</div>');
       if (hhadRow) jcLines.push('<div>' + hhadRow + '</div>');
       var jcCell = jcLines.join('');
       return '<tr><td>' + anBtn + '</td><td>' + esc(m.id) + '</td><td>' + esc(m.league) + ' ' + esc(m.time) + '</td>' +
