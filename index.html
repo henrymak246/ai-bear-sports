@@ -87,7 +87,6 @@
   .cb-badge { color:#fff; border-radius:4px; padding:1px 6px; font-size:11px; font-weight:800; white-space:nowrap; }
   .cb-hc { background:#F5A623; }
   .cb-hd { background:#4A90D9; }
-  .asian7-panel { border-top:4px solid #059669; }
   .dpost-panel { border-top:4px solid #F25C5C; }
   .dpost-title { font-size:15px; font-weight:800; color:var(--brown); margin-bottom:10px; }
   .dpost-content { white-space:pre-wrap; font-size:13px; line-height:1.9; color:#4A3A28; background:#FFF8EC; border-radius:12px; padding:14px 16px; }
@@ -505,7 +504,6 @@
       <div id="dream7Blocks"></div>
       <div id="slot8Blocks"></div>
       <div id="hc7Blocks"></div>
-      <div id="asian7Blocks"></div>
       <div id="score3Blocks"></div>
       <div id="zucai310Blocks"></div>
     </section>
@@ -1240,29 +1238,9 @@ function renderApp(days) {
       '</div>';
   }
 
-  // ---- 🎲 非竞彩亚盘7场：最新一天 asian7 字段（非竞彩场次亚洲让球盘推荐） ----
-  function renderAsian7(days) {
-    var box = document.getElementById('asian7Blocks');
-    if (!box) return;
-    var day = pickDay(function (d) { return d.asian7 && Array.isArray(d.asian7.legs) && d.asian7.legs.length > 0; });
-    if (!day) { box.innerHTML = ''; return; }
-    var a7 = day.asian7;
-    var rows = a7.legs.map(function (leg, i) {
-      var mark = leg.result === 'hit' ? '<span class="hit">红 ✅</span>' : leg.result === 'miss' ? '<span class="miss">黑 ❌</span>' : '<span class="wait">待赛</span>';
-      return '<tr><td>' + (i + 1) + '</td>' +
-        '<td><span class="d7-league">' + esc(leg.league || '—') + '</span></td>' +
-        '<td>' + esc(leg.match) + '</td>' +
-        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.sel ? ' <span style="background:#4A90D9;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">双选</span>' : '') + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + '</td>' +
-        '<td class="d7-odds">' + esc(leg.odds) + '</td>' +
-        '<td class="d7-reason">' + esc(leg.reason) + '</td>' +
-        '<td>' + mark + '</td></tr>';
-    }).join('');
-    box.innerHTML =
-      '<div class="panel asian7-panel"><h2>🎲 非竞彩亚盘7场<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + esc(day.date) + ' · 全中约 ' + esc(a7.totalOdds || '—') + ' · 亚洲让球盘推荐</span></h2>' +
-      '<table class="d7-table"><tr><th>关</th><th>联赛</th><th>场次</th><th>选项</th><th>赔率</th><th>依据</th><th>红黑</th></tr>' + rows + '</table>' +
-      
-      '</div>';
-  }
+  // ---- 🎲 非竞彩亚盘7场：2026-11-12 起停用(用户拍板)——
+  //   asian7 的旧票与时段票重复, 已取消; 亚盘/大小观点改在「🌏 亚洲让球」方案卡里出腿池表(day.asianPool)。
+  //   函数与容器一并删掉(不留 pickDay 回退到旧日期的坑)。
 
   // ---- 💚 幸福比分：固定3场，每场3个比分；旧历史的单值 pick/odds 原样兼容 ----
   function renderScore3(days) {
@@ -1453,24 +1431,41 @@ function renderApp(days) {
       html += '<div class="plan-group-title">' + g.title + '<span class="pg-tag">' + g.tag + '</span></div>' +
         '<div class="plan-blocks">' + tiers.map(function (x) {
           var c = TIER_COLORS[x.i % TIER_COLORS.length];
-          /* 🀄 北单卡: 腿池表(2026-11-12 用户拍板「总览按信心排行, 从高到低我自己选择」)——
-             腿池 = day.beidan310.legs, 带 rank(1=最强)/conf(★)/note(依据) 才出表, 按 rank 升序;
+          /* 腿池表(2026-11-12 用户拍板「总览按信心排行, 从高到低我自己选择」/「亚盘结合大小球也一样」)——
+             两种池: ①北单 = day.beidan310.legs(卡片 market=bd 自动挂) ②亚盘+大小 = day.asianPool.legs
+             (卡片上写 poolRef:'asian' 才挂)。腿都带 rank(1=最强)/conf(★)/note(依据) 才出表, 按 rank 升序;
              老日子没有 rank → 不出表, 卡片只有正文, 与以前完全一致 */
           var poolHtml = '';
-          var bdLegs = (g.key === 'bd' && day.beidan310 && Array.isArray(day.beidan310.legs)) ? day.beidan310.legs : [];
-          if (bdLegs.length && bdLegs.every(function (l) { return l && l.rank != null; })) {
-            var pool = bdLegs.slice().sort(function (a, b) { return Number(a.rank) - Number(b.rank); });
+          var poolKind = '';
+          var poolLegs = [];
+          if (x.t.poolRef === 'asian' && day.asianPool && Array.isArray(day.asianPool.legs)) {
+            poolKind = 'asian'; poolLegs = day.asianPool.legs;
+          } else if (g.key === 'bd' && day.beidan310 && Array.isArray(day.beidan310.legs)) {
+            poolKind = 'bd'; poolLegs = day.beidan310.legs;
+          }
+          if (poolLegs.length && poolLegs.every(function (l) { return l && l.rank != null; })) {
+            var pool = poolLegs.slice().sort(function (a, b) { return Number(a.rank) - Number(b.rank); });
             var prows = pool.map(function (l) {
-              var hc = Number(l.handicap);
-              var hcTxt = '让' + (hc > 0 ? '+' + hc : hc);
+              var pickCell, spTxt;
+              if (poolKind === 'bd') {
+                var hc = Number(l.handicap);
+                pickCell = '<b>' + esc(l.pick) + '</b><span class="pl-hc">[让' + esc(hc > 0 ? '+' + hc : hc) + ']</span>';
+                spTxt = (l.sp3 || []).join('/');
+              } else {
+                // 亚盘/大小腿: play 写成小标签(亚盘让球 / 大小球), 选项本身已经是「黑山-1.5」「大3.25」这种整串
+                pickCell = (l.play ? '<span class="pl-hc">' + esc(l.play) + '</span> ' : '') + '<b>' + esc(l.pick) + '</b>';
+                spTxt = l.odds == null ? '' : l.odds;
+              }
               return '<tr><td class="num">' + esc(l.rank) + '</td>' +
                 '<td>' + esc(l.match) + '</td>' +
-                '<td><b>' + esc(l.pick) + '</b><span class="pl-hc">[' + esc(hcTxt) + ']</span></td>' +
-                '<td class="num">' + esc((l.sp3 || []).join('/')) + '</td>' +
+                '<td>' + pickCell + '</td>' +
+                '<td class="num">' + esc(spTxt) + '</td>' +
                 '<td class="pl-stars">' + '★'.repeat(Number(l.conf) || 0) + '</td>' +
                 '<td class="pl-why">' + esc(l.note || '') + '</td></tr>';
             }).join('');
-            poolHtml = '<div class="pb-pool-h3">🀄 腿池总览 · 按信心从高到低(自己挑腿组票)</div>' +
+            poolHtml = '<div class="pb-pool-h3">' + (poolKind === 'bd'
+                ? '🀄 腿池总览 · 按信心从高到低(自己挑腿组票)'
+                : '🌏 亚盘+大小腿池 · 按信心从高到低(自己挑腿组串)') + '</div>' +
               '<table class="d7-table pl-table"><tr><th>#</th><th>场次</th><th>选择</th><th>参考SP</th><th>信心</th><th>依据</th></tr>' + prows + '</table>';
           }
           return '<a class="plan-block" href="#!" data-modal="tier" data-date="' + esc(day.date) + '" data-idx="' + x.i + '" style="border-top-color:' + c + '">' +
@@ -2054,7 +2049,7 @@ function renderApp(days) {
       ? dayDetail(day)
       : '<div class="panel wait">还没有记录，等小熊的第一场预测 🐻</div>';
     // 当日方案、三时段8拖与发布内容均跟随月历选中日期。
-    renderDream7(days); renderSlot8(days); renderHc7(days); renderAsian7(days); renderScore3(days); renderZucai310(days); renderDailyPost(days); renderPlanBlocks(days); renderMovesRadar(day);
+    renderDream7(days); renderSlot8(days); renderHc7(days); renderScore3(days); renderZucai310(days); renderDailyPost(days); renderPlanBlocks(days); renderMovesRadar(day);
   }
 
   function dayDetail(day) {
