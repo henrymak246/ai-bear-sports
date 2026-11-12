@@ -12,10 +12,11 @@ function makeAsian(legs) {
   const numeric = legs.every(l => Number.isFinite(Number(l.odds)) && Number(l.odds) > 0);
   return { legs, cost: 2, totalOdds: numeric ? legs.reduce((n, l) => n * Number(l.odds), 1).toFixed(1) : '待补', result: null };
 }
-function makeBeidan(issue, legs) {
+function makeBeidan(issue, legs, unit) {
   const doubles = legs.filter(l => String(l.pick).includes('/')).length;
   if (legs.some(l => !String(l.pick).includes('/') && String(l.handicap || '0') !== '0')) throw new Error('北单让球场禁单选');
-  return { issue, legs, stakes: 2 ** doubles, cost: 2 ** doubles * 2, result: null };
+  const u = unit == null ? 2 : unit;
+  return { issue, legs, stakes: 2 ** doubles, unit: u, cost: 2 ** doubles * u, result: null };
 }
 function validateSlot8(day) {
   const errors = [];
@@ -36,7 +37,8 @@ function validateSlot8(day) {
       if (!String(l.pick).includes('/') && String(l.handicap || '0') !== '0') errors.push(slot + '北单让球场单选 ' + l.bdNum);
     }
     const expected = 2 ** (b.beidan.legs || []).filter(l => String(l.pick).includes('/')).length;
-    if (b.beidan.stakes !== expected || b.beidan.cost !== expected * 2) errors.push(slot + '北单注数/金额错误');
+    const unit = b.beidan.unit == null ? 2 : b.beidan.unit; // 2026-11-12 起支持每注 6 元(单位由建日声明)
+    if (b.beidan.stakes !== expected || b.beidan.cost !== expected * unit) errors.push(slot + '北单注数/金额错误');
   }
   return errors;
 }
