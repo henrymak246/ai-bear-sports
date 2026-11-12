@@ -1950,14 +1950,21 @@ function renderApp(days) {
       '<div class="inv-card"><div class="n pos">' + (best ? money(best.net) : '—') + '</div><div class="t">最高单日盈利' + (best ? ' · ' + esc(best.date) : '') + '</div></div>' +
       '</div>';
 
-    /* 方案分配：今天这笔预算怎么分、各买什么、全中多少 */
+    /* 方案分配：今天这笔预算怎么分、各买什么、全中多少
+       ★2026-11-12 用户拍板: 表格按**推荐强度从高到低**排(最强在最上), 优先级写在数据 rows[].rank
+         (1=最强); 老日子没有 rank → 全部并列, 保持建日时的原序(_smoke_ne 的 fixture 就是这种) */
     var bp = today && today.betPlan;
     if (bp && Array.isArray(bp.rows) && bp.rows.length) {
-      var bpRows = bp.rows.map(function (r) {
+      var bpSorted = bp.rows.slice().sort(function (a, b) {
+        var ra = (a && a.rank != null) ? Number(a.rank) : 99;
+        var rb = (b && b.rank != null) ? Number(b.rank) : 99;
+        return ra - rb;
+      });
+      var bpRows = bpSorted.map(function (r) {
         return '<tr><td>' + esc(r.tier) + '</td><td>' + esc(r.name) + '</td><td>' + esc(r.detail) + '</td>' +
           '<td class="num">' + esc(r.stake) + '</td><td class="num">' + esc(r.odds) + '</td><td class="num">' + esc(r.payout) + '</td></tr>';
       }).join('');
-      html += '<div class="inv-h3">💰 方案分配 · 合计 ' + esc(bp.total) + ' 元</div>' +
+      html += '<div class="inv-h3">💰 方案分配 · 合计 ' + esc(bp.total) + ' 元<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">按推荐强度从高到低</span></div>' +
         '<table class="inv-table"><tr><th>层级</th><th>项目</th><th>内容</th><th>金额(元)</th><th>赔率</th><th>全中回报(元)</th></tr>' + bpRows +
         '<tr class="inv-total"><td colspan="3"><b>合计</b></td><td class="num"><b>' + esc(bp.total) + '</b></td><td></td><td></td></tr></table>' +
         (bp.note ? '<div class="inv-note">' + esc(bp.note) + '</div>' : '');
