@@ -96,7 +96,7 @@ sandbox.byDate[fixture.date] = fixture;
 vm.runInContext('renderSlot8(days)', sandbox);
 const slotHtml = boxes.slot8Blocks.innerHTML;
 ['早场', '06:00–17:59', '夜场', '18:00–23:59', '深夜', '次日00:00–05:59',
-  '亚盘让球+大小球混编2串', '北单8拖', '26113', '26114', '32注', '64元', '待补',
+  '亚盘让球+大小球混编2串', '北单1拖', '26113', '26114', '32注', '64元', '待补',
   '亚盘', '大小球', '2.35', '红', '黑', '内存fixture理由'].forEach(text => {
   assert(slotHtml.includes(text), '三时段8拖应显示「' + text + '」');
 });
@@ -104,7 +104,7 @@ assert.strictEqual((slotHtml.match(/class="slot8-card/g) || []).length, 3, '应�
 assert.strictEqual((slotHtml.match(/class="slot8-ticket/g) || []).length, 6, '每档应上下排亚盘与北单两张票');
 assert(html.includes('.slot8-grid { display:block; }'), '三时段应取消左右grid, 改为纵向表格');
 const firstSlot = slotHtml.split('class="slot8-card')[1];
-assert(firstSlot.indexOf('亚盘让球+大小球混编2串') < firstSlot.indexOf('北单8拖'), '每档亚盘表必须在北单表上方');
+assert(firstSlot.indexOf('亚盘让球+大小球混编2串') < firstSlot.indexOf('北单1拖'), '每档亚盘表必须在北单表上方');
 
 vm.runInContext('renderScore3(days)', sandbox);
 const scoreHtml = boxes.score3Blocks.innerHTML;

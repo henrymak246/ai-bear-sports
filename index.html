@@ -1181,7 +1181,7 @@ function renderApp(days) {
           '<td>' + esc(leg.match || '—') + '</td><td><span class="d7-pick">' + esc(pick) + '</span></td>' +
           '<td class="d7-odds">' + esc(sp) + '</td><td class="d7-reason">' + esc(leg.note || '—') + '</td><td>' + badge(leg.result) + '</td></tr>';
       }).join('') || '<tr><td colspan="7">暂无可出票腿</td></tr>';
-      return '<div class="slot8-ticket"><h3>🀄 北单8拖</h3>' +
+      return '<div class="slot8-ticket"><h3>🀄 北单' + legs.length + '拖</h3>' +
         '<div class="slot8-meta">期次' + esc(t.issue || '待补') + ' · ' + legs.length + '腿 · ' + esc(t.stakes == null ? '待补' : t.stakes) + '注 · 成本' + esc(t.cost == null ? '—' : t.cost) + '元 · 结果' + badge(t.result) + '</div>' +
         '<table class="d7-table"><tr><th>关</th><th>北单号</th><th>场次</th><th>310选择</th><th>参考SP</th><th>说明</th><th>结果</th></tr>' + rows + '</table></div>';
     }

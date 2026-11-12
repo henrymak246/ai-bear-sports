@@ -202,15 +202,25 @@ if (day.date >= "2026-11-12") {
       const t = String(l.match || "");
       return ditched.some(m => t.indexOf(m.home) !== -1 && t.indexOf(m.away) !== -1);
     };
-    ((day.beidan310 && day.beidan310.legs) || []).filter(hitDitch)
-      .forEach(l => violations.push(`[资金] 弃选场 ${l.match} 不得进北单310`));
-    ((day.dream7 && day.dream7.legs) || []).filter(hitDitch)
-      .forEach(l => violations.push(`[资金] 弃选场 ${l.match} 不得进梦想7关`));
+    // 弃选场可以进北单/时段北单, 但腿必须站资金侧(让 0 场: 资金主→含3, 资金客→含0; 让球场本身是不输盘表达, 放行)
+    const ditchLegOk = (l, tag) => {
+      const m = ditched.find(x => String(l.match || "").indexOf(x.home) !== -1 && String(l.match || "").indexOf(x.away) !== -1);
+      if (!m) return;
+      if (String(l.handicap == null ? "0" : l.handicap) !== "0") return;
+      const side = moneySideOf(m);
+      if (!side) return;
+      const need = side === "主胜" ? "3" : "0";
+      if (String(l.pick || "").indexOf(need) === -1) {
+        violations.push(`[资金] 弃选场 ${l.match} ${tag}腿 ${l.pick} 未站资金侧(${side})`);
+      }
+    };
+    ((day.beidan310 && day.beidan310.legs) || []).forEach(l => ditchLegOk(l, "北单310"));
     ["early", "night", "late"].forEach(s => {
       const b = day.slot8 && day.slot8[s];
-      ((b && b.beidan && b.beidan.legs) || []).filter(hitDitch)
-        .forEach(l => violations.push(`[资金] 弃选场 ${l.match} 不得进${s}北单`));
+      ((b && b.beidan && b.beidan.legs) || []).forEach(l => ditchLegOk(l, s + "北单"));
     });
+    ((day.dream7 && day.dream7.legs) || []).filter(hitDitch)
+      .forEach(l => violations.push(`[资金] 弃选场 ${l.match} 不得进梦想7关`));
     if (ditched.some(m => String(m.direction || "") !== "放弃")) {
       violations.push(`[资金] 弃选场 direction 必须写「放弃」(否则仍计入方向层统计)`);
     }
