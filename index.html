@@ -1431,42 +1431,41 @@ function renderApp(days) {
       html += '<div class="plan-group-title">' + g.title + '<span class="pg-tag">' + g.tag + '</span></div>' +
         '<div class="plan-blocks">' + tiers.map(function (x) {
           var c = TIER_COLORS[x.i % TIER_COLORS.length];
-          /* 腿池表(2026-11-12 用户拍板「总览按信心排行, 从高到低我自己选择」/「亚盘结合大小球也一样」)——
-             两种池: ①北单 = day.beidan310.legs(卡片 market=bd 自动挂) ②亚盘+大小 = day.asianPool.legs
-             (卡片上写 poolRef:'asian' 才挂)。腿都带 rank(1=最强)/conf(★)/note(依据) 才出表, 按 rank 升序;
-             老日子没有 rank → 不出表, 卡片只有正文, 与以前完全一致 */
+          /* 腿池表(2026-11-12 用户拍板「总览按信心排行, 从高到低我自己选择」/「亚盘结合大小球也一样」/「放在北单方案下面」)——
+             **两张表都挂在「🀄 北单方案」卡里、上下并列**: 先北单腿池(day.beidan310.legs), 再亚盘+大小腿池(day.asianPool.legs)。
+             腿都带 rank(1=最强)/conf(★)/note(依据) 才出表, 按 rank 升序; 老日子没有 rank → 不出表, 卡片只有正文。 */
           var poolHtml = '';
-          var poolKind = '';
-          var poolLegs = [];
-          if (x.t.poolRef === 'asian' && day.asianPool && Array.isArray(day.asianPool.legs)) {
-            poolKind = 'asian'; poolLegs = day.asianPool.legs;
-          } else if (g.key === 'bd' && day.beidan310 && Array.isArray(day.beidan310.legs)) {
-            poolKind = 'bd'; poolLegs = day.beidan310.legs;
-          }
-          if (poolLegs.length && poolLegs.every(function (l) { return l && l.rank != null; })) {
-            var pool = poolLegs.slice().sort(function (a, b) { return Number(a.rank) - Number(b.rank); });
-            var prows = pool.map(function (l) {
-              var pickCell, spTxt;
-              if (poolKind === 'bd') {
-                var hc = Number(l.handicap);
-                pickCell = '<b>' + esc(l.pick) + '</b><span class="pl-hc">[让' + esc(hc > 0 ? '+' + hc : hc) + ']</span>';
-                spTxt = (l.sp3 || []).join('/');
-              } else {
-                // 亚盘/大小腿: play 写成小标签(亚盘让球 / 大小球), 选项本身已经是「黑山-1.5」「大3.25」这种整串
-                pickCell = (l.play ? '<span class="pl-hc">' + esc(l.play) + '</span> ' : '') + '<b>' + esc(l.pick) + '</b>';
-                spTxt = l.odds == null ? '' : l.odds;
-              }
-              return '<tr><td class="num">' + esc(l.rank) + '</td>' +
-                '<td>' + esc(l.match) + '</td>' +
-                '<td>' + pickCell + '</td>' +
-                '<td class="num">' + esc(spTxt) + '</td>' +
-                '<td class="pl-stars">' + '★'.repeat(Number(l.conf) || 0) + '</td>' +
-                '<td class="pl-why">' + esc(l.note || '') + '</td></tr>';
-            }).join('');
-            poolHtml = '<div class="pb-pool-h3">' + (poolKind === 'bd'
-                ? '🀄 腿池总览 · 按信心从高到低(自己挑腿组票)'
-                : '🌏 亚盘+大小腿池 · 按信心从高到低(自己挑腿组串)') + '</div>' +
-              '<table class="d7-table pl-table"><tr><th>#</th><th>场次</th><th>选择</th><th>参考SP</th><th>信心</th><th>依据</th></tr>' + prows + '</table>';
+          if (g.key === 'bd') {
+            [
+              { kind: 'bd', title: '🀄 北单腿池 · 按信心从高到低(自己挑腿组票)',
+                legs: (day.beidan310 && Array.isArray(day.beidan310.legs)) ? day.beidan310.legs : [] },
+              { kind: 'asian', title: '🌏 亚盘+大小腿池 · 按信心从高到低(自己挑腿组串)',
+                legs: (day.asianPool && Array.isArray(day.asianPool.legs)) ? day.asianPool.legs : [] }
+            ].forEach(function (P) {
+              var poolLegs = P.legs;
+              if (!poolLegs.length || !poolLegs.every(function (l) { return l && l.rank != null; })) return;
+              var pool = poolLegs.slice().sort(function (a, b) { return Number(a.rank) - Number(b.rank); });
+              var prows = pool.map(function (l) {
+                var pickCell, spTxt;
+                if (P.kind === 'bd') {
+                  var hc = Number(l.handicap);
+                  pickCell = '<b>' + esc(l.pick) + '</b><span class="pl-hc">[让' + esc(hc > 0 ? '+' + hc : hc) + ']</span>';
+                  spTxt = (l.sp3 || []).join('/');
+                } else {
+                  // 亚盘/大小腿: play 写成小标签(亚盘让球 / 大小球), 选项本身已经是「黑山-1.5」「大3.25」这种整串
+                  pickCell = (l.play ? '<span class="pl-hc">' + esc(l.play) + '</span> ' : '') + '<b>' + esc(l.pick) + '</b>';
+                  spTxt = l.odds == null ? '' : l.odds;
+                }
+                return '<tr><td class="num">' + esc(l.rank) + '</td>' +
+                  '<td>' + esc(l.match) + '</td>' +
+                  '<td>' + pickCell + '</td>' +
+                  '<td class="num">' + esc(spTxt) + '</td>' +
+                  '<td class="pl-stars">' + '★'.repeat(Number(l.conf) || 0) + '</td>' +
+                  '<td class="pl-why">' + esc(l.note || '') + '</td></tr>';
+              }).join('');
+              poolHtml += '<div class="pb-pool-h3">' + P.title + '</div>' +
+                '<table class="d7-table pl-table"><tr><th>#</th><th>场次</th><th>选择</th><th>参考SP</th><th>信心</th><th>依据</th></tr>' + prows + '</table>';
+            });
           }
           return '<a class="plan-block" href="#!" data-modal="tier" data-date="' + esc(day.date) + '" data-idx="' + x.i + '" style="border-top-color:' + c + '">' +
             '<div class="pb-head">' + esc(x.t.name) + planBadge(x.t) + '</div>' +
