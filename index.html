@@ -495,7 +495,7 @@
       <div id="dailyPostBox"></div>
       <div id="movesRadar"></div>
       <div class="panel" id="investPanel">
-        <h2>💰 投资策略<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">今日投入 · 每日盈亏 · 累计盈亏</span></h2>
+        <h2>💰 投资策略<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">今日投入 · 昨日盈亏 · 累计盈亏</span></h2>
         <div id="investBody"></div>
       </div>
       <h2 class="sec-title">📊 每日预测总览</h2>
@@ -1268,34 +1268,40 @@ function renderApp(days) {
       '</div>';
   }
 
-  // ---- 🎫 足彩310：最新一天 zucai310 字段（胜负彩14场 + 任选9场） ----
+  // ---- 🎫 足彩310：最近 3 期 zucai310 字段（胜负彩14场 + 任选9场），2026-11-13 起多期并列 ----
   function renderZucai310(days) {
     var box = document.getElementById('zucai310Blocks');
     if (!box) return;
-    var day = pickDay(function (d) { return d.zucai310 && Array.isArray(d.zucai310.legs) && d.zucai310.legs.length > 0; });
-    if (!day) { box.innerHTML = ''; return; }
-    var zc = day.zucai310;
+    var zcDays = (days || []).filter(function (d) { return d.zucai310 && Array.isArray(d.zucai310.legs) && d.zucai310.legs.length > 0; }).slice(0, 3);
+    if (!zcDays.length) { box.innerHTML = ''; return; }
     var selDay = byDate[calState.sel];
-    var isFallback = !(selDay && selDay.zucai310 && Array.isArray(selDay.zucai310.legs) && selDay.zucai310.legs.length > 0);
-    var zcLabel = isFallback ? '最近一期 · ' : '';
-    var rows = zc.legs.map(function (leg, i) {
-      var mark = leg.result === 'hit' ? ' <span class="hit">红✅</span>' : leg.result === 'miss' ? ' <span class="miss">黑❌</span>' : '';
-      return '<tr><td>' + (i + 1) + '</td>' +
-        '<td>' + esc(leg.match) + '</td>' +
-        '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + mark + '</td></tr>';
+    var selHas = !!(selDay && selDay.zucai310 && Array.isArray(selDay.zucai310.legs) && selDay.zucai310.legs.length > 0);
+    box.innerHTML = zcDays.map(function (day, idx) {
+      var zc = day.zucai310;
+      var isFallback = idx === 0 && !selHas;
+      var zcLabel = isFallback ? '最近一期 · ' : '';
+      var nHit = zc.legs.filter(function (l) { return l.result === 'hit'; }).length;
+      var nJudged = zc.legs.filter(function (l) { return l.result === 'hit' || l.result === 'miss'; }).length;
+      var statBadge = nJudged
+        ? ' <span style="font-size:11px;font-weight:800;margin-left:6px;color:' + (zc.result === 'hit' ? '#1a7f37' : '#c0392b') + '">' + nHit + '红' + (nJudged - nHit) + '黑' + (zc.result === 'hit' ? ' · 票红' : ' · 票灭') + '</span>'
+        : ' <span style="font-size:11px;color:var(--muted);margin-left:6px">待赛</span>';
+      var rows = zc.legs.map(function (leg, i) {
+        var mark = leg.result === 'hit' ? ' <span class="hit">红✅</span>' : leg.result === 'miss' ? ' <span class="miss">黑❌</span>' : '';
+        return '<tr><td>' + (i + 1) + '</td>' +
+          '<td>' + esc(leg.match) + '</td>' +
+          '<td><span class="d7-pick">' + esc(leg.pick) + '</span>' + (leg.key ? ' <span style="background:#F5A623;color:#fff;border-radius:4px;padding:1px 5px;font-size:11px;font-weight:800;margin-left:4px">胆</span>' : '') + mark + '</td></tr>';
+      }).join('');
+      var r9 = zc.rensuan9 || {};
+      var r9html = (r9.dan || r9.tuo)
+        ? '<div style="margin-top:8px;padding:9px 11px;background:var(--amber-bg);border:1px solid #F5C96B;border-radius:10px;font-size:12.5px;line-height:1.7">' +
+          '<b>🎯 任选9场</b>' + (r9.result === 'hit' ? ' <span class="hit">红✅</span>' : r9.result === 'miss' ? ' <span class="miss">黑❌</span>' : '') + '<br>胆：' + esc((r9.dan || []).join('、')) + '<br>拖：' + esc((r9.tuo || []).join('、')) +
+          (r9.note ? '<br>' + esc(r9.note) : '') + '</div>'
+        : '';
+      return '<div class="panel zucai310-panel"' + (idx > 0 ? ' style="margin-top:14px;opacity:.92"' : '') + '><h2>🎫 足彩310（' + esc(zc.period || '胜负彩') + '期）<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + zcLabel + esc(day.date) + ' · 3=主胜 1=平 0=客胜</span>' + statBadge + '</h2>' +
+        '<table class="d7-table"><tr><th>关</th><th>场次</th><th>310选择</th></tr>' + rows + '</table>' +
+        r9html +
+        '</div>';
     }).join('');
-    var r9 = zc.rensuan9 || {};
-    var r9html = (r9.dan || r9.tuo)
-      ? '<div style="margin-top:8px;padding:9px 11px;background:var(--amber-bg);border:1px solid #F5C96B;border-radius:10px;font-size:12.5px;line-height:1.7">' +
-        '<b>🎯 任选9场</b><br>胆：' + esc((r9.dan || []).join('、')) + '<br>拖：' + esc((r9.tuo || []).join('、')) +
-        (r9.note ? '<br>' + esc(r9.note) : '') + '</div>'
-      : '';
-    box.innerHTML =
-      '<div class="panel zucai310-panel"><h2>🎫 足彩310（胜负彩14场）<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">' + zcLabel + esc(day.date) + ' · 3=主胜 1=平 0=客胜 · 复式注数=各场选择数乘积</span></h2>' +
-      '<table class="d7-table"><tr><th>关</th><th>场次</th><th>310选择</th></tr>' + rows + '</table>' +
-      
-      r9html +
-      '</div>';
   }
 
   // ---- 💥 综合过关7关（仅历史日）：max7 字段（全部不让球胜平负口径）。
@@ -1947,7 +1953,8 @@ function renderApp(days) {
     renderColumnPanel('neBody', ne, '还没有深夜/白天场次记录，小熊等补充场 🐾', sum, true);
   }
 
-  // ---- 💰 投资策略（2026-11-12 用户拍板：去掉三层长文，只要 今日/累计盈亏 + 两张表） ----
+  // ---- 💰 投资策略（2026-11-12 用户拍板：去掉三层长文，只要 今日/累计盈亏 + 两张表；
+  //      2026-11-15 用户拍板：「今日盈亏」改「昨日盈亏」+ 昨日盈亏说明 + 足彩单计入投资） ----
   renderInvest(days);
   function renderInvest(days) {
     var box = document.getElementById('investBody');
@@ -1957,8 +1964,10 @@ function renderApp(days) {
 
     var list = (days || []).slice();
     var today = list[0] || null;
+    var yest = list[1] || null;
     var tb = (today && today.bank) || {};
-    // 累计口径：只累加有净值的日子（复盘里写不出金额的不臆造）
+    var yb = (yest && yest.bank) || {};
+    // 累计口径：只累加有净值的日子（复盘里写不出金额的不臆造）; 足彩按建票日挂账进 bank.stake/net
     var asc = list.slice().reverse(), acc = 0, accMap = {};
     asc.forEach(function (d) { if (d.bank && d.bank.net != null) acc += d.bank.net; accMap[d.date] = acc; });
     var counted = asc.filter(function (d) { return d.bank && d.bank.net != null; }).length;
@@ -1969,17 +1978,43 @@ function renderApp(days) {
 
     var html = '<div class="inv-cards">' +
       '<div class="inv-card"><div class="n">' + (tb.stake == null ? '—' : tb.stake + ' 元') + '</div><div class="t">今日投入' + (today ? ' · ' + esc(today.date) : '') + '</div></div>' +
-      '<div class="inv-card"><div class="n' + cls(tb.net) + '">' + (tb.net == null ? '待赛' : money(tb.net)) + '</div><div class="t">今日盈亏' + (tb.ret != null ? ' · 回收 ' + tb.ret + ' 元' : '') + '</div></div>' +
+      '<div class="inv-card"><div class="n' + cls(yb.net) + '">' + (yb.net == null ? '待赛' : money(yb.net)) + '</div><div class="t">昨日盈亏' + (yest ? ' · ' + esc(yest.date) : '') + (yb.ret != null ? ' · 回收 ' + yb.ret + ' 元' : '') + '</div></div>' +
       '<div class="inv-card"><div class="n' + cls(acc) + '">' + money(acc) + '</div><div class="t">累计盈亏 · 可核算 ' + counted + ' 天</div></div>' +
       '<div class="inv-card"><div class="n pos">' + (best ? money(best.net) : '—') + '</div><div class="t">最高单日盈利' + (best ? ' · ' + esc(best.date) : '') + '</div></div>' +
       '</div>';
 
+    /* 昨日盈亏说明: 投入/回收/净 + 回收构成(bank.detail) + 足彩在途与结算(近 3 天有 zucai310 的日子) */
+    if (yest && yest.bank) {
+      var yLines = [];
+      if (yb.stake != null) {
+        yLines.push('昨日(' + esc(yest.date) + ')投入 ' + esc(yb.stake) + ' 元, 回收 ' + (yb.ret == null ? '—' : esc(yb.ret)) + ' 元, 净盈亏 <b class="' + cls(yb.net).trim() + '">' + (yb.net == null ? '待赛' : money(yb.net)) + ' 元</b>');
+      }
+      if (yb.detail) yLines.push('回收构成: ' + esc(yb.detail));
+      // 足彩单计入投资: 近 3 天内有 zucai310 的日子逐条列出(账挂建票日)
+      list.slice(0, 3).forEach(function (d) {
+        if (!d.zucai310) return;
+        var z = d.zucai310;
+        var zStake = 0;
+        ((d.betPlan && d.betPlan.rows) || []).forEach(function (r) {
+          if (/足彩|任九|胜负彩|14 ?场/.test(String(r.name) + String(r.detail))) zStake += Number(r.stake) || 0;
+        });
+        var st = z.result === 'miss' ? '已灭, 回收 0' : z.result === 'hit' ? '中奖, 回收以官方开奖为准' : '待赛/待开奖';
+        yLines.push('足彩 ' + esc(z.period) + ' 期(账挂 ' + esc(d.date) + (zStake ? ', ' + zStake + ' 元' : '') + ', 已计入当日投入与净盈亏): ' + st);
+      });
+      if (yLines.length) html += '<div class="inv-note" style="margin-top:8px">' + yLines.join('<br>') + '</div>';
+    }
+
     /* 方案分配：今天这笔预算怎么分、各买什么、全中多少
        ★2026-11-12 用户拍板: 表格按**推荐强度从高到低**排(最强在最上), 优先级写在数据 rows[].rank
-         (1=最强); 老日子没有 rank → 全部并列, 保持建日时的原序(_smoke_ne 的 fixture 就是这种) */
+         (1=最强); 老日子没有 rank → 全部并列, 保持建日时的原序(_smoke_ne 的 fixture 就是这种)
+       ★2026-11-15 用户拍板: 足彩单也要算投资内 —— 当日建了足彩但 rows 里没列时自动补行 */
     var bp = today && today.betPlan;
     if (bp && Array.isArray(bp.rows) && bp.rows.length) {
-      var bpSorted = bp.rows.slice().sort(function (a, b) {
+      var bpRows0 = bp.rows.slice();
+      if (today.zucai310 && !bpRows0.some(function (r) { return /足彩|任九|胜负彩|14 ?场/.test(String(r.name) + String(r.detail)); })) {
+        bpRows0.push({ rank: 90, tier: '足彩', name: '胜负彩 ' + today.zucai310.period + ' 期', detail: (today.zucai310.note || '').slice(0, 60), stake: '—', odds: '—', payout: '以官方开奖为准' });
+      }
+      var bpSorted = bpRows0.sort(function (a, b) {
         var ra = (a && a.rank != null) ? Number(a.rank) : 99;
         var rb = (b && b.rank != null) ? Number(b.rank) : 99;
         return ra - rb;
@@ -1994,7 +2029,7 @@ function renderApp(days) {
         (bp.note ? '<div class="inv-note">' + esc(bp.note) + '</div>' : '');
     }
 
-    html += '<div style="font-size:11px;color:var(--muted);margin-top:10px">⚠️ 投入/回收按建日方案与赛后记录；未留赔率的票只记命中、不虚构回收。仅供研究参考，不构成投注建议。</div>';
+    html += '<div style="font-size:11px;color:var(--muted);margin-top:10px">⚠️ 投入/回收按建日方案与赛后记录；足彩按建票日挂账计入当日投入与净盈亏；未留赔率的票只记命中、不虚构回收。仅供研究参考，不构成投注建议。</div>';
     box.innerHTML = html;
   }
 
