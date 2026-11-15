@@ -2029,6 +2029,22 @@ function renderApp(days) {
         (bp.note ? '<div class="inv-note">' + esc(bp.note) + '</div>' : '');
     }
 
+    /* 每日盈亏记录(2026-11-15 用户拍板: 投资栏目恢复按日记录, 近 14 天) */
+    var recDays = list.filter(function (d) { return d.bank && d.bank.stake != null; }).slice(0, 14);
+    if (recDays.length) {
+      var recRows = recDays.map(function (d) {
+        var b = d.bank;
+        var note = b.net == null ? '待赛' : (b.detail ? String(b.detail).slice(0, 42) : '');
+        return '<tr><td>' + esc(d.date) + '</td><td class="num">' + esc(b.stake) + '</td>' +
+          '<td class="num">' + (b.ret == null ? '—' : esc(b.ret)) + '</td>' +
+          '<td class="num' + cls(b.net) + '">' + (b.net == null ? '待赛' : money(b.net)) + '</td>' +
+          '<td class="num' + cls(accMap[d.date]) + '">' + money(accMap[d.date]) + '</td>' +
+          '<td style="font-size:11px;color:var(--muted)">' + esc(note) + '</td></tr>';
+      }).join('');
+      html += '<div class="inv-h3">📒 每日盈亏记录 · 近 ' + recDays.length + ' 天</div>' +
+        '<table class="inv-table"><tr><th>日期</th><th>投入(元)</th><th>回收(元)</th><th>净盈亏(元)</th><th>累计(元)</th><th>说明</th></tr>' + recRows + '</table>';
+    }
+
     html += '<div style="font-size:11px;color:var(--muted);margin-top:10px">⚠️ 投入/回收按建日方案与赛后记录；足彩按建票日挂账计入当日投入与净盈亏；未留赔率的票只记命中、不虚构回收。仅供研究参考，不构成投注建议。</div>';
     box.innerHTML = html;
   }

@@ -142,11 +142,11 @@ const investDays = Array.from({ length: 8 }, (_, i) => ({
 sandbox.days = investDays;
 vm.runInContext('renderInvest(days)', sandbox);
 const investHtml = boxes.investBody.innerHTML;
-assert.strictEqual((investHtml.match(/<table/g) || []).length, 1, '投资策略只保留方案分配表(今日策略/每日盈亏表已取消)');
-['今日投入', '昨日盈亏', '累计盈亏', '最高单日盈利', '方案分配', '全中回报'].forEach(text => {
+assert.strictEqual((investHtml.match(/<table/g) || []).length, 2, '投资策略=方案分配表+每日盈亏记录表两张表(2026-11-15 拍板恢复按日记录)');
+['今日投入', '昨日盈亏', '累计盈亏', '最高单日盈利', '方案分配', '全中回报', '每日盈亏记录'].forEach(text => {
   assert(investHtml.includes(text), '投资策略应包含「' + text + '」');
 });
-['入场条件', '仓位依据', '风险控制', '复盘口径', '何时不做', '第1天方案明细', '方案金额', '方案明细', '今日策略', '每日盈亏', '今日盈亏'].forEach(text => {
+['入场条件', '仓位依据', '风险控制', '复盘口径', '何时不做', '第1天方案明细', '方案金额', '方案明细', '今日策略', '今日盈亏'].forEach(text => {
   assert(!investHtml.includes(text), '投资策略不应再出现长文/旧列「' + text + '」');
 });
 assert(investHtml.includes('可核算 8 天'), '累计盈亏应标注可核算天数');
