@@ -5,6 +5,12 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
+/* 东京 cron 每日 05:30/13:30 UTC(北京 13:30/21:30) 自动采集(node _ext_fetch_server.js);
+   评审前加 --pull 先 scp 回服务器最新 ext_preds_* 再对账。 */
+if (process.argv.includes('--pull')) {
+  try { execSync('scp -q "tokyo-via-proxy:/root/football/tools/ext_preds_*.json" "' + __dirname.replace(/\\/g, '/') + '/"', { stdio: 'inherit' }); } catch (e) { console.log('pull 失败(忽略, 用本地现有):', e.message.slice(0, 80)); }
+}
 const S = require(path.join(__dirname, '..', 'stats.js'));
 const days = require(path.join(__dirname, '..', 'data', 'predictions.js'));
 const ALIAS = require('./_ext_teams.json');
@@ -32,7 +38,7 @@ const seen = new Set(ledger.map(l => l.key));
 let added = 0, pending = 0;
 for (const f of fs.readdirSync(__dirname).filter(f => /^ext_preds_\d{4}\.json$/.test(f))) {
   for (const p of JSON.parse(fs.readFileSync(path.join(__dirname, f), 'utf8'))) {
-    const key = f.slice(10, 14) + '|' + p.src + '|' + p.home + '|' + p.away;
+    const key = p.src + '|' + p.home + '|' + p.away + '|' + String(p.kickoff || '').slice(0, 10);
     if (seen.has(key)) continue;
     const m = findPlayed(p);
     if (!m) { pending++; continue; }
