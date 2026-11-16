@@ -1964,7 +1964,9 @@ function renderApp(days) {
 
     var list = (days || []).slice();
     var today = list[0] || null;
-    var yest = list[1] || null;
+    // 昨日盈亏口径(2026-11-16 修正): 取最近一个已结算日(bank.net 有值), 不机械取 list[1]——
+    // 今日池未建/未赛时 list[1] 会错挂到前天
+    var yest = list.find(function (d) { return d.bank && d.bank.net != null; }) || list[1] || null;
     var tb = (today && today.bank) || {};
     var yb = (yest && yest.bank) || {};
     // 累计口径：只累加有净值的日子（复盘里写不出金额的不臆造）; 足彩按建票日挂账进 bank.stake/net
