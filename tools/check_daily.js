@@ -175,26 +175,82 @@ if (day.date >= "2026-11-12") {
   });
 }
 
+// ---- V4.10 主仓 SP 下限(2026-11-13, 用户拍板「只卡主仓≥1.5, 胆留小仓」) ----
+//   动因=11-12 黑山: 1.20 单选投 100 元(赢也只 +20)且胜平负实际未开售, 双输。
+//   ① 单选(dirTag 或 betPlan 单选行)所选 SP 必须 ≥1.5 —— 低于 1.5 的场只能做胆(1.20-1.50 区间, 仓位≤10 元)或方向层展示;
+//   ② betPlan 胆行仓位 ≤10 元; ③ 北单让 0 腿所选 SP(sp3)≥1.5(让球腿实际 SP 在 spv 未存腿面, 由建池纪律把关)。
+if (day.date >= "2026-11-13") {
+  (day.matches || []).forEach(m => {
+    if (!/单选/.test(String(m.dirTag || ""))) return;
+    if (!Array.isArray(m.sp)) return; // 让球-only 场(sp:null)由混选门禁管
+    const sp = Number(m.sp[m.direction === "主胜" ? 0 : m.direction === "客胜" ? 2 : 1]);
+    if (isFinite(sp) && sp < 1.5) violations.push(`[SP下限] ${m.id} 单选 ${m.direction} SP ${sp} <1.5(主仓下限; 该档只能做胆[≤10元]或方向展示)`);
+  });
+  ((day.betPlan && day.betPlan.rows) || []).forEach(r => {
+    if (/单选/.test(String(r.name || ""))) {
+      const o = Number(r.odds);
+      if (isFinite(o) && o < 1.5) violations.push(`[SP下限] betPlan 单选行赔率 ${r.odds} <1.5(主仓下限)`);
+    }
+    if (/胆/.test(String(r.name || ""))) {
+      const s = Number(r.stake);
+      if (isFinite(s) && s > 10) violations.push(`[SP下限] betPlan 胆行仓位 ${r.stake} 元 >10(胆档小仓上限)`);
+    }
+  });
+  const bdLegs = [
+    ...(((day.beidan310 || {}).legs) || []),
+    ...Object.values(day.slot8 || {}).flatMap(s => (((s || {}).beidan || {}).legs) || []),
+  ];
+  bdLegs.forEach(l => {
+    const hcp = String(l.handicap == null ? "0" : l.handicap);
+    if (hcp !== "0" || !Array.isArray(l.sp3)) return;
+    String(l.pick).split("/").forEach(x => {
+      const i = { "3": 0, "1": 1, "0": 2 }[x];
+      if (i == null) return;
+      const v = Number(l.sp3[i]);
+      if (isFinite(v) && v < 1.5) violations.push(`[SP下限] 北单腿 ${l.match} ${l.pick} 所选 SP ${v} <1.5`);
+    });
+  });
+}
+
 // ---- V4.8 方向层不得逆资金(2026-11-12, 用户拍板「按新规则重新输出」) ----
 //   动因=11-11 北单017 阿蒂斯: note 写「资金站受让方主队」, 方向仍推客胜 1/0, 结果 2-1 主胜 ——
 //   同一场两套口径同时出票, 方向与北单双黑、只有亚盘红。
 //   资金侧 = 澳彩让球盘(ah)水位低的一侧; 水位差 <0.05 视为平水不判(噪声)。
 //   规则: 方向与资金侧相反 ⇒ 必须改跟资金, 或 dirTag='弃选' 且 direction='放弃';
 //         弃选场不得进 beidan310 / dream7 / slot8 北单。
+// ---- V4.12 三公司互证(2026-11-16, 用户拍板「资金面不应该开出与盘口完全相反的方向」) ----
+//   动因=11-15 跟资金 1红2黑: 单公司(澳彩)单时点水位当资金, 004(365平水/伟德反向)/008(盘口连升与
+//   受让低水矛盾)/010(降盘+主低水)三黑均可被多维口径拦下。
+//   match.ahFund(_ah_multi.fundMapper 产出)存在时优先于单公司口径:
+//     signal=strong   → 方向不得与 ahFund.side 相反(否则改跟资金或弃选)
+//     signal=conflict → 升盘矛盾, 弃选级: 必须 dirTag=弃选 且 direction=放弃
+//     signal=soft     → 降盘矛盾, 降权级: 不得作胆/单选(dirTag 不得为 胆/单选)
+//     signal=none     → 无互证信号, 方向自由但不得声称「跟资金」
 if (day.date >= "2026-11-12") {
   const moneySideOf = (m) => {
+    if (m.ahFund && m.ahFund.side) return m.ahFund.side === "主" ? "主胜" : "客胜";
     const h = Number(m.ah && m.ah.home), a = Number(m.ah && m.ah.away);
     if (!isFinite(h) || !isFinite(a) || Math.abs(h - a) < 0.05) return null;
     return h < a ? "主胜" : "客胜";
   };
   (day.matches || []).forEach(m => {
+    const pick = String(m.direction || "");
+    const f = m.ahFund;
+    if (f && f.signal === "conflict") {
+      if (m.dirTag !== "弃选" || pick !== "放弃")
+        violations.push(`[资金] ${m.id} ${m.home}vs${m.away} 升盘矛盾(三公司低水站${f.side}但盘口连升)=诱下预警, 必须弃选`);
+      return;
+    }
+    if (f && f.signal === "soft") {
+      if (m.dirTag === "胆" || m.dirTag === "单选")
+        violations.push(`[资金] ${m.id} ${m.home}vs${m.away} 降盘矛盾=降权级, 不得作胆/单选(仅可双选 conf≤1)`);
+    }
     const side = moneySideOf(m);
     if (!side) return;
-    const pick = String(m.direction || "");
     if (pick !== "主胜" && pick !== "客胜") return;
     if (pick === side) return;
     if (m.dirTag === "弃选" || pick === "放弃") return;
-    violations.push(`[资金] ${m.id} ${m.home}vs${m.away} 方向 ${pick} 与澳彩资金侧(${side}, ${m.ah.home}/${m.ah.away})相反: 改跟资金或 dirTag=弃选/direction=放弃`);
+    violations.push(`[资金] ${m.id} ${m.home}vs${m.away} 方向 ${pick} 与${f && f.side ? "三公司互证" : "澳彩"}资金侧(${side})相反: 改跟资金或 dirTag=弃选/direction=放弃`);
   });
   const ditched = (day.matches || []).filter(m => m.dirTag === "弃选");
   if (ditched.length) {
