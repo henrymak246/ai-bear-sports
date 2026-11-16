@@ -2007,7 +2007,36 @@ function renderApp(days) {
     /* 方案分配：今天这笔预算怎么分、各买什么、全中多少
        ★2026-11-12 用户拍板: 表格按**推荐强度从高到低**排(最强在最上), 优先级写在数据 rows[].rank
          (1=最强); 老日子没有 rank → 全部并列, 保持建日时的原序(_smoke_ne 的 fixture 就是这种)
-       ★2026-11-15 用户拍板: 足彩单也要算投资内 —— 当日建了足彩但 rows 里没列时自动补行 */
+       ★2026-11-15 用户拍板: 足彩单也要算投资内 —— 当日建了足彩但 rows 里没列时自动补行
+       ★2026-11-16 用户拍板: 最右加「判定」列(红黑标记) */
+    function rowResult(d, r) {
+      if (!d || !r) return null;
+      if (r.result) return r.result;
+      var nm = String(r.name || '') + String(r.detail || '');
+      var T = { '早场': 'early', '夜场': 'night', '深夜': 'late' };
+      if (/任九/.test(nm)) return d.zucai310 && d.zucai310.rensuan9 ? d.zucai310.rensuan9.result : null;
+      if (/足彩|胜负彩|14 ?场/.test(nm)) return d.zucai310 ? d.zucai310.result : null;
+      if (/大小/.test(nm)) return d.ou2 ? d.ou2.result : null;
+      if (/比分/.test(nm)) return d.score3 ? d.score3.result : null;
+      if (/梦想/.test(nm)) return d.dream7 ? d.dream7.result : null;
+      if (/北单/.test(nm)) { var s = T[r.tier]; if (s && d.slot8 && d.slot8[s]) return d.slot8[s].beidan.result; return d.beidan310 ? d.beidan310.result : null; }
+      if (/亚盘/.test(nm)) { var s2 = T[r.tier]; if (s2 && d.slot8 && d.slot8[s2]) return d.slot8[s2].asian.result; return null; }
+      if (/混选|组合/.test(nm)) return r.result || null;
+      if (/胆|单选/.test(nm)) {
+        var m = (d.matches || []).find(function (x) { return x.dirTag === '胆' || x.dirTag === '单选'; });
+        if (!m || !m.finalScore || typeof StatsLib === 'undefined') return null;
+        var v = StatsLib.judgeDirection(m.direction, m.finalScore, m.spHandicap);
+        return v === 1 ? 'hit' : v === 0 ? 'miss' : null;
+      }
+      return null;
+    }
+    function resultMark(res) {
+      if (res === 'hit') return '<span class="pos">红</span>';
+      if (res === 'miss') return '<span class="neg">黑</span>';
+      if (res === 'half') return '<span class="pos">半红</span>';
+      if (res === 'push') return '<span>走</span>';
+      return '<span style="color:var(--muted)">待赛</span>';
+    }
     var bp = today && today.betPlan;
     if (bp && Array.isArray(bp.rows) && bp.rows.length) {
       var bpRows0 = bp.rows.slice();
@@ -2021,20 +2050,21 @@ function renderApp(days) {
       });
       var bpRows = bpSorted.map(function (r) {
         return '<tr><td>' + esc(r.tier) + '</td><td>' + esc(r.name) + '</td><td>' + esc(r.detail) + '</td>' +
-          '<td class="num">' + esc(r.stake) + '</td><td class="num">' + esc(r.odds) + '</td><td class="num">' + esc(r.payout) + '</td></tr>';
+          '<td class="num">' + esc(r.stake) + '</td><td class="num">' + esc(r.odds) + '</td><td class="num">' + esc(r.payout) + '</td>' +
+          '<td class="num">' + resultMark(rowResult(today, r)) + '</td></tr>';
       }).join('');
       html += '<div class="inv-h3">💰 方案分配 · 合计 ' + esc(bp.total) + ' 元<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:8px">按推荐强度从高到低</span></div>' +
-        '<table class="inv-table"><tr><th>层级</th><th>项目</th><th>内容</th><th>金额(元)</th><th>赔率</th><th>全中回报(元)</th></tr>' + bpRows +
-        '<tr class="inv-total"><td colspan="3"><b>合计</b></td><td class="num"><b>' + esc(bp.total) + '</b></td><td></td><td></td></tr></table>' +
+        '<table class="inv-table"><tr><th>层级</th><th>项目</th><th>内容</th><th>金额(元)</th><th>赔率</th><th>全中回报(元)</th><th>判定</th></tr>' + bpRows +
+        '<tr class="inv-total"><td colspan="3"><b>合计</b></td><td class="num"><b>' + esc(bp.total) + '</b></td><td></td><td></td><td></td></tr></table>' +
         (bp.note ? '<div class="inv-note">' + esc(bp.note) + '</div>' : '');
     }
 
-    /* 每日盈亏记录(2026-11-15 用户拍板: 投资栏目恢复按日记录, 近 14 天) */
-    var recDays = list.filter(function (d) { return d.bank && d.bank.stake != null; }).slice(0, 14);
+    /* 每日盈亏记录(2026-11-15 拍板恢复按日记录; 2026-11-16 拍板只保留一周+说明写简短总结) */
+    var recDays = list.filter(function (d) { return d.bank && d.bank.stake != null; }).slice(0, 7);
     if (recDays.length) {
       var recRows = recDays.map(function (d) {
         var b = d.bank;
-        var note = b.net == null ? '待赛' : (b.detail ? String(b.detail).slice(0, 42) : '');
+        var note = b.net == null ? '待赛' : (b.summary || (b.detail ? String(b.detail).slice(0, 42) : ''));
         return '<tr><td>' + esc(d.date) + '</td><td class="num">' + esc(b.stake) + '</td>' +
           '<td class="num">' + (b.ret == null ? '—' : esc(b.ret)) + '</td>' +
           '<td class="num' + cls(b.net) + '">' + (b.net == null ? '待赛' : money(b.net)) + '</td>' +
