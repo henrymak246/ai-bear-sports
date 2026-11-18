@@ -312,6 +312,8 @@ Page({
       bdNote: (bd && bd.note) || '',
       bdDisabled: !(slot8Bd.length || (bd && Array.isArray(bd.legs) && bd.legs.length)),
       dailyTitle: (payload.dailyPost && payload.dailyPost.title) || '',
+      // 🛠️ 盘中调整时间线(2026-11-18 与主站同步, 用户拍板「页面要有提示」): 撤腿/降仓/降级醒目留痕
+      updates: Array.isArray(payload.updates) ? payload.updates : [],
       // 🌏 亚盘推荐串(asian7): 七腿推荐+来源提示, 亚盘 Tab 顶部展示
       asian7View: (a7 && Array.isArray(a7.legs) && a7.legs.length) ? {
         legs: a7.legs.map((l) => ({ pick: l.pick || '', match: l.match || '', odds: l.odds || '' })),

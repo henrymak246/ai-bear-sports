@@ -278,6 +278,12 @@
 .a7-odds { color: #d97706; font-weight: 600; }
 .a7-note { margin-top: 12rpx; font-size: 24rpx; line-height: 1.5; }
 .stale-banner { background: #fef3c7; color: #92400e; font-size: 24rpx; padding: 10rpx 20rpx; margin: 8rpx 0; border-radius: 8rpx; }
+/* 🛠️ 盘中调整时间线(2026-11-18, 与主站 day.updates 同源): 撤腿/降仓/降级醒目留痕 */
+.updates-banner { background: #FFF1E3; border-left: 8rpx solid #E8862E; border-radius: 16rpx; padding: 16rpx 20rpx; margin: 12rpx 0; }
+.updates-title { font-size: 26rpx; font-weight: 700; color: #9a3412; margin-bottom: 8rpx; }
+.updates-item { font-size: 24rpx; color: #7c4a12; line-height: 1.7; }
+.updates-item + .updates-item { margin-top: 10rpx; }
+.updates-tag { display: inline-block; background: #E8862E; color: #fff; border-radius: 8rpx; padding: 0 12rpx; margin-right: 10rpx; font-size: 22rpx; font-weight: 700; }
 
 /* 亚盘腿双勾选+选项切换(2026-10-18) */
 .m-cart-row { display: flex; align-items: center; gap: 10rpx; padding: 6rpx 0; }

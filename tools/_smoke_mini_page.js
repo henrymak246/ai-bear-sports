@@ -119,6 +119,20 @@ assert(miniWxml.indexOf('wx:for="{{slot8Bd}}"') !== -1, '北单 Tab 未渲染 sl
 assert(miniWxml.indexOf('wx:for="{{slot8Ah}}"') !== -1, '亚盘 Tab 未渲染 slot8Ah');
 assert(miniWxml.indexOf('wx:for="{{slot.beidan.legs}}"') !== -1, '北单票未逐腿渲染');
 assert(miniWxml.indexOf('wx:for="{{slot.asian.legs}}"') !== -1, '亚盘票未逐腿渲染');
+// 🛠️ 盘中调整时间线(2026-11-18 与主站同步): payload.updates → data.updates + WXML 渲染
+const updPage = Object.create(captured);
+updPage.data = JSON.parse(JSON.stringify(captured.data));
+updPage.setData = function (patch) { Object.assign(this.data, patch); };
+updPage.renderPayload(Object.assign({}, slot8Payload, { updates: [{ tag: '测试调整', text: '撤腿样例' }] }), '');
+assert.strictEqual(updPage.data.updates.length, 1, 'payload.updates 应进入 data.updates');
+assert.strictEqual(updPage.data.updates[0].tag, '测试调整');
+assert(miniWxml.indexOf('updates-banner') !== -1 && miniWxml.indexOf('wx:for="{{updates}}"') !== -1, 'WXML 未渲染盘中调整条');
+const updEmpty = Object.create(captured);
+updEmpty.data = JSON.parse(JSON.stringify(captured.data));
+updEmpty.setData = function (patch) { Object.assign(this.data, patch); };
+updEmpty.renderPayload(slot8Payload, '');
+assert.strictEqual(updEmpty.data.updates.length, 0, '无 updates 字段时应为空数组(不渲染)');
+console.log('OK 2c/4 updates: 盘中调整条 data/WXML 渲染+空数据兼容');
 console.log('OK 2b/4 slot8: 三档北单+亚盘 / 让球与SP待补 / 注数成本 / 旧数据兼容');
 
 // ---- ③ onShow 端到端三态 ----

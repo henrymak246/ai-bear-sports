@@ -17,6 +17,14 @@
 
   <view class="err-banner" wx:if="{{errMsg}}">⚠️ {{errMsg}}</view>
   <view class="stale-banner" wx:if="{{staleTip}}">🕐 {{staleTip}}</view>
+
+  <!-- 🛠️ 盘中调整时间线(撤腿/降仓/降级, 与主站 day.updates 同源) -->
+  <view class="updates-banner" wx:if="{{updates.length}}">
+    <view class="updates-title">🛠️ 盘中调整</view>
+    <view class="updates-item" wx:for="{{updates}}" wx:key="tag">
+      <text class="updates-tag">{{item.tag}}</text>{{item.text}}
+    </view>
+  </view>
   <view class="loading" wx:if="{{loading && !payload}}">小熊搬运中…</view>
 
   <!-- ============ 🎫 竞彩 Tab ============ -->
