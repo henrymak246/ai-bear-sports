@@ -401,6 +401,12 @@
   .mini-tier b { color:var(--brown); }
   .review { font-size:13px; color:var(--brown-soft); margin-top:12px; line-height:1.8; white-space:pre-wrap; background:#FFF8EC; border-radius:12px; padding:10px 14px; }
   .review b { color:var(--brown); }
+  /* 盘中调整时间线(day.updates): 撤腿/降仓/降级等赛中修正必须在日卡醒目留痕(2026-11-18 用户拍板「页面要有提示」) */
+  .day-updates { font-size:13px; color:var(--brown-soft); margin-top:12px; line-height:1.8; background:#FFF1E3; border-left:4px solid #E8862E; border-radius:12px; padding:10px 14px; }
+  .day-updates b { color:var(--brown); }
+  .du-item { white-space:pre-wrap; }
+  .du-item + .du-item { margin-top:6px; }
+  .du-tag { display:inline-block; background:#E8862E; color:#fff; border-radius:6px; padding:0 8px; margin-right:8px; font-size:12px; font-weight:700; }
   .fold-more-btn { display:block; width:100%; margin-top:10px; border:1px dashed var(--line); background:var(--card); border-radius:10px; padding:8px 0; font-size:12.5px; font-weight:700; color:var(--honey-dark); cursor:pointer; font-family:inherit; }
   .fold-more-btn:hover { background:var(--amber-bg); }
   .xs-toggle { border:none; background:none; color:var(--honey-dark); font-size:11.5px; font-weight:700; cursor:pointer; font-family:inherit; padding:0; margin-left:8px; }
@@ -2145,6 +2151,7 @@ function renderApp(days) {
       (day.dayNote ? ' · <a href="#!" data-modal="daynote" data-date="' + esc(day.date) + '" class="daynote-link">📝 当日基调</a>' : '') + '</div></div>' +
       badge + '</div>' +
       '<div class="day-body">' + matchGroups(day) +
+      (day.updates && day.updates.length ? '<div class="day-updates"><b>🛠️ 盘中调整：</b>' + day.updates.map(function (u) { return '<div class="du-item"><span class="du-tag">' + esc(u.tag) + '</span>' + esc(u.text) + '</div>'; }).join('') + '</div>' : '') +
       (day.review ? '<div class="review"><b>🔍 复盘结论：</b>' + esc(day.review) + '</div>' : '') +
       '</div></div>';
   }

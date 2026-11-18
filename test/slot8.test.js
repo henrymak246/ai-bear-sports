@@ -29,7 +29,7 @@ test('缺大小赔率不虚构总倍数', () => {
 
 test('validateSlot8抓时段错位和北单注数错误', () => {
   const day = { matches: [{ id: '周日001', time: '13:00' }], slot8: {} };
-  for (const slot of ['early', 'night', 'late']) day.slot8[slot] = { asian: { legs: [] }, beidan: { legs: [], stakes: 1, cost: 2 } };
+  for (const slot of ['early', 'night', 'late']) day.slot8[slot] = { asian: { legs: [] }, beidan: { legs: [], stakes: 0, cost: 0 } };
   assert.deepEqual(validateSlot8(day), []);
   day.slot8.late.asian.legs.push({ id: '周日001' });
   day.slot8.late.beidan = { legs: [{ bdNum: '002', pick: '3/1', handicap: '-1' }], stakes: 1, cost: 2 };
@@ -40,7 +40,7 @@ test('validateSlot8抓时段错位和北单注数错误', () => {
 
 test('同一张混编票同一场不得同时有让球和大小球', () => {
   const day = { matches: [{ id: '周日001', time: '13:00' }], slot8: {} };
-  for (const slot of ['early', 'night', 'late']) day.slot8[slot] = { asian: { legs: [] }, beidan: { legs: [], stakes: 1, cost: 2 } };
+  for (const slot of ['early', 'night', 'late']) day.slot8[slot] = { asian: { legs: [] }, beidan: { legs: [], stakes: 0, cost: 0 } };
   day.slot8.early.asian.legs = [
     { id: '周日001', play: '亚盘', pick: '客队-0.25' },
     { id: '周日001', play: '大小球', pick: '小2.5' },

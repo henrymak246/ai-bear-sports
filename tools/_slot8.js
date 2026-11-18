@@ -36,9 +36,12 @@ function validateSlot8(day) {
       if (!l.bdNum || !l.pick) errors.push(slot + '北单腿字段缺失');
       if (!String(l.pick).includes('/') && String(l.handicap || '0') !== '0') errors.push(slot + '北单让球场单选 ' + l.bdNum);
     }
-    const expected = 2 ** (b.beidan.legs || []).filter(l => String(l.pick).includes('/')).length;
-    const unit = b.beidan.unit == null ? 2 : b.beidan.unit; // 2026-11-12 起支持每注 6 元(单位由建日声明)
-    if (b.beidan.stakes !== expected || b.beidan.cost !== expected * unit) errors.push(slot + '北单注数/金额错误');
+    const bdLegs = b.beidan.legs || [];
+    if (bdLegs.length) {
+      const expected = 2 ** bdLegs.filter(l => String(l.pick).includes('/')).length;
+      const unit = b.beidan.unit == null ? 2 : b.beidan.unit; // 2026-11-12 起支持每注 6 元(单位由建日声明)
+      if (b.beidan.stakes !== expected || b.beidan.cost !== expected * unit) errors.push(slot + '北单注数/金额错误');
+    } else if ((b.beidan.cost || 0) !== 0) errors.push(slot + '北单空票金额必须为 0');
   }
   return errors;
 }

@@ -1,0 +1,393 @@
+{
+ "周一001": {
+  "side": "客",
+  "strength": 3,
+  "move": "升",
+  "conflict": true,
+  "soft": false,
+  "signal": "conflict",
+  "votes": {
+   "主": 0,
+   "客": 3
+  },
+  "moves": {
+   "升": 1,
+   "降": 0
+  },
+  "companies": {
+   "365": {
+    "line": 0.75,
+    "home": 2.02,
+    "away": 1.77,
+    "initLine": 0.5
+   },
+   "澳彩": {
+    "line": 0.75,
+    "home": 2.06,
+    "away": 1.78,
+    "initLine": 0.75
+   },
+   "伟德": {
+    "line": 0.75,
+    "home": 2.02,
+    "away": 1.82,
+    "initLine": 0.75
+   }
+  }
+ },
+ "周一002": {
+  "side": "客",
+  "strength": 2,
+  "move": "升",
+  "conflict": true,
+  "soft": false,
+  "signal": "conflict",
+  "votes": {
+   "主": 1,
+   "客": 2
+  },
+  "moves": {
+   "升": 3,
+   "降": 0
+  },
+  "companies": {
+   "365": {
+    "line": -0.5,
+    "home": 1.8,
+    "away": 2,
+    "initLine": -1
+   },
+   "澳彩": {
+    "line": -0.5,
+    "home": 1.98,
+    "away": 1.86,
+    "initLine": -0.75
+   },
+   "伟德": {
+    "line": -0.5,
+    "home": 2.01,
+    "away": 1.83,
+    "initLine": -1
+   }
+  }
+ },
+ "周一003": {
+  "side": "主",
+  "strength": 2,
+  "move": "升",
+  "conflict": false,
+  "soft": false,
+  "signal": "strong",
+  "votes": {
+   "主": 2,
+   "客": 1
+  },
+  "moves": {
+   "升": 1,
+   "降": 0
+  },
+  "companies": {
+   "365": {
+    "line": 0.25,
+    "home": 1.77,
+    "away": 2.02,
+    "initLine": 0.25
+   },
+   "澳彩": {
+    "line": 0.25,
+    "home": 1.8,
+    "away": 2.04,
+    "initLine": 0.25
+   },
+   "伟德": {
+    "line": 0.5,
+    "home": 2.04,
+    "away": 1.8,
+    "initLine": 0.25
+   }
+  }
+ },
+ "周一004": {
+  "side": "客",
+  "strength": 2,
+  "move": "升",
+  "conflict": true,
+  "soft": false,
+  "signal": "conflict",
+  "votes": {
+   "主": 1,
+   "客": 2
+  },
+  "moves": {
+   "升": 3,
+   "降": 0
+  },
+  "companies": {
+   "365": {
+    "line": 1.75,
+    "home": 1.97,
+    "away": 1.82,
+    "initLine": 1.5
+   },
+   "澳彩": {
+    "line": 1.75,
+    "home": 2,
+    "away": 1.84,
+    "initLine": 1.5
+   },
+   "伟德": {
+    "line": 1.75,
+    "home": 1.89,
+    "away": 1.94,
+    "initLine": 1.5
+   }
+  }
+ },
+ "周一005": {
+  "side": "客",
+  "strength": 2,
+  "move": "降",
+  "conflict": false,
+  "soft": false,
+  "signal": "strong",
+  "votes": {
+   "主": 0,
+   "客": 2
+  },
+  "moves": {
+   "升": 0,
+   "降": 2
+  },
+  "companies": {
+   "365": {
+    "line": 0.75,
+    "home": 1.97,
+    "away": 1.82,
+    "initLine": 1
+   },
+   "澳彩": {
+    "line": 0.75,
+    "home": 1.94,
+    "away": 1.9,
+    "initLine": 0.75
+   },
+   "伟德": {
+    "line": 0.75,
+    "home": 1.96,
+    "away": 1.87,
+    "initLine": 1
+   }
+  }
+ },
+ "周一006": {
+  "side": "主",
+  "strength": 3,
+  "move": null,
+  "conflict": false,
+  "soft": false,
+  "signal": "strong",
+  "votes": {
+   "主": 3,
+   "客": 0
+  },
+  "moves": {
+   "升": 0,
+   "降": 0
+  },
+  "companies": {
+   "365": {
+    "line": 0.5,
+    "home": 1.85,
+    "away": 2,
+    "initLine": 0.5
+   },
+   "澳彩": {
+    "line": 0.5,
+    "home": 1.84,
+    "away": 2,
+    "initLine": 0.5
+   },
+   "伟德": {
+    "line": 0.5,
+    "home": 1.85,
+    "away": 1.98,
+    "initLine": 0.5
+   }
+  }
+ },
+ "周一007": {
+  "side": null,
+  "strength": 0,
+  "move": "降",
+  "conflict": false,
+  "soft": false,
+  "signal": "none",
+  "votes": {
+   "主": 0,
+   "客": 0
+  },
+  "moves": {
+   "升": 0,
+   "降": 2
+  },
+  "companies": {
+   "365": {
+    "line": -1,
+    "home": 1.9,
+    "away": 1.9,
+    "initLine": -0.75
+   },
+   "澳彩": {
+    "line": -1,
+    "home": 1.94,
+    "away": 1.9,
+    "initLine": -1
+   },
+   "伟德": {
+    "line": -1,
+    "home": 1.91,
+    "away": 1.92,
+    "initLine": -0.75
+   }
+  }
+ },
+ "周一008": {
+  "side": "客",
+  "strength": 2,
+  "move": null,
+  "conflict": false,
+  "soft": false,
+  "signal": "strong",
+  "votes": {
+   "主": 0,
+   "客": 2
+  },
+  "moves": {
+   "升": 0,
+   "降": 0
+  },
+  "companies": {
+   "365": {
+    "line": 1.25,
+    "home": 1.92,
+    "away": 1.92,
+    "initLine": 1.25
+   },
+   "澳彩": {
+    "line": 1.25,
+    "home": 1.98,
+    "away": 1.86,
+    "initLine": 1.25
+   },
+   "伟德": {
+    "line": 1.25,
+    "home": 1.98,
+    "away": 1.85,
+    "initLine": 1.25
+   }
+  }
+ },
+ "北单105": {
+  "side": "主",
+  "strength": 2,
+  "move": null,
+  "conflict": false,
+  "soft": false,
+  "signal": "strong",
+  "votes": {
+   "主": 2,
+   "客": 0
+  },
+  "moves": {
+   "升": 0,
+   "降": 0
+  },
+  "companies": {
+   "365": {
+    "line": 0.5,
+    "home": 1.85,
+    "away": 1.95,
+    "initLine": 0.5
+   },
+   "澳彩": {
+    "line": 0.5,
+    "home": 1.86,
+    "away": 1.92,
+    "initLine": 0.5
+   },
+   "伟德": null
+  }
+ },
+ "北单106": {
+  "side": "客",
+  "strength": 3,
+  "move": "升",
+  "conflict": true,
+  "soft": false,
+  "signal": "conflict",
+  "votes": {
+   "主": 0,
+   "客": 3
+  },
+  "moves": {
+   "升": 2,
+   "降": 0
+  },
+  "companies": {
+   "365": {
+    "line": 1,
+    "home": 2,
+    "away": 1.8,
+    "initLine": 0.5
+   },
+   "澳彩": {
+    "line": 1,
+    "home": 1.98,
+    "away": 1.8,
+    "initLine": 1
+   },
+   "伟德": {
+    "line": 1,
+    "home": 1.99,
+    "away": 1.81,
+    "initLine": 0.75
+   }
+  }
+ },
+ "北单111": {
+  "side": "客",
+  "strength": 2,
+  "move": "升",
+  "conflict": true,
+  "soft": false,
+  "signal": "conflict",
+  "votes": {
+   "主": 1,
+   "客": 2
+  },
+  "moves": {
+   "升": 2,
+   "降": 0
+  },
+  "companies": {
+   "365": {
+    "line": 2,
+    "home": 1.77,
+    "away": 2.02,
+    "initLine": 2
+   },
+   "澳彩": {
+    "line": 2.25,
+    "home": 2,
+    "away": 1.78,
+    "initLine": 2
+   },
+   "伟德": {
+    "line": 2.25,
+    "home": 1.97,
+    "away": 1.76,
+    "initLine": 2
+   }
+  }
+ }
+}

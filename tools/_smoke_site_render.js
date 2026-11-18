@@ -365,6 +365,13 @@ const realFetch = global.fetch; // ⑥ 要真打官方, 先留一份
   });
   // 2026-11-09 起日韩专栏恢复主动渲染(与 _smoke_ne.js 的栏目归属断言配套)
   assert(htmlIn(sb, 'jkBody').length > 0, '① 日韩专栏应恢复渲染');
+  // day.updates 盘中调整时间线(2026-11-18 新增, 用户拍板「页面要有提示」): 副本注入一条验证渲染路径
+  const dayWithUpdates = todayDays();
+  dayWithUpdates[0].updates = [{ tag: '测试调整', text: '撤腿降级样例文本' }];
+  sb.renderApp(dayWithUpdates);
+  const updHtml = htmlIn(sb, 'dailyList');
+  assert(updHtml.indexOf('盘中调整') !== -1 && updHtml.indexOf('撤腿降级样例文本') !== -1 && updHtml.indexOf('du-tag') !== -1,
+    '① day.updates 应渲染「盘中调整」块(tag 徽章+文本)');
 
   /* ---- ①b 让球-only: 官方只开让球、没开胜平负的场 ----
      用户 2026-09-15 的原话: "013皇马是-2球的盘, 没有开不让球的胜平负" ——
